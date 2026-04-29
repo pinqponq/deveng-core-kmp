@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -95,6 +96,7 @@ import core.presentation.component.navigationmenu.NavigationMenu
 import core.presentation.component.navigationmenu.NavigationMenuItem
 import core.presentation.component.optionitemlist.OptionItem
 import core.presentation.component.optionitemlist.OptionItemLazyListDialog
+import core.presentation.component.qrcode.CustomQrCodeView
 import core.presentation.component.optionitemlist.OptionItemList
 import core.presentation.component.optionitemlist.OptionItemMultiSelectLazyListDialog
 import core.presentation.component.otpview.OtpSize
@@ -143,6 +145,7 @@ import core.util.image.SavePhotoResult
 import core.util.video.SaveVideoResult
 import core.util.video.VideoSaveUtils
 import deveng_core_kmp.sample.composeapp.generated.resources.Res
+import deveng_core_kmp.sample.composeapp.generated.resources.deveng_logo
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_arrow_left
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_arrow_right
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_cyclone
@@ -345,10 +348,14 @@ internal fun App() {
     // Step 2: Apply theme using library's AppTheme
     AppTheme(componentTheme = customTheme) {
         var showCameraScreen by remember { mutableStateOf(false) }
-        if (showCameraScreen) {
-            CameraScreen(onBack = { showCameraScreen = false })
-        } else {
-            ThemingDemo(onOpenCamera = { showCameraScreen = true })
+        var showQrGeneratorScreen by remember { mutableStateOf(false) }
+        when {
+            showQrGeneratorScreen -> QrGeneratorDemoScreen(onBack = { showQrGeneratorScreen = false })
+            showCameraScreen -> CameraScreen(onBack = { showCameraScreen = false })
+            else -> ThemingDemo(
+                onOpenCamera = { showCameraScreen = true },
+                onOpenQrGenerator = { showQrGeneratorScreen = true },
+            )
         }
     }
 }
@@ -604,7 +611,10 @@ private fun CameraContent(onBack: () -> Unit) {
 }
 
 @Composable
-private fun ThemingDemo(onOpenCamera: () -> Unit = {}) {
+private fun ThemingDemo(
+    onOpenCamera: () -> Unit = {},
+    onOpenQrGenerator: () -> Unit = {},
+) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
     var showMarkdownDialog by remember { mutableStateOf(false) }
@@ -969,6 +979,12 @@ private fun ThemingDemo(onOpenCamera: () -> Unit = {}) {
                             text = "Open Camera",
                             containerColor = Color(0xFF4CAF50),
                             onClick = onOpenCamera
+                        )
+
+                        CustomButton(
+                            text = "Open QR Generator",
+                            containerColor = Color(0xFF9C27B0),
+                            onClick = onOpenQrGenerator
                         )
 
                         RatingRow(
@@ -2208,4 +2224,68 @@ private fun SectionTitle(text: String) {
             .fillMaxWidth()
             .padding(vertical = 8.dp)
     )
+}
+
+@Composable
+private fun QrGeneratorDemoScreen(onBack: () -> Unit) {
+    val data = "https://deveng.global/"
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .windowInsetsPadding(WindowInsets.safeDrawing),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = "CustomQrCodeView",
+                style = CoreBoldTextStyle().copy(fontSize = 22.sp),
+            )
+            Text(
+                text = data,
+                style = CoreRegularTextStyle().copy(
+                    fontSize = 13.sp,
+                    color = Color(0xFF6B7280),
+                ),
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            CustomQrCodeView(
+                data = data,
+                modifier = Modifier.size(280.dp),
+                contentDescription = "QR code linking to deveng.global",
+                overlayFraction = 0.4f,
+                overlayContent = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1861f / 590f)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(Color.White)
+                            .padding(horizontal = 6.dp, vertical = 3.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Image(
+                            painter = painterResource(Res.drawable.deveng_logo),
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                },
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(onClick = onBack) { Text("Back") }
+        }
+    }
 }

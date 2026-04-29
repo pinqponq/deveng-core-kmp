@@ -17,7 +17,13 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.alexzhirkevich.qrose.options.QrBallShape
+import io.github.alexzhirkevich.qrose.options.QrFrameShape
+import io.github.alexzhirkevich.qrose.options.QrPixelShape
+import io.github.alexzhirkevich.qrose.options.QrShapes
 import org.jetbrains.compose.resources.DrawableResource
+
+private val QrCodeViewDefaultShapes = QrShapes()
 
 /**
  * Theme colors for CustomButton component
@@ -664,6 +670,35 @@ data class OtpViewTheme(
 )
 
 /**
+ * Theme for CustomQrCodeView component.
+ *
+ * @param darkColor Color used for the dark modules (the "data" pixels and finder squares).
+ * @param lightColor Color used for the light modules and the surrounding background fill.
+ * @param overlayFraction Fraction of the QR code's width/height that the centered
+ *   `overlayContent` (typically a logo) is allowed to occupy, in `0f..1f`. The default
+ *   `0.25f` covers ~25% of the code's area — paired with the default
+ *   [io.github.alexzhirkevich.qrose.options.QrErrorCorrectionLevel.High] (~30% recovery)
+ *   this leaves a small safety margin so the code still scans reliably. Going much above
+ *   ~0.30 risks unreadable codes even at level High; lower values (e.g. `0.20f`) are
+ *   safer but shrink the logo. Ignored when no `overlayContent` is supplied.
+ * @param pixelShape Shape used for the dark data modules (the "pixels"). Defaults to the
+ *   library's square shape. Use the factories on [QrPixelShape.Companion] (e.g.
+ *   `QrPixelShape.circle()`, `QrPixelShape.roundCorners()`) for a styled look.
+ * @param ballShape Shape used for the inner square inside each of the three finder eyes.
+ *   Defaults to the library's square shape. Factories on [QrBallShape.Companion].
+ * @param frameShape Shape used for the outer ring of each of the three finder eyes.
+ *   Defaults to the library's square shape. Factories on [QrFrameShape.Companion].
+ */
+data class QrCodeViewTheme(
+    val darkColor: Color = Color.Black,
+    val lightColor: Color = Color.White,
+    val overlayFraction: Float = 0.25f,
+    val pixelShape: QrPixelShape = QrCodeViewDefaultShapes.darkPixel,
+    val ballShape: QrBallShape = QrCodeViewDefaultShapes.ball,
+    val frameShape: QrFrameShape = QrCodeViewDefaultShapes.frame
+)
+
+/**
  * Typography theme for customizing font family across all components.
  *
  * @param fontFamily The default font family to use. If null, uses Urbanist font family.
@@ -730,7 +765,8 @@ data class ComponentTheme(
     val swipeCards: SwipeCardsTheme = SwipeCardsTheme(),
     val reviewStack: ReviewStackTheme = ReviewStackTheme(),
     val tabRow: TabRowTheme = TabRowTheme(),
-    val shutter: ShutterTheme = ShutterTheme()
+    val shutter: ShutterTheme = ShutterTheme(),
+    val qrCodeView: QrCodeViewTheme = QrCodeViewTheme()
 )
 
 /**
