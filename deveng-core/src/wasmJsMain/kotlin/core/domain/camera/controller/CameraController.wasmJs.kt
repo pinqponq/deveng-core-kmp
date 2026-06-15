@@ -2,6 +2,7 @@ package core.domain.camera.controller
 
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
+import core.domain.camera.ensureWasmCameraBootstrap
 import core.domain.camera.enums.CameraDeviceType
 import core.domain.camera.enums.CameraLens
 import core.domain.camera.enums.Directory
@@ -13,34 +14,51 @@ import core.domain.camera.plugins.CameraPlugin
 import core.domain.camera.result.ImageCaptureResult
 import core.domain.camera.video.VideoCaptureResult
 import core.domain.camera.video.VideoConfiguration
-import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.js.JsAny
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLVideoElement
-import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 
 /**
  * Browser camera via [getUserMedia](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia).
- * Preview uses JPEG snapshots on a hidden [HTMLVideoElement] (see [getFrameChannel]).
- * Video recording WebM will be wired in a follow-up; photo capture and preview are supported.
+ *
+ * ## Preview rendering — BlendMode.Clear DOM overlay
+ *
+ * The `<video>` element is mounted on `document.documentElement` (behind the Compose
+ * canvas at `z-index: -1`). [core.domain.camera.compose.CameraPreviewView] draws a
+ * `BlendMode.Clear` rectangle that erases Skia's opaque-white pixels in its bounds, and
+ * the browser then composites the DOM video natively through the hole. No per-frame work
+ * happens in WASM during steady-state preview; the browser's media decoder + compositor
+ * handles everything.
+ *
+ * Mounting on `document.documentElement` rather than `document.body` is required because
+ * `ComposeViewport` attaches a shadow root to `<body>` with no `<slot>`, which hides any
+ * direct children of `body`.
+ *
+ * ## Photo capture
+ *
+ * Capture uses a non-DOM canvas as a scratch surface: `drawImage(video, …)` →
+ * `canvas.toDataURL('image/jpeg')` → Base64 → `ByteArray`. The same canvas is exposed
+ * `internal` so module-internal plugins (e.g. QR scanner) can sample frames without
+ * owning their own canvas.
+ *
+ * ## Video recording
+ *
+ * WebM-via-MediaRecorder is not implemented yet; `startRecording` throws and
+ * `stopRecording` returns an error result.
  */
 @OptIn(ExperimentalTime::class)
 actual class CameraController internal constructor(
@@ -56,28 +74,39 @@ actual class CameraController internal constructor(
     private var currentLens: CameraLens = initialLens
     private var mediaStream: JsAny? = null
 
-    private val video: HTMLVideoElement =
+    /**
+     * Full-viewport `<video>` mounted behind the Compose canvas on
+     * `document.documentElement`. Exposed `internal` so module-internal plugins (e.g. the
+     * QR scanner) can read frames at full resolution without owning their own DOM nodes.
+     */
+    internal val video: HTMLVideoElement =
         document.createElement("video").unsafeCast<HTMLVideoElement>()
-    private val canvas: HTMLCanvasElement =
+
+    /** Scratch canvas for plugins that need to sample frames. */
+    internal val canvas: HTMLCanvasElement =
         document.createElement("canvas").unsafeCast<HTMLCanvasElement>()
 
-    private val frameChannel = Channel<ImageBitmap>(Channel.CONFLATED)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private var previewJob: Job? = null
 
     private var listener: (ByteArray) -> Unit = { }
 
     init {
+        ensureWasmCameraBootstrap()
+        video.id = "deveng-wasm-camera-video"
         video.setAttribute("playsinline", "")
         video.setAttribute("webkit-playsinline", "")
+        video.setAttribute("autoplay", "")
+        video.setAttribute(
+            "style",
+            "position:fixed;top:0;left:0;width:100vw;height:100vh;" +
+                "object-fit:cover;z-index:-1;pointer-events:none;background:#000;",
+        )
         video.muted = true
     }
 
     actual var onPreviewTapListener: ((Float, Float) -> Unit)? = null
     actual var onPreviewDoubleTapListener: (() -> Unit)? = null
     actual var shouldSuppressTapToFocus: ((Float, Float) -> Boolean)? = null
-
-    fun getFrameChannel(): Channel<ImageBitmap> = frameChannel
 
     @Deprecated(
         message = "Use takePictureToFile() instead for better performance",
@@ -104,63 +133,48 @@ actual class CameraController internal constructor(
     }
 
     actual fun toggleFlashMode() {}
-
     actual fun setFlashMode(mode: FlashMode) {}
-
     actual fun getFlashMode(): FlashMode? = FlashMode.OFF
-
     actual fun toggleTorchMode() {}
-
     actual fun setTorchMode(mode: TorchMode) {}
-
     actual fun getTorchMode(): TorchMode? = null
 
     actual fun toggleCameraLens() {
         currentLens = if (currentLens == CameraLens.BACK) CameraLens.FRONT else CameraLens.BACK
         scope.launch {
-            runCatching { restartCamera() }
+            runCatching { openCamera() }
         }
     }
 
     actual fun getCameraLens(): CameraLens? = currentLens
-
     actual fun getImageFormat(): ImageFormat = imageFormat
-
     actual fun getQualityPrioritization(): QualityPrioritization = qualityPriority
-
     actual fun getPreferredCameraDeviceType(): CameraDeviceType = CameraDeviceType.DEFAULT
-
     actual fun setPreferredCameraDeviceType(deviceType: CameraDeviceType) {}
-
     actual fun setZoom(zoomRatio: Float) {}
-
     actual fun getZoom(): Float = 1f
-
     actual fun getMaxZoom(): Float = 1f
-
     actual fun setFocusPoint(normalizedX: Float, normalizedY: Float) {}
-
     actual fun getExposureCompensationRange(): Pair<Int, Int> = 0 to 0
-
     actual fun setExposureCompensationIndex(index: Int) {}
-
     actual fun getExposureCompensationIndex(): Int = 0
 
     actual fun startSession() {
-        previewJob?.cancel()
-        previewJob = scope.launch {
-            runCatching {
-                openCamera()
-                previewLoop()
-            }
+        if (video.parentNode == null) {
+            document.documentElement?.appendChild(video)
+        }
+        scope.launch {
+            runCatching { openCamera() }
         }
     }
 
     actual fun stopSession() {
-        previewJob?.cancel()
-        previewJob = null
         stopTracks()
         video.unsafeCast<WasmHtmlVideoSrc>().srcObject = null
+        try {
+            video.parentNode?.removeChild(video)
+        } catch (_: Throwable) {
+        }
     }
 
     actual fun addImageCaptureListener(listener: (ByteArray) -> Unit) {
@@ -168,15 +182,10 @@ actual class CameraController internal constructor(
     }
 
     actual fun setPreviewStabilizationEnabled(enabled: Boolean) {}
-
     actual fun applyCaptureModeSessionPreset(isVideoMode: Boolean) {}
-
     actual fun isNightModeSupported(): Boolean = false
-
     actual fun setNightMode(enabled: Boolean) {}
-
     actual fun setWideSelfieMode(enabled: Boolean) {}
-
     actual fun isWideSelfieEnabled(): Boolean = false
 
     actual fun initializeControllerPlugins() {
@@ -185,16 +194,14 @@ actual class CameraController internal constructor(
 
     actual fun cleanup() {
         stopSession()
-        try {
-            frameChannel.close()
-        } catch (_: Throwable) {
-        }
         scope.cancel()
     }
 
     actual suspend fun captureRecordingThumbnailFrame(): ImageBitmap? = null
-
-    actual suspend fun extractVideoThumbnailFromFile(filePath: String, isFrontCamera: Boolean): ImageBitmap? = null
+    actual suspend fun extractVideoThumbnailFromFile(
+        filePath: String,
+        isFrontCamera: Boolean,
+    ): ImageBitmap? = null
 
     actual suspend fun startRecording(configuration: VideoConfiguration): String {
         throw UnsupportedOperationException(
@@ -206,18 +213,7 @@ actual class CameraController internal constructor(
         VideoCaptureResult.Error(IllegalStateException("Not recording"))
 
     actual suspend fun pauseRecording() {}
-
     actual suspend fun resumeRecording() {}
-
-    private suspend fun restartCamera() {
-        previewJob?.cancel()
-        stopTracks()
-        video.unsafeCast<WasmHtmlVideoSrc>().srcObject = null
-        previewJob = scope.launch {
-            openCamera()
-            previewLoop()
-        }
-    }
 
     private suspend fun openCamera() {
         stopTracks()
@@ -225,19 +221,6 @@ actual class CameraController internal constructor(
         mediaStream = stream
         wasmSetVideoSrcObject(video, stream)
         runCatching { awaitVoidPromise(wasmVideoPlayPromise(video)) }
-    }
-
-    private suspend fun previewLoop() {
-        while (coroutineContext.isActive) {
-            runCatching {
-                val bytes = captureFrameJpeg()
-                if (bytes.isNotEmpty()) {
-                    val bmp = Image.makeFromEncoded(bytes).toComposeImageBitmap()
-                    frameChannel.trySend(bmp)
-                }
-            }
-            delay(50L)
-        }
     }
 
     @OptIn(ExperimentalEncodingApi::class)
