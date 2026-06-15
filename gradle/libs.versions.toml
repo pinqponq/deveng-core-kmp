@@ -31,6 +31,8 @@ russhwolfsettings = "1.2.0"
 
 # QR generator
 qrose = "1.1.2"
+# QR scanner
+mlkit-barcode = "17.3.0"
 
 [libraries]
 
@@ -64,6 +66,8 @@ javacv-platform = { module = "org.bytedeco:javacv-platform", version.ref = "java
 
 # QR generator
 qrose = { module = "io.github.alexzhirkevich:qrose", version.ref = "qrose" }
+# QR scanner
+mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkit-barcode" }
 
 [plugins]
 

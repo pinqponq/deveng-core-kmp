@@ -15,8 +15,12 @@ import core.domain.camera.video.VideoConfiguration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,6 +50,21 @@ actual class CameraController(
 
     private var cameraGrabber: CameraGrabber? = null
     private val frameChannel = Channel<BufferedImage>(Channel.CONFLATED)
+
+    /**
+     * Fan-out of camera frames for plugins and other non-preview consumers.
+     *
+     * Uses `replay = 0` and `extraBufferCapacity = 1` with `DROP_OLDEST` overflow — slow
+     * consumers see the most-recent frame instead of blocking the grabber loop. Emissions
+     * happen on the grabber's IO dispatcher in [CameraGrabber.start], in addition to
+     * [frameChannel] (which the preview continues to consume).
+     */
+    private val frameFlow: MutableSharedFlow<BufferedImage> = MutableSharedFlow(
+        replay = 0,
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
     private val qualityPriority: QualityPrioritization = QualityPrioritization.QUALITY
 
     // Video recording
@@ -230,10 +249,15 @@ actual class CameraController(
         CoroutineScope(Dispatchers.Default).launch {
             // If there is a custom grabber, use it, else use the default camera grabber
             // Which attempts to use the default camera
-            cameraGrabber = CameraGrabber(frameChannel, {
-                System.err.println("CameraK: Camera error: ${it.message}")
-                it.printStackTrace()
-            }, targetResolution).apply {
+            cameraGrabber = CameraGrabber(
+                frameChannel = frameChannel,
+                errorHandler = {
+                    System.err.println("CameraK: Camera error: ${it.message}")
+                    it.printStackTrace()
+                },
+                targetResolution = targetResolution,
+                frameFlow = frameFlow,
+            ).apply {
                 setHorizontalFlip(horizontalFlip)
                 start(this@launch, customGrabber)
             }
@@ -282,6 +306,16 @@ actual class CameraController(
     }
 
     fun getFrameChannel() = frameChannel
+
+    /**
+     * Read-only view of the frame fan-out flow. Intended for plugins
+     * (e.g. [core.domain.camera.scanner.QrScannerPlugin]) that need to observe the live
+     * camera stream without competing with the preview's channel consumer.
+     *
+     * The flow has `replay = 0`; plugins only see frames emitted after they start
+     * collecting. If no camera session is active, the flow is simply idle.
+     */
+    fun getFrameFlow(): SharedFlow<BufferedImage> = frameFlow.asSharedFlow()
 
 
     actual suspend fun captureRecordingThumbnailFrame(): ImageBitmap? = null

@@ -89,6 +89,7 @@ kotlin {
             implementation(libs.androidx.media3.transformer)
             implementation(libs.androidx.startup.runtime)
             implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.mlkit.barcode.scanning)
         }
 
         val desktopMain by getting {
