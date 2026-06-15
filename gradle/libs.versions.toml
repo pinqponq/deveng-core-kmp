@@ -29,6 +29,9 @@ javacvPlatform = "1.5.12"
 datetime = "0.7.1"
 russhwolfsettings = "1.2.0"
 
+# QR generator
+qrose = "1.1.2"
+
 [libraries]
 
 androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
@@ -58,6 +61,9 @@ coil3 = { module = "io.coil-kt.coil3:coil", version.ref = "coil-mp" }
 coil3-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil-mp" }
 coil3-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil-mp" }
 javacv-platform = { module = "org.bytedeco:javacv-platform", version.ref = "javacvPlatform" }
+
+# QR generator
+qrose = { module = "io.github.alexzhirkevich:qrose", version.ref = "qrose" }
 
 [plugins]
 

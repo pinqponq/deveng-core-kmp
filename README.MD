@@ -196,7 +196,7 @@ CustomButton(text = "Button", textStyle = SemiBoldTextStyle().copy(fontSize = 18
 - **Layout:** `CustomHeader`, `RoundedSurface`, `LabeledSlot`, `Slot`, `ChipItem`
 - **Lists & selection:** `OptionItemList`, `OptionItemLazyListDialog`, `OptionItemMultiSelectLazyListDialog`, `CustomDropDownMenu`
 - **Navigation:** `NavigationMenu` (horizontal, expanded, collapsed)
-- **Feedback:** `RatingRow`, `ProgressIndicatorBars`, `JsonViewer`
+- **Feedback:** `RatingRow`, `ProgressIndicatorBars`, `JsonViewer`, `CustomQrCodeView` (see [CustomQrCodeView](#customqrcodeview))
 - **Swipe stack:** `SwipeCards`, `SwipeCardsState`, `rememberSwipeCardsState`, `SwipeCardsScope`; optional left/right/revert icon buttons; use `pendingRevertKey` when the list updates so the revert button stays visible (see [SwipeCards](#swipecards))
 - **Scrolling:** `PaginatedListView`, `ScrollbarWithScrollState`, `ScrollbarWithLazyListState`
 
@@ -240,6 +240,44 @@ fun MyApp() {
 ### SwipeCards
 
 Tinder-style swipeable card stack: `SwipeCards`, `SwipeCardsState`, `rememberSwipeCardsState`, `SwipeCardsScope` (`items` / `itemsIndexed`). Use `showSwipeButtons` with `negativeButtonIcon`, `positiveButtonIcon`, `revertButtonIcon` for overlay buttons. Revert is normally driven by internal state (`state.canRevert`, `popLastSwipe`, `animateBackSwipe`). When the **list content changes** (e.g. you remove an item after committing a previous swipe), the internal revert state is lost and the built-in revert button would disappear. Pass **`pendingRevertKey`** with the pending item's key (same id you use in `items`/`itemsIndexed`) so the revert button stays visible and a click calls `onRevert(pendingRevertKey)`.
+
+### CustomQrCodeView
+
+Multiplatform QR code generator backed by [QRose](https://github.com/alexzhirkevich/qrose); works on Android, iOS, Desktop JVM and WASM/JS from `commonMain`.
+
+```kotlin
+CustomQrCodeView(
+    data = "https://deveng.global/",
+    modifier = Modifier.size(280.dp),
+    contentDescription = "QR code linking to deveng.global",
+    overlayContent = {
+        Image(painter = painterResource(Res.drawable.deveng_logo), contentDescription = null)
+    }
+)
+```
+
+**Defaults vs overrides.** Global defaults live in `QrCodeViewTheme` (colors, overlay fraction, and module shapes) and can be set on the app's `ComponentTheme`. Every theme value also has a nullable per-call override on the composable so a single QR can deviate from the global look without touching the theme.
+
+**Error correction.** The `errorCorrectionLevel` parameter defaults to `QrErrorCorrectionLevel.High` (~30% damage tolerance) so that codes with a centered logo overlay still scan reliably. Lower it to `Medium` or `Auto` when there is no overlay and you want a tidier, less dense code.
+
+**Overlay fraction.** `overlayFraction` (theme default `0.25f`) controls the share of the QR's width that the centered `overlayContent` occupies. Stay at or below ~0.30 to leave a safety margin at level High; ~0.40 still scans in clean conditions but with no margin.
+
+**Shape knobs.** `pixelShape` / `ballShape` / `frameShape` (theme defaults: square) accept any `QrPixelShape` / `QrBallShape` / `QrFrameShape` produced by the QRose factories — for example `QrPixelShape.circle()`, `QrBallShape.roundCorners(0.25f)`, `QrFrameShape.roundCorners(0.5f)` — for a styled look.
+
+```kotlin
+AppTheme(
+    componentTheme = ComponentTheme(
+        qrCodeView = QrCodeViewTheme(
+            darkColor = Color(0xFF0F172A),
+            pixelShape = QrPixelShape.circle(),
+            ballShape = QrBallShape.circle(),
+            frameShape = QrFrameShape.roundCorners(0.25f),
+        )
+    )
+) { /* app content */ }
+```
+
+When you use `overlayContent`, prefer a backdrop sized to your logo's natural aspect ratio (a rounded pill or circle) rather than filling the whole overlay square — this hides only the QR pixels actually under the logo and reads cleaner. See the sample app's `QrGeneratorDemoScreen` for a worked example.
 
 ### Best Practices (UI)
 
