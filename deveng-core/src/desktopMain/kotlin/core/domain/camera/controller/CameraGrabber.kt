@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.bytedeco.javacv.FFmpegFrameGrabber
@@ -16,6 +17,13 @@ class CameraGrabber(
     private val frameChannel: Channel<BufferedImage>,
     private val errorHandler: (Throwable) -> Unit,
     private val targetResolution: Pair<Int, Int>? = null,
+    /**
+     * Optional fan-out sink for grabbed frames. When provided, every successfully converted
+     * frame is also offered to this flow via `tryEmit` in addition to being sent to
+     * [frameChannel]. Used by plugins (e.g. [core.domain.camera.scanner.QrScannerPlugin])
+     * that need the live frame stream without stealing frames from the preview.
+     */
+    private val frameFlow: MutableSharedFlow<BufferedImage>? = null,
 ) {
     private val converter = FrameConverter()
     private var grabber: FrameGrabber? = null
@@ -67,6 +75,7 @@ class CameraGrabber(
                         if (frame?.image != null) {
                             converter.convert(frame)?.let { image ->
                                 frameChannel.trySend(image)
+                                frameFlow?.tryEmit(image)
                                 println("DEBUG: Sent frame to channel, image size: ${image.width}x${image.height}")
 
                                 frameCount++

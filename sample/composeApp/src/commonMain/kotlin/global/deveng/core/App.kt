@@ -62,7 +62,15 @@ import core.domain.camera.enums.QualityPrioritization
 import core.domain.camera.permissions.Permissions
 import core.domain.camera.permissions.providePermissions
 import core.domain.camera.result.ImageCaptureResult
+import core.domain.camera.scanner.QrScannerConfig
+import core.domain.camera.scanner.QrScannerView
 import core.domain.camera.state.CameraConfiguration
+import core.presentation.permission.BindEffect
+import core.presentation.permission.DeniedAlwaysException
+import core.presentation.permission.DeniedException
+import core.presentation.permission.Permission
+import core.presentation.permission.PermissionState
+import core.presentation.permission.rememberPermissionsControllerFactory
 import core.domain.camera.state.CameraKEvent
 import core.domain.camera.state.CameraKState
 import core.domain.camera.state.CameraKStateHolder
@@ -349,12 +357,15 @@ internal fun App() {
     AppTheme(componentTheme = customTheme) {
         var showCameraScreen by remember { mutableStateOf(false) }
         var showQrGeneratorScreen by remember { mutableStateOf(false) }
+        var showQrScannerScreen by remember { mutableStateOf(false) }
         when {
             showQrGeneratorScreen -> QrGeneratorDemoScreen(onBack = { showQrGeneratorScreen = false })
+            showQrScannerScreen -> QrScannerDemoScreen(onBack = { showQrScannerScreen = false })
             showCameraScreen -> CameraScreen(onBack = { showCameraScreen = false })
             else -> ThemingDemo(
                 onOpenCamera = { showCameraScreen = true },
                 onOpenQrGenerator = { showQrGeneratorScreen = true },
+                onOpenQrScanner = { showQrScannerScreen = true },
             )
         }
     }
@@ -614,6 +625,7 @@ private fun CameraContent(onBack: () -> Unit) {
 private fun ThemingDemo(
     onOpenCamera: () -> Unit = {},
     onOpenQrGenerator: () -> Unit = {},
+    onOpenQrScanner: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -985,6 +997,12 @@ private fun ThemingDemo(
                             text = "Open QR Generator",
                             containerColor = Color(0xFF9C27B0),
                             onClick = onOpenQrGenerator
+                        )
+
+                        CustomButton(
+                            text = "Open QR Scanner",
+                            containerColor = Color(0xFF2196F3),
+                            onClick = onOpenQrScanner
                         )
 
                         RatingRow(
@@ -2286,6 +2304,144 @@ private fun QrGeneratorDemoScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(onClick = onBack) { Text("Back") }
+        }
+    }
+}
+
+/**
+ * Demo screen that exercises the deveng-core QR scanner. Uses the library's
+ * [PermissionsController] for a clean suspend-based permission flow that works consistently
+ * on Android, iOS, Desktop, and WASM (where the browser handles the actual prompt inside
+ * `getUserMedia` and the controller is optimistic).
+ */
+@Composable
+private fun QrScannerDemoScreen(onBack: () -> Unit) {
+    val factory = rememberPermissionsControllerFactory()
+    val permissionsController = remember(factory) { factory.createPermissionsController() }
+    BindEffect(permissionsController)
+
+    var permissionState by remember { mutableStateOf(PermissionState.NotDetermined) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var requestAttempt by remember { mutableStateOf(0) }
+
+    LaunchedEffect(permissionsController, requestAttempt) {
+        try {
+            val current = permissionsController.getPermissionState(Permission.CAMERA)
+            if (current == PermissionState.Granted) {
+                permissionState = PermissionState.Granted
+            } else {
+                permissionsController.providePermission(Permission.CAMERA)
+                permissionState = PermissionState.Granted
+            }
+        } catch (e: DeniedAlwaysException) {
+            permissionState = PermissionState.DeniedAlways
+        } catch (e: DeniedException) {
+            permissionState = PermissionState.Denied
+        } catch (e: Exception) {
+            errorMessage = e.message ?: "Unknown error"
+            permissionState = PermissionState.Denied
+        }
+    }
+
+    var lastScannedCode by remember { mutableStateOf<String?>(null) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .windowInsetsPadding(WindowInsets.safeDrawing),
+    ) {
+        when (permissionState) {
+            PermissionState.Denied,
+            PermissionState.DeniedAlways,
+            PermissionState.NotGranted -> {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.Black)
+                        .padding(24.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = errorMessage
+                            ?: "Camera permission is required to scan QR codes.",
+                        color = Color.White,
+                        style = CoreRegularTextStyle().copy(fontSize = 16.sp),
+                        textAlign = TextAlign.Center,
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        if (permissionState == PermissionState.DeniedAlways) {
+                            Button(onClick = { permissionsController.openAppSettings() }) {
+                                Text("Open settings")
+                            }
+                        } else {
+                            Button(onClick = { requestAttempt++ }) { Text("Try again") }
+                        }
+                        Button(onClick = onBack) { Text("Back") }
+                    }
+                }
+            }
+
+            PermissionState.NotDetermined -> {
+                Box(
+                    Modifier.fillMaxSize().background(Color.Black),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        CircularProgressIndicator(color = Color.White)
+                        Text(
+                            text = "Requesting camera permission...",
+                            color = Color.White,
+                            style = CoreRegularTextStyle().copy(fontSize = 16.sp),
+                        )
+                    }
+                }
+            }
+
+            PermissionState.Granted -> {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    QrScannerView(
+                        onQrScanned = { code -> lastScannedCode = code },
+                        scannerConfig = QrScannerConfig(scanThrottleMs = 1500L),
+                        modifier = Modifier.fillMaxSize(),
+                    )
+
+                    Button(
+                        onClick = onBack,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(16.dp),
+                    ) { Text("Back") }
+
+                    lastScannedCode?.let { code ->
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .background(Color.Black.copy(alpha = 0.75f))
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                text = "Scanned:",
+                                color = Color.White.copy(alpha = 0.7f),
+                                style = CoreRegularTextStyle().copy(fontSize = 12.sp),
+                            )
+                            Text(
+                                text = code,
+                                color = Color.White,
+                                style = CoreRegularTextStyle().copy(fontSize = 14.sp),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
