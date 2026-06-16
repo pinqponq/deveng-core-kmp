@@ -37,6 +37,7 @@ import core.presentation.theme.CoreMediumTextStyle
 import core.presentation.theme.LocalComponentTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlin.math.abs
 
 
@@ -126,16 +127,30 @@ fun <T> PaginatedListView(
             firstVisible to lastVisible
         }
             .distinctUntilChanged()
+            // Skip the value emitted synchronously when this effect (re)starts (e.g. right
+            // after a new page is appended). That first value reflects the layout from
+            // before the new items were measured, not a real scroll - reacting to it causes
+            // an immediate extra page load whenever a freshly loaded page already fills the
+            // viewport. Only react to genuine subsequent layout/scroll changes.
+            .drop(1)
             .collectLatest { (firstVisibleIndex, lastVisibleIndex) ->
                 val totalItems = state.items.size
                 if (totalItems == 0) return@collectLatest
 
                 val shouldLoadMore = if (!isReverseLayout) {
-                    val triggerIndex = (totalItems - prefetchThreshold).coerceAtLeast(0)
-                    lastVisibleIndex >= triggerIndex
+                    val rawTriggerIndex = totalItems - prefetchThreshold
+                    if (rawTriggerIndex <= 0) {
+                        lastVisibleIndex >= totalItems - 1
+                    } else {
+                        lastVisibleIndex >= rawTriggerIndex
+                    }
                 } else {
-                    val triggerIndex = (prefetchThreshold - 1).coerceAtLeast(0)
-                    firstVisibleIndex in 0..triggerIndex
+                    val rawTriggerIndex = prefetchThreshold - 1
+                    if (rawTriggerIndex >= totalItems - 1) {
+                        firstVisibleIndex <= 0
+                    } else {
+                        firstVisibleIndex in 0..rawTriggerIndex
+                    }
                 }
 
                 if (
