@@ -311,6 +311,8 @@ private fun formatRecordingProgress(elapsedMs: Long, maxDurationMs: Long): Strin
  * @param thumbnailSaveInProgress When true, shows a progress indicator on the last-capture thumbnail and blocks thumbnail taps (e.g. while persisting to disk). Thumbnail is also blocked for the in-flight interval from shutter until [onImageCaptured] returns.
  * @param onPhotoCaptureEngaged Invoked after the still-capture request is queued (before [onImageCaptured]) — use to flip app-level “saving” UI and avoid thumbnail races.
  * @param onPhotoCaptureFailed Invoked when still capture throws before [onImageCaptured] runs; pair with [onPhotoCaptureEngaged] to clear app state.
+ * @param showLastCaptureThumbnail When false, the last-capture thumbnail (and the gallery-icon fallback shown when no thumbnail exists yet) is not rendered — for capture flows where reviewing/re-opening a previous frame doesn't apply (e.g. single-shot / view-once capture).
+ * @param singleCaptureModeEnabled When true, only one capture — a photo OR a video recording — is allowed per composition: the shutter is disabled after a photo is taken or a recording starts (an in-progress recording can still be stopped), and Photo/Video mode switching is disabled once that slot is claimed. To reset, recompose with a fresh key/controller (e.g. leaving and re-entering the camera screen).
  * @param modifier Modifier for the root layout.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -325,6 +327,8 @@ fun DefaultCameraPreview(
     onPhotoCaptureEngaged: () -> Unit = {},
     onPhotoCaptureFailed: () -> Unit = {},
     thumbnailTopEndContent: @Composable () -> Unit = {},
+    showLastCaptureThumbnail: Boolean = true,
+    singleCaptureModeEnabled: Boolean = false,
     stateHolder: CameraKStateHolder? = null,
     maxVideoRecordingDurationMs: Long = 0L,
     onRecordingStarted: (() -> Unit)? = null,
@@ -359,6 +363,12 @@ fun DefaultCameraPreview(
     var lastCapturedBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     /** True if [lastCapturedBitmap] was taken with the front lens (mirrors thumbnail to match PreviewView). */
     var lastCapturedWithFrontLens by remember { mutableStateOf(false) }
+    /**
+     * Set once a photo is captured OR a video recording starts when [singleCaptureModeEnabled] is
+     * true; disables the shutter/mode-switch for the rest of this composition (an in-progress
+     * recording can still be stopped — see [ShutterButton]'s `enabled` computation below).
+     */
+    var hasClaimedSingleCapture by remember { mutableStateOf(false) }
     var nightModeSupported by remember { mutableStateOf(controller.isNightModeSupported()) }
     var captureMode by remember { mutableStateOf(CameraCaptureMode.Photo) }
     LaunchedEffect(captureMode) {
@@ -439,6 +449,11 @@ fun DefaultCameraPreview(
                 is CameraKEvent.RecordingStopped -> {
                     lastCapturedBitmap = null
                     lastCapturedWithFrontLens = false
+                    // Recording never actually produced a video — the single-use slot claimed at
+                    // record-start (see onVideoStart below) was never fulfilled; allow a retry.
+                    if (singleCaptureModeEnabled && event.result is VideoCaptureResult.Error) {
+                        hasClaimedSingleCapture = false
+                    }
                     onRecordingStopped?.invoke(event.result)
                 }
                 else -> { }
@@ -548,7 +563,13 @@ fun DefaultCameraPreview(
         }
     }
 
-    val capturePhotoDuringPreview: () -> Unit = {
+    val capturePhotoDuringPreview: () -> Unit = capturePhoto@{
+        // Guard + flip BEFORE launching: takePictureToFile() takes 100s of ms, and a rapid
+        // second tap landing in that window would otherwise queue a second real capture before
+        // the disabled-shutter recomposition ever lands. Setting the flag synchronously here
+        // (not after the capture resolves) closes that race down to a single Compose frame.
+        if (singleCaptureModeEnabled && hasClaimedSingleCapture) return@capturePhoto
+        if (singleCaptureModeEnabled) hasClaimedSingleCapture = true
         awaitingThumbnailUnlockAfterCapture = true
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             try {
@@ -569,6 +590,8 @@ fun DefaultCameraPreview(
                 } else {
                     lastCapturedBitmap = null
                     lastCapturedWithFrontLens = false
+                    // Capture failed — the single shot was never actually taken; allow a retry.
+                    if (singleCaptureModeEnabled) hasClaimedSingleCapture = false
                 }
                 onImageCaptured(result)
                 if (deferShutterUntilAfterCapture) {
@@ -577,6 +600,7 @@ fun DefaultCameraPreview(
                 }
             } catch (t: Throwable) {
                 t.printStackTrace()
+                if (singleCaptureModeEnabled) hasClaimedSingleCapture = false
                 onPhotoCaptureFailed()
             } finally {
                 awaitingThumbnailUnlockAfterCapture = false
@@ -910,109 +934,111 @@ fun DefaultCameraPreview(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    val thumbnailBitmap = lastCapturedBitmap ?: lastRecordedVideoThumbnail ?: initialThumbnailBitmap
-                    val mirrorThumbnailHorizontally =
-                        lastCapturedBitmap != null &&
-                            lastCapturedWithFrontLens &&
-                            thumbnailBitmap === lastCapturedBitmap
-                    thumbnailBitmap?.let { bitmap ->
-                        // Top-end square so the count badge meets the frame; other corners rounded (bottom-start = bottom-left in LTR).
-                        val thumbShape = RoundedCornerShape(
-                            topStart = 8.dp,
-                            topEnd = 0.dp,
-                            bottomEnd = 8.dp,
-                            bottomStart = 8.dp,
-                        )
-                        // Clip only the image so the count badge is not cut off by [thumbShape] (badge sits in margin).
-                        // Clicks: put [clickable] on the image stack and on the badge — some hosts (e.g. web/WASM)
-                        // do not deliver taps from [Image] to a parent [clickable] on the outer frame.
-                        val openLastCapture: () -> Unit = { onLastPhotoClick?.invoke(bitmap) }
-                        val thumbImageInteraction = remember(bitmap) { MutableInteractionSource() }
-                        val thumbBadgeInteraction = remember(bitmap, "badge") { MutableInteractionSource() }
-                        val thumbImageClickModifier =
-                            if (thumbnailBusy || onLastPhotoClick == null) {
-                                Modifier
-                            } else {
-                                Modifier.clickable(
-                                    interactionSource = thumbImageInteraction,
-                                    indication = null,
-                                    onClick = openLastCapture,
-                                )
-                            }
-                        val thumbBadgeClickModifier =
-                            if (thumbnailBusy || onLastPhotoClick == null) {
-                                Modifier
-                            } else {
-                                Modifier.clickable(
-                                    interactionSource = thumbBadgeInteraction,
-                                    indication = null,
-                                    onClick = openLastCapture,
-                                )
-                            }
-                        Box(
-                            modifier = Modifier
-                                .size(width = 44.dp, height = 56.dp)
-                                .border(2.dp, Color.White, thumbShape),
-                        ) {
+                    if (showLastCaptureThumbnail) {
+                        val thumbnailBitmap = lastCapturedBitmap ?: lastRecordedVideoThumbnail ?: initialThumbnailBitmap
+                        val mirrorThumbnailHorizontally =
+                            lastCapturedBitmap != null &&
+                                lastCapturedWithFrontLens &&
+                                thumbnailBitmap === lastCapturedBitmap
+                        thumbnailBitmap?.let { bitmap ->
+                            // Top-end square so the count badge meets the frame; other corners rounded (bottom-start = bottom-left in LTR).
+                            val thumbShape = RoundedCornerShape(
+                                topStart = 8.dp,
+                                topEnd = 0.dp,
+                                bottomEnd = 8.dp,
+                                bottomStart = 8.dp,
+                            )
+                            // Clip only the image so the count badge is not cut off by [thumbShape] (badge sits in margin).
+                            // Clicks: put [clickable] on the image stack and on the badge — some hosts (e.g. web/WASM)
+                            // do not deliver taps from [Image] to a parent [clickable] on the outer frame.
+                            val openLastCapture: () -> Unit = { onLastPhotoClick?.invoke(bitmap) }
+                            val thumbImageInteraction = remember(bitmap) { MutableInteractionSource() }
+                            val thumbBadgeInteraction = remember(bitmap, "badge") { MutableInteractionSource() }
+                            val thumbImageClickModifier =
+                                if (thumbnailBusy || onLastPhotoClick == null) {
+                                    Modifier
+                                } else {
+                                    Modifier.clickable(
+                                        interactionSource = thumbImageInteraction,
+                                        indication = null,
+                                        onClick = openLastCapture,
+                                    )
+                                }
+                            val thumbBadgeClickModifier =
+                                if (thumbnailBusy || onLastPhotoClick == null) {
+                                    Modifier
+                                } else {
+                                    Modifier.clickable(
+                                        interactionSource = thumbBadgeInteraction,
+                                        indication = null,
+                                        onClick = openLastCapture,
+                                    )
+                                }
                             Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(thumbShape)
-                                    .then(thumbImageClickModifier),
+                                    .size(width = 44.dp, height = 56.dp)
+                                    .border(2.dp, Color.White, thumbShape),
                             ) {
-                                Image(
-                                    bitmap = bitmap,
-                                    contentDescription = "Photo thumbnail",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .then(
-                                            if (mirrorThumbnailHorizontally) {
-                                                Modifier.graphicsLayer {
-                                                    scaleX = -1f
-                                                    transformOrigin = TransformOrigin(0.5f, 0.5f)
-                                                }
-                                            } else {
-                                                Modifier
-                                            },
-                                        ),
-                                )
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .then(thumbBadgeClickModifier),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                thumbnailTopEndContent()
-                            }
-                            if (thumbnailBusy) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .clip(thumbShape)
-                                        .background(Color.Black.copy(alpha = 0.45f)),
-                                    contentAlignment = Alignment.Center,
+                                        .then(thumbImageClickModifier),
                                 ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(22.dp),
-                                        color = Color.White,
-                                        strokeWidth = 2.dp,
+                                    Image(
+                                        bitmap = bitmap,
+                                        contentDescription = "Photo thumbnail",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .then(
+                                                if (mirrorThumbnailHorizontally) {
+                                                    Modifier.graphicsLayer {
+                                                        scaleX = -1f
+                                                        transformOrigin = TransformOrigin(0.5f, 0.5f)
+                                                    }
+                                                } else {
+                                                    Modifier
+                                                },
+                                            ),
                                     )
                                 }
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .then(thumbBadgeClickModifier),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    thumbnailTopEndContent()
+                                }
+                                if (thumbnailBusy) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(thumbShape)
+                                            .background(Color.Black.copy(alpha = 0.45f)),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(22.dp),
+                                            color = Color.White,
+                                            strokeWidth = 2.dp,
+                                        )
+                                    }
+                                }
                             }
+                            Spacer(modifier = Modifier.size(8.dp))
                         }
-                        Spacer(modifier = Modifier.size(8.dp))
-                    }
-                    if (thumbnailBitmap == null) {
-                        CustomIconButton(
-                            icon = CameraIcons.galleryPhotoLibrary,
-                            iconDescription = "Gallery",
-                            iconTint = Color.White,
-                            backgroundColor = Color.Transparent,
-                            shadowElevation = 0.dp,
-                            onClick = { onGalleryClick?.invoke() ?: Unit },
-                        )
+                        if (thumbnailBitmap == null) {
+                            CustomIconButton(
+                                icon = CameraIcons.galleryPhotoLibrary,
+                                iconDescription = "Gallery",
+                                iconTint = Color.White,
+                                backgroundColor = Color.Transparent,
+                                shadowElevation = 0.dp,
+                                onClick = { onGalleryClick?.invoke() ?: Unit },
+                            )
+                        }
                     }
                 }
                 Box(
@@ -1024,8 +1050,19 @@ fun DefaultCameraPreview(
                         isRecording = recordingUiState.isRecording,
                         recordingDurationMs = recordingUiState.recordingDurationMs,
                         stateHolder = stateHolder,
+                        // Disabled once the single-capture slot is claimed (photo taken, or video
+                        // recording started) — EXCEPT while actively recording, so the in-progress
+                        // recording can still be stopped via this same button.
+                        enabled = !(
+                            singleCaptureModeEnabled &&
+                                hasClaimedSingleCapture &&
+                                !recordingUiState.isRecording
+                            ),
                         onPhotoCapture = capturePhotoDuringPreview,
                         onVideoStart = {
+                            // Claim synchronously at record-start, mirroring capturePhotoDuringPreview's
+                            // guard — starting a recording spends the single-use slot immediately.
+                            if (singleCaptureModeEnabled) hasClaimedSingleCapture = true
                             stateHolder?.startRecording(
                                 VideoConfiguration(maxDurationMs = maxVideoRecordingDurationMs),
                             )
@@ -1047,7 +1084,8 @@ fun DefaultCameraPreview(
                                 onModeChange = { newMode ->
                                     captureMode = newMode
                                 },
-                                enabled = !recordingUiState.isRecording,
+                                enabled = !recordingUiState.isRecording &&
+                                    !(singleCaptureModeEnabled && hasClaimedSingleCapture),
                             )
                             Box(
                                 modifier = Modifier.heightIn(min = 10.dp),
@@ -1056,6 +1094,11 @@ fun DefaultCameraPreview(
                                 when {
                                     captureMode == CameraCaptureMode.Video &&
                                         recordingUiState.isRecording -> {
+                                        // Already functionally inert once the slot is claimed at record-start
+                                        // (capturePhotoDuringPreview's own guard no-ops the tap) — this only
+                                        // adds the matching visual disabled state for clarity.
+                                        val inlinePhotoDuringRecordingEnabled =
+                                            !(singleCaptureModeEnabled && hasClaimedSingleCapture)
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -1073,7 +1116,9 @@ fun DefaultCameraPreview(
                                                     .size(28.dp)
                                                     .clip(CircleShape)
                                                     .border(1.5.dp, Color.White, CircleShape)
+                                                    .alpha(if (inlinePhotoDuringRecordingEnabled) 1f else 0.45f)
                                                     .clickable(
+                                                        enabled = inlinePhotoDuringRecordingEnabled,
                                                         interactionSource = remember {
                                                             MutableInteractionSource()
                                                         },
@@ -1284,6 +1329,7 @@ private fun ShutterButton(
     onPhotoCapture: () -> Unit,
     onVideoStart: () -> Unit,
     onVideoStop: () -> Unit,
+    enabled: Boolean = true,
 ) {
     val isVideoMode = mode == CameraCaptureMode.Video && stateHolder != null
     val outerColor = if (isRecording) Color.Red else Color.White
@@ -1295,7 +1341,9 @@ private fun ShutterButton(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(72.dp)
+            .alpha(if (enabled) 1f else 0.45f)
             .clickable(
+                enabled = enabled,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = {
