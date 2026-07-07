@@ -141,6 +141,11 @@ private val UndoBannerStackSpacing = 8.dp
  *        front card is zoomed in (scale above minimum). Resets to `false` when the settled page changes.
  * @param restartPagerToFirstKey Increment (e.g. after an undo that prepends the item) to snap the pager
  *        and [state] back to page 0 so the restored front card is visible.
+ * @param decisionGate Optional synchronous check consulted right before a decision starts its exit
+ *        animation. Return `false` to veto the decision outright (e.g. a free-tier quota was reached) —
+ *        the card is left exactly as-is with no animation played at all, avoiding the need to reset any
+ *        exit-transform state afterward. When `null` (default) every decision is allowed, matching prior
+ *        behavior.
  * @param itemContent Composable used to render each item card's content.
  */
 @Composable
@@ -174,6 +179,7 @@ fun <T> ReviewStack(
     topEndContent: (@Composable () -> Unit)? = null,
     topBar: (@Composable (currentPage: Int, totalCount: Int) -> Unit)? = null,
     onFrontCardZoomedChanged: ((Boolean) -> Unit)? = null,
+    decisionGate: ((item: T, decision: ReviewDecision) -> Boolean)? = null,
     itemContent: @Composable (item: T) -> Unit,
 ) {
     val theme = LocalComponentTheme.current.reviewStack
@@ -245,6 +251,7 @@ fun <T> ReviewStack(
     val onDecisionRef = rememberUpdatedState(onDecision)
     val onUndoDecisionRef = rememberUpdatedState(onUndoDecision)
     val onUndoBannerSupersededRef = rememberUpdatedState(onUndoBannerSuperseded)
+    val decisionGateRef = rememberUpdatedState(decisionGate)
     var undoBannerStack by remember { mutableStateOf<List<ReviewStackUndoSession<T>>>(emptyList()) }
     var undoSessionId by remember { mutableStateOf(0L) }
 
@@ -602,8 +609,12 @@ fun <T> ReviewStack(
                 onPositioned = { center -> negButtonCenter = center },
                 onClick = {
                     if (canDecide) {
-                        pendingItem = items[pagerPage]
-                        pendingDecision = ReviewDecision.NEGATIVE
+                        val candidateItem = items[pagerPage]
+                        val isAllowed = decisionGateRef.value?.invoke(candidateItem, ReviewDecision.NEGATIVE) ?: true
+                        if (isAllowed) {
+                            pendingItem = candidateItem
+                            pendingDecision = ReviewDecision.NEGATIVE
+                        }
                     }
                 },
             )
@@ -627,8 +638,12 @@ fun <T> ReviewStack(
                 onPositioned = { center -> posButtonCenter = center },
                 onClick = {
                     if (canDecide) {
-                        pendingItem = items[pagerPage]
-                        pendingDecision = ReviewDecision.POSITIVE
+                        val candidateItem = items[pagerPage]
+                        val isAllowed = decisionGateRef.value?.invoke(candidateItem, ReviewDecision.POSITIVE) ?: true
+                        if (isAllowed) {
+                            pendingItem = candidateItem
+                            pendingDecision = ReviewDecision.POSITIVE
+                        }
                     }
                 },
             )
