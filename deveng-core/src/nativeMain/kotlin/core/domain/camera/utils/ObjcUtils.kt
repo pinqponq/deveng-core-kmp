@@ -7,7 +7,6 @@ import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
-import kotlinx.cinterop.allocArrayOf
 import kotlinx.cinterop.get
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.reinterpret
@@ -28,6 +27,26 @@ import platform.posix.memcpy
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlinx.cinterop.IntVar
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.convert
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.value
+import core.util.bytearray.toImageBitmap
+import platform.CoreFoundation.CFDataCreate
+import platform.CoreFoundation.CFDataRef
+import platform.CoreFoundation.CFDictionaryCreateMutable
+import platform.CoreFoundation.CFDictionarySetValue
+import platform.CoreFoundation.CFNumberCreate
+import platform.CoreFoundation.CFRelease
+import platform.CoreFoundation.kCFAllocatorDefault
+import platform.CoreFoundation.kCFBooleanTrue
+import platform.CoreFoundation.kCFNumberIntType
+import platform.ImageIO.CGImageSourceCreateThumbnailAtIndex
+import platform.ImageIO.CGImageSourceCreateWithData
+import platform.ImageIO.kCGImageSourceCreateThumbnailFromImageAlways
+import platform.ImageIO.kCGImageSourceCreateThumbnailWithTransform
+import platform.ImageIO.kCGImageSourceThumbnailMaxPixelSize
 
 fun ImageBitmap.toByteArray(): ByteArray? {
     val skiaBitmap = this.asSkiaBitmap()
@@ -37,12 +56,22 @@ fun ImageBitmap.toByteArray(): ByteArray? {
     return encodedData?.bytes
 }
 
+/**
+ * Copies the bytes into an [NSData] with a single bulk copy.
+ *
+ * Must not use `allocArrayOf`: Kotlin/Native fills that array element-by-element, which costs
+ * ~550 ms for a multi-megabyte JPEG (measured, iPhone 11) and dominated both the GPS-EXIF write
+ * and the temp-photo save on the camera capture path.
+ */
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
-fun ByteArray.toNSData(): NSData = memScoped {
-    NSData.create(
-        bytes = allocArrayOf(this@toNSData),
-        length = this@toNSData.size.toULong(),
-    )
+fun ByteArray.toNSData(): NSData {
+    if (isEmpty()) {
+        return NSData.create(bytes = null, length = 0uL)
+    }
+
+    return usePinned { pinned ->
+        NSData.create(bytes = pinned.addressOf(0), length = size.toULong())
+    }
 }
 
 /**
@@ -107,6 +136,59 @@ fun capNSDataJpegToMaxPhotoDimensions(data: NSData, capWidth: Int, capHeight: In
         return UIImageJPEGRepresentation(resized, 0.92) ?: data
     } finally {
         UIGraphicsEndImageContext()
+    }
+}
+
+/** Max pixel size for the capture-result corner preview; a crisp retina preview needs only a few hundred px. */
+private const val CAPTURE_PREVIEW_MAX_PIXEL = 512
+
+/**
+ * Fast preview decode for the capture-result corner preview: decodes the JPEG **directly at a
+ * reduced size** via ImageIO instead of decoding the full multi-megapixel image and throwing it away
+ * (the full Skia decode was ~1–2s on older devices). Falls back to the full decode on any failure so
+ * a preview is always produced.
+ */
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
+fun ByteArray.toCapturePreviewImageBitmap(): ImageBitmap? {
+    val downsized = runCatching { decodeDownsampledPreviewBitmap(CAPTURE_PREVIEW_MAX_PIXEL) }.getOrNull()
+    return downsized ?: runCatching { toImageBitmap() }.getOrNull()
+}
+
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
+private fun ByteArray.decodeDownsampledPreviewBitmap(maxPixelSize: Int): ImageBitmap? {
+    if (isEmpty()) return null
+    val cfData: CFDataRef = usePinned { pinned ->
+        CFDataCreate(kCFAllocatorDefault, pinned.addressOf(0).reinterpret(), size.convert())
+    } ?: return null
+    try {
+        val source = CGImageSourceCreateWithData(cfData, null) ?: return null
+        try {
+            val options = CFDictionaryCreateMutable(kCFAllocatorDefault, 0.convert(), null, null) ?: return null
+            try {
+                CFDictionarySetValue(options, kCGImageSourceCreateThumbnailFromImageAlways, kCFBooleanTrue)
+                CFDictionarySetValue(options, kCGImageSourceCreateThumbnailWithTransform, kCFBooleanTrue)
+                val cfMax = memScoped {
+                    val holder = alloc<IntVar>()
+                    holder.value = maxPixelSize
+                    CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, holder.ptr)
+                } ?: return null
+                try {
+                    CFDictionarySetValue(options, kCGImageSourceThumbnailMaxPixelSize, cfMax)
+                    val cgPreview = CGImageSourceCreateThumbnailAtIndex(source, 0u, options) ?: return null
+                    val uiImage = UIImage.imageWithCGImage(cgPreview) ?: return null
+                    val jpeg = UIImageJPEGRepresentation(uiImage, 0.9) ?: return null
+                    return jpeg.toByteArray().toImageBitmap()
+                } finally {
+                    CFRelease(cfMax)
+                }
+            } finally {
+                CFRelease(options)
+            }
+        } finally {
+            CFRelease(source)
+        }
+    } finally {
+        CFRelease(cfData)
     }
 }
 

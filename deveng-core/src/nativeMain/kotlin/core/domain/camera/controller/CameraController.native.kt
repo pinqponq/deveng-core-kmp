@@ -17,6 +17,7 @@ import core.domain.camera.utils.fixOrientation
 import core.domain.camera.utils.toByteArray
 import core.domain.camera.utils.toUIImage
 import core.util.bytearray.toImageBitmap
+import core.domain.camera.utils.toCapturePreviewImageBitmap
 import core.domain.camera.ios.IosFrontCameraVideoBridge
 import core.domain.camera.ios.IosPreviewDbgLog
 import core.domain.camera.ios.applyClampedPreviewLayerFrame
@@ -490,7 +491,7 @@ actual class CameraController(
                                     when (imageFormat) {
                                         ImageFormat.JPEG -> {
                                             image.toByteArray().let { bytes ->
-                                                val bitmap = try { bytes.toImageBitmap() } catch (_: Exception) { null }
+                                                val bitmap = bytes.toCapturePreviewImageBitmap()
                                                 ImageCaptureResult.Success(bytes, bitmap)
                                             }
                                         }
@@ -498,7 +499,7 @@ actual class CameraController(
                                             val uiImage = image.toUIImage()
                                             val orientedImage = uiImage.fixOrientation()
                                             UIImagePNGRepresentation(orientedImage)?.toByteArray()?.let { bytes ->
-                                                val bitmap = try { bytes.toImageBitmap() } catch (_: Exception) { null }
+                                                val bitmap = bytes.toCapturePreviewImageBitmap()
                                                 ImageCaptureResult.Success(bytes, bitmap)
                                             }
                                         }
@@ -510,7 +511,7 @@ actual class CameraController(
                                         ImageFormat.JPEG -> {
 
                                             image.toByteArray().let { bytes ->
-                                                val bitmap = try { bytes.toImageBitmap() } catch (_: Exception) { null }
+                                                val bitmap = bytes.toCapturePreviewImageBitmap()
                                                 ImageCaptureResult.Success(bytes, bitmap)
                                             }
                                         }
@@ -519,7 +520,7 @@ actual class CameraController(
                                             val uiImage = image.toUIImage()
                                             val orientedImage = uiImage.fixOrientation()
                                             UIImagePNGRepresentation(orientedImage)?.toByteArray()?.let { bytes ->
-                                                val bitmap = try { bytes.toImageBitmap() } catch (_: Exception) { null }
+                                                val bitmap = bytes.toCapturePreviewImageBitmap()
                                                 ImageCaptureResult.Success(bytes, bitmap)
                                             }
                                         }
@@ -597,7 +598,7 @@ actual class CameraController(
                                     when (imageFormat) {
                                         ImageFormat.JPEG -> {
                                             image.toByteArray().let { bytes ->
-                                                val bitmap = try { bytes.toImageBitmap() } catch (_: Exception) { null }
+                                                val bitmap = bytes.toCapturePreviewImageBitmap()
                                                 ImageCaptureResult.Success(bytes, bitmap)
                                             }
                                         }
@@ -605,7 +606,7 @@ actual class CameraController(
                                             val uiImage = image.toUIImage()
                                             val orientedImage = uiImage.fixOrientation()
                                             UIImagePNGRepresentation(orientedImage)?.toByteArray()?.let { bytes ->
-                                                val bitmap = try { bytes.toImageBitmap() } catch (_: Exception) { null }
+                                                val bitmap = bytes.toCapturePreviewImageBitmap()
                                                 ImageCaptureResult.Success(bytes, bitmap)
                                             }
                                         }
