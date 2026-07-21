@@ -11,11 +11,13 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.net.toUri
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 @Suppress(names = ["EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING"])
@@ -99,40 +101,60 @@ actual class MultiPlatformUtils(private val context: Context) {
         }
 
         val lastKnownLocation = getLastKnownLocation()
-        if (lastKnownLocation != null) {
+        if (lastKnownLocation != null &&
+            lastKnownLocation.ageMillis() <= LOCATION_FRESHNESS_THRESHOLD_MS
+        ) {
             return Pair(lastKnownLocation.latitude, lastKnownLocation.longitude)
         }
 
-        return suspendCancellableCoroutine { continuation ->
-            val provider = when {
-                hasFineLocationPermission && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ->
-                    LocationManager.GPS_PROVIDER
-                locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ->
-                    LocationManager.NETWORK_PROVIDER
-                else -> {
-                    continuation.resume(null)
-                    return@suspendCancellableCoroutine
+        val freshLocation = withTimeoutOrNull(LOCATION_LIVE_TIMEOUT_MS) {
+            requestFreshLocation(hasFineLocationPermission = hasFineLocationPermission)
+        }
+        if (freshLocation != null) {
+            return Pair(freshLocation.latitude, freshLocation.longitude)
+        }
+
+        return lastKnownLocation?.let { Pair(it.latitude, it.longitude) }
+    }
+
+    @SuppressLint("MissingPermission")
+    private suspend fun requestFreshLocation(
+        hasFineLocationPermission: Boolean,
+    ): Location? = suspendCancellableCoroutine { continuation ->
+        val providers = buildList {
+            if (hasFineLocationPermission &&
+                locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            ) {
+                add(LocationManager.GPS_PROVIDER)
+            }
+            if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                add(LocationManager.NETWORK_PROVIDER)
+            }
+        }
+
+        if (providers.isEmpty()) {
+            continuation.resume(null)
+            return@suspendCancellableCoroutine
+        }
+
+        val locationListener = object : LocationListener {
+            override fun onLocationChanged(location: Location) {
+                locationManager.removeUpdates(this)
+                if (continuation.isActive) {
+                    continuation.resume(location)
                 }
             }
 
-            val locationListener = object : LocationListener {
-                override fun onLocationChanged(location: Location) {
-                    locationManager.removeUpdates(this)
-                    continuation.resume(Pair(location.latitude, location.longitude))
-                }
+            override fun onProviderDisabled(provider: String) {}
 
-                override fun onProviderDisabled(provider: String) {
-                    locationManager.removeUpdates(this)
-                    continuation.resume(null)
-                }
+            override fun onProviderEnabled(provider: String) {}
+        }
 
-                override fun onProviderEnabled(provider: String) {}
-            }
+        continuation.invokeOnCancellation {
+            locationManager.removeUpdates(locationListener)
+        }
 
-            continuation.invokeOnCancellation {
-                locationManager.removeUpdates(locationListener)
-            }
-
+        providers.forEach { provider ->
             locationManager.requestLocationUpdates(
                 provider,
                 0L,
@@ -142,6 +164,9 @@ actual class MultiPlatformUtils(private val context: Context) {
             )
         }
     }
+
+    private fun Location.ageMillis(): Long =
+        (SystemClock.elapsedRealtimeNanos() - elapsedRealtimeNanos) / 1_000_000L
 
     actual fun shareText(text: String) {
         if (text.isBlank()) return

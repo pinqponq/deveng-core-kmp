@@ -1098,21 +1098,26 @@ class CustomCameraController(
             return
         }
 
-        val imageData = didFinishProcessingPhoto.fileDataRepresentation()
-        val tr = effectiveTargetResolution()
-        val cappedData = if (tr != null && imageData != null) {
-            capNSDataJpegToMaxPhotoDimensions(imageData, tr.first, tr.second).also { capped ->
-                if (capped.length != imageData.length) {
-                    NSLog(
-                        "CameraK",
-                        "captureCapped lens=${if (isUsingFrontCamera) "front" else "back"} cap=$tr",
-                    )
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH.toLong(), 0u)) {
+            val imageData = didFinishProcessingPhoto.fileDataRepresentation()
+            val tr = effectiveTargetResolution()
+            val cappedData = if (tr != null && imageData != null) {
+                capNSDataJpegToMaxPhotoDimensions(imageData, tr.first, tr.second).also { capped ->
+                    if (capped.length != imageData.length) {
+                        NSLog(
+                            "CameraK",
+                            "captureCapped lens=${if (isUsingFrontCamera) "front" else "back"} cap=$tr",
+                        )
+                    }
                 }
+            } else {
+                imageData
             }
-        } else {
-            imageData
+
+            dispatch_async(dispatch_get_main_queue()) {
+                onPhotoCapture?.invoke(cappedData)
+            }
         }
-        onPhotoCapture?.invoke(cappedData)
     }
 
     @OptIn(ExperimentalForeignApi::class)
