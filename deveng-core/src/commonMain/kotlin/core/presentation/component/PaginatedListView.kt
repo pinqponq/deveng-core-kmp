@@ -39,6 +39,7 @@ import core.presentation.theme.CoreMediumTextStyle
 import core.presentation.theme.LocalComponentTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlin.math.abs
 
 
@@ -191,18 +192,22 @@ fun <T> PaginatedListView(
             Triple(firstVisible, lastVisible, laidOutCount)
         }
             .distinctUntilChanged()
+            // Normal (append) lists keep the original drop(1): it skips the synchronous
+            // emission when this effect restarts after a page loads, so a freshly loaded
+            // page that already fills the viewport does not immediately trigger another
+            // load. Reverse/chat lists instead rely on the stale-frame filter below, so a
+            // settled fling still triggers the next page without an extra manual scroll.
+            // Prepend pushes the first index away from the top after each load, so this
+            // cannot run away.
+            .let { positionFlow -> if (isReverseLayout) positionFlow else positionFlow.drop(1) }
             .collectLatest { (firstVisibleIndex, lastVisibleIndex, laidOutCount) ->
                 val totalItems = state.items.size
                 if (totalItems == 0) return@collectLatest
 
                 // Skip stale frames emitted right after a page (pre)pends but before the
                 // LazyColumn has measured the new items: the visible indices still describe
-                // the old layout, so acting on them would either load an extra page or, in
-                // reverse mode, miss the real settled position. Once measured, the laid-out
-                // count covers every item (plus the status/spacer rows), so it is never
-                // below the item count. Replaces a blanket drop(1), which also discarded
-                // genuine settled positions and left reverse-mode flings needing an extra
-                // manual scroll to trigger the next page.
+                // the old layout. Once measured, the laid-out count covers every item (plus
+                // the status/spacer rows), so it is never below the item count.
                 if (laidOutCount < totalItems) return@collectLatest
 
                 val shouldLoadMore = if (!isReverseLayout) {

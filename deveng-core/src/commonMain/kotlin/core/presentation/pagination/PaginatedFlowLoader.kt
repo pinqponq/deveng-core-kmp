@@ -30,9 +30,9 @@ class PaginatedFlowLoader<Key, Item>(
     private var pageSource: suspend (key: Key, size: Int) -> PageResult<Item>,
     private val getNextKey: (Key, List<Item>) -> Key,
     private val shouldPrependNewPages: Boolean = false,
-    private val itemKey: ((Item) -> Any)? = null,
     private val onSuccess: ((List<Item>) -> Unit)? = null,
-    private val onError: ((Throwable) -> Unit)? = null
+    private val onError: ((Throwable) -> Unit)? = null,
+    private val itemKey: ((Item) -> Any)? = null
 ) {
     private val _state = MutableStateFlow(PaginatedListState<Item>())
     val state: StateFlow<PaginatedListState<Item>> = _state
