@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -37,7 +39,6 @@ import core.presentation.theme.CoreMediumTextStyle
 import core.presentation.theme.LocalComponentTheme
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
 import kotlin.math.abs
 
 
@@ -98,16 +99,75 @@ fun <T> PaginatedListView(
     errorText: String? = null,
     pullToRetryText: String? = null
 ) {
-    // auto scroll to end in reverse mode
-    var didAutoScrollToEnd by remember { mutableStateOf(false) }
+    // The LazyColumn renders more than [state.items]: reverse mode prepends a status
+    // item (loading spinner / empty / error) and every layout appends a trailing Spacer.
+    // So the last LAZY index is NOT state.items.lastIndex. Targeting state.items.size + 1
+    // (one past the newest message) lands on that trailing Spacer - clamped by the list
+    // to the real last index - which reliably pins the viewport to the true bottom
+    // regardless of how many status items are present.
+    val bottomScrollTargetIndex = state.items.size + 1
 
-    LaunchedEffect(isReverseLayout, state.items.size) {
-        if (isReverseLayout && state.items.isNotEmpty() && !didAutoScrollToEnd) {
-            listState.scrollToItem(state.items.lastIndex)
-            didAutoScrollToEnd = true
+    // True while the newest item is (about to be) at the bottom of the viewport.
+    val isAtBottom by remember {
+        derivedStateOf {
+            val layoutInfo = listState.layoutInfo
+            val lastVisibleIndex = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+            layoutInfo.totalItemsCount > 0 && lastVisibleIndex >= layoutInfo.totalItemsCount - 2
         }
-        if (!isReverseLayout && state.items.isEmpty()) {
-            didAutoScrollToEnd = false
+    }
+
+    // Reverse/chat mode auto-scroll. Keyed on the LAST item's key (not the list size)
+    // so it reacts only when a new newest item is appended at the bottom - not when an
+    // older page is prepended at the top, which would otherwise yank the user back down
+    // on their first scroll-up.
+    var didAutoScrollToEnd by remember { mutableStateOf(false) }
+    val lastItemKey = state.items.lastOrNull()?.let { item -> itemKey?.invoke(item) ?: item }
+
+    LaunchedEffect(isReverseLayout, lastItemKey) {
+        if (!isReverseLayout) {
+            if (state.items.isEmpty()) didAutoScrollToEnd = false
+            return@LaunchedEffect
+        }
+        if (state.items.isEmpty()) return@LaunchedEffect
+
+        if (!didAutoScrollToEnd) {
+            // First load: jump straight to the newest message.
+            listState.scrollToItem(bottomScrollTargetIndex)
+            didAutoScrollToEnd = true
+            return@LaunchedEffect
+        }
+
+        // A new newest message arrived. Stay pinned to the bottom only if the user was
+        // already there; if they scrolled up to read history, leave them where they are.
+        if (isAtBottom) {
+            listState.animateScrollToItem(bottomScrollTargetIndex)
+        }
+    }
+
+    // Reverse/chat mode: keep the newest message visible while the keyboard opens. The
+    // list viewport shrinks by the ime inset as it animates in, which would otherwise
+    // slide the bottom messages behind the input.
+    //
+    // The "was the user at the bottom" decision must be made from BEFORE the keyboard
+    // starts moving. Reading isAtBottom on the first ime frame is a race: on slower
+    // devices the first frame arrives after the layout already shrank, so isAtBottom
+    // reads false and the follow never starts. Instead we snapshot isAtBottom
+    // continuously while the keyboard is closed (imeBottom == 0) into
+    // wasAtBottomBeforeIme, and once it opens we follow the ime height frame by frame
+    // based on that pre-keyboard snapshot - independent of device timing. History
+    // reading is left undisturbed because the snapshot is false when scrolled up.
+    val imeBottom = WindowInsets.ime.getBottom(LocalDensity.current)
+    var wasAtBottomBeforeIme by remember { mutableStateOf(true) }
+
+    LaunchedEffect(isReverseLayout, imeBottom, isAtBottom) {
+        if (!isReverseLayout || state.items.isEmpty()) return@LaunchedEffect
+
+        if (imeBottom <= 0) {
+            wasAtBottomBeforeIme = isAtBottom
+            return@LaunchedEffect
+        }
+        if (wasAtBottomBeforeIme) {
+            listState.scrollToItem(bottomScrollTargetIndex)
         }
     }
 
@@ -124,18 +184,26 @@ fun <T> PaginatedListView(
             val layoutInfo = listState.layoutInfo
             val firstVisible = layoutInfo.visibleItemsInfo.firstOrNull()?.index ?: -1
             val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-            firstVisible to lastVisible
+            // totalItemsCount lets us tell a stale, pre-measurement frame from a settled
+            // one: right after a page (pre)pends, this still reports the OLD layout until
+            // the LazyColumn re-measures.
+            val laidOutCount = layoutInfo.totalItemsCount
+            Triple(firstVisible, lastVisible, laidOutCount)
         }
             .distinctUntilChanged()
-            // Skip the value emitted synchronously when this effect (re)starts (e.g. right
-            // after a new page is appended). That first value reflects the layout from
-            // before the new items were measured, not a real scroll - reacting to it causes
-            // an immediate extra page load whenever a freshly loaded page already fills the
-            // viewport. Only react to genuine subsequent layout/scroll changes.
-            .drop(1)
-            .collectLatest { (firstVisibleIndex, lastVisibleIndex) ->
+            .collectLatest { (firstVisibleIndex, lastVisibleIndex, laidOutCount) ->
                 val totalItems = state.items.size
                 if (totalItems == 0) return@collectLatest
+
+                // Skip stale frames emitted right after a page (pre)pends but before the
+                // LazyColumn has measured the new items: the visible indices still describe
+                // the old layout, so acting on them would either load an extra page or, in
+                // reverse mode, miss the real settled position. Once measured, the laid-out
+                // count covers every item (plus the status/spacer rows), so it is never
+                // below the item count. Replaces a blanket drop(1), which also discarded
+                // genuine settled positions and left reverse-mode flings needing an extra
+                // manual scroll to trigger the next page.
+                if (laidOutCount < totalItems) return@collectLatest
 
                 val shouldLoadMore = if (!isReverseLayout) {
                     val rawTriggerIndex = totalItems - prefetchThreshold
