@@ -92,14 +92,27 @@ class PaginatedFlowLoader<Key, Item>(
                 currentKey = getNextKey(currentKey, items)
                 onSuccess?.invoke(items)
 
-                _state.value = PaginatedListState(
-                    items = items,
-                    isInitialLoad = false,
-                    isNextPageLoading = false,
-                    hasNextPage = hasNext,
-                    hasLoadedBefore = true,
-                    isError = false
-                )
+                _state.update { current ->
+                    // Preserve items that were merged in (via updateItems) WHILE this
+                    // initial page was loading - e.g. a realtime/optimistic chat message
+                    // that arrived between load start and this response. A plain replace
+                    // would drop them. Only keyed lists get this merge: itemKey provides
+                    // the de-duplication, and non-keyed lists start from an empty state on
+                    // initial load so their behavior is unchanged.
+                    val combinedItems = if (itemKey != null && current.items.isNotEmpty()) {
+                        combinePages(existingItems = current.items, newItems = items)
+                    } else {
+                        items
+                    }
+                    PaginatedListState(
+                        items = combinedItems,
+                        isInitialLoad = false,
+                        isNextPageLoading = false,
+                        hasNextPage = hasNext,
+                        hasLoadedBefore = true,
+                        isError = false
+                    )
+                }
             } catch (e: Throwable) {
                 if (e.shouldAbortPaginationLoad(coroutineContext)) return@launch
                 onError?.invoke(e)
