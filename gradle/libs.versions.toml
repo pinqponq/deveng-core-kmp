@@ -5,7 +5,7 @@ android-targetSdk = "36"
 android-compileSdk = "36"
 app-version-major = "1"
 app-version-code = "7"
-app-minor-version = "95"
+app-minor-version = "98"
 
 androidx-activityCompose = "1.12.2"
 compose-plugin = "1.10.0"
