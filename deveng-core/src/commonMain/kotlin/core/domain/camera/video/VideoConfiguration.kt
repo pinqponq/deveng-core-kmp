@@ -11,6 +11,13 @@ import androidx.compose.runtime.Immutable
  * @property outputDirectory Absolute path to directory for saving the video file.
  *                           Null uses the platform default (DCIM/CameraK on Android, temp on iOS/Desktop).
  * @property filePrefix Prefix for the generated filename.
+ * @property shouldChainNewSegmentAtMaxDuration With [maxDurationMs] > 0, reaching the cap ends the clip
+ *                           but not the take: the finished file is reported through
+ *                           [core.domain.camera.state.CameraKEvent.RecordingStopped] and a new
+ *                           recording starts right away, until
+ *                           [core.domain.camera.state.CameraKStateHolder.stopRecording] is called.
+ *                           A long take is captured as consecutive clips instead of being cut off.
+ *                           Ignored when [maxDurationMs] is 0.
  */
 @Immutable
 data class VideoConfiguration(
@@ -19,4 +26,5 @@ data class VideoConfiguration(
     val maxDurationMs: Long = 0L,
     val outputDirectory: String? = null,
     val filePrefix: String = "VID",
+    val shouldChainNewSegmentAtMaxDuration: Boolean = false,
 )

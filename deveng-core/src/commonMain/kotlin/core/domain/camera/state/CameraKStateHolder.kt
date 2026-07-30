@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -127,6 +129,12 @@ class CameraKStateHolder(
     private val attachedPlugins = mutableListOf<CameraKPlugin>()
     private var isInitialized = false
     private var recordingTimerJob: Job? = null
+
+    /**
+     * Serializes a chained segment hand-off against [stopRecording] so the user's stop either waits
+     * for the hand-off to finish or is seen by its `isRecording` guard — never lands in between.
+     */
+    private val recordingTransitionMutex = Mutex()
     private var recordingFilePath: String? = null
     /** Preview-frame thumbnail for the in-flight recording; attached when recording stops. */
     private var videoThumbnailBitmap: ImageBitmap? = null
@@ -438,10 +446,99 @@ class CameraKStateHolder(
     }
 
     /**
+     * Opens a recording on the controller and publishes the recording UI state, without emitting
+     * [CameraKEvent.RecordingStarted] — the caller emits it once the previous segment's events are
+     * out, so consumers never see a start before the stop that preceded it.
+     *
+     * @return The output file path of the started segment.
+     */
+    private suspend fun startRecordingSegment(
+        controller: CameraController,
+        configuration: VideoConfiguration,
+    ): String {
+        if (controller.usesPhotoCaptureForVideoThumbnail) {
+            videoThumbnailBitmap = when (val photoResult = controller.takePictureToFile()) {
+                is ImageCaptureResult.Success -> photoResult.bitmap
+                is ImageCaptureResult.Error -> null
+            }
+        }
+
+        val path = controller.startRecording(configuration)
+        recordingFilePath = path
+        _uiState.value =
+            _uiState.value.copy(
+                isRecording = true,
+                isPaused = false,
+                recordingDurationMs = 0L,
+            )
+
+        if (!controller.usesPhotoCaptureForVideoThumbnail) {
+            coroutineScope.launch {
+                videoThumbnailBitmap = runCatching {
+                    controller.captureRecordingThumbnailFrame()
+                }.getOrNull()
+            }
+        }
+        return path
+    }
+
+    /**
+     * Opens the next segment of a chained take, or ends the take when chaining is off, the finished
+     * segment failed, or the recorder refuses to restart.
+     *
+     * @return The new segment's file path, or null when the take is over — recording state is then
+     * already reset (the caller's timer coroutine is the one that must stop looping).
+     */
+    private suspend fun startNextSegmentOrNull(
+        controller: CameraController,
+        configuration: VideoConfiguration,
+        completedResult: VideoCaptureResult,
+    ): String? {
+        val shouldChain = configuration.shouldChainNewSegmentAtMaxDuration &&
+            completedResult is VideoCaptureResult.Success
+        if (shouldChain) {
+            try {
+                return startRecordingSegment(controller, configuration)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.value =
+                    _uiState.value.copy(
+                        lastError = "Recording failed: ${e.message}",
+                    )
+                _events.emit(CameraKEvent.RecordingFailed(e))
+            }
+        }
+        resetRecordingState(cancelRecordingTimer = false)
+        return null
+    }
+
+    /**
+     * Post-processes and describes a finished segment so it can be handed to the caller: the front-lens
+     * fix-up rewrites the file and a long clip takes seconds, so this deliberately runs after the next
+     * segment is already recording.
+     */
+    private suspend fun completeRecordingSegment(
+        controller: CameraController,
+        result: VideoCaptureResult,
+        savedThumbnail: ImageBitmap?,
+    ): VideoCaptureResult = withVideoThumbnail(
+        controller = controller,
+        result = controller.applyRecordingPostProcessing(result),
+        savedThumbnail = savedThumbnail,
+    )
+
+    /**
      * Starts video recording.
      * Emits [CameraKEvent.RecordingStarted] on success.
      * If [VideoConfiguration.maxDurationMs] > 0, auto-stops and emits
-     * [CameraKEvent.RecordingMaxDurationReached].
+     * [CameraKEvent.RecordingMaxDurationReached] followed by [CameraKEvent.RecordingStopped].
+     *
+     * With [VideoConfiguration.shouldChainNewSegmentAtMaxDuration] the take continues instead of ending
+     * there: the next segment starts before the finished one is post-processed, [uiState] keeps
+     * reporting `isRecording = true` across the boundary (only [CameraUIState.recordingDurationMs]
+     * restarts, per segment), and every segment arrives as its own [CameraKEvent.RecordingStopped].
+     * Only [stopRecording] ends the chain.
      *
      * @param configuration Recording settings.
      */
@@ -461,38 +558,12 @@ class CameraKStateHolder(
 
         coroutineScope.launch {
             try {
-                if (currentController.usesPhotoCaptureForVideoThumbnail) {
-                    when (val photoResult = currentController.takePictureToFile()) {
-                        is ImageCaptureResult.Success -> {
-                            videoThumbnailBitmap = photoResult.bitmap
-                        }
-                        is ImageCaptureResult.Error -> {
-                            videoThumbnailBitmap = null
-                        }
-                    }
-                }
-
-                val path = currentController.startRecording(configuration)
-                recordingFilePath = path
-                _uiState.value =
-                    _uiState.value.copy(
-                        isRecording = true,
-                        isPaused = false,
-                        recordingDurationMs = 0L,
-                    )
+                var path = startRecordingSegment(currentController, configuration)
                 _events.emit(CameraKEvent.RecordingStarted(path))
-
-                if (!currentController.usesPhotoCaptureForVideoThumbnail) {
-                    coroutineScope.launch {
-                        videoThumbnailBitmap = runCatching {
-                            currentController.captureRecordingThumbnailFrame()
-                        }.getOrNull()
-                    }
-                }
 
                 // Start duration ticker with pause-aware elapsed tracking
                 recordingTimerJob = coroutineScope.launch {
-                    val startMs = Clock.System.now().toEpochMilliseconds()
+                    var startMs = Clock.System.now().toEpochMilliseconds()
                     var pausedAccumulatorMs = 0L
                     var pauseStartMs = 0L
                     while (isActive) {
@@ -509,18 +580,37 @@ class CameraKStateHolder(
                         val elapsed = Clock.System.now().toEpochMilliseconds() - startMs - pausedAccumulatorMs
                         _uiState.value = _uiState.value.copy(recordingDurationMs = elapsed)
 
-                        if (configuration.maxDurationMs > 0 && elapsed >= configuration.maxDurationMs) {
-                            // Auto-stop — guard against race with manual stopRecording()
-                            if (!_uiState.value.isRecording) break
-                            val savedThumbnail = videoThumbnailBitmap
-                            resetRecordingState(cancelRecordingTimer = false)
-                            val result = currentController.stopRecording()
-                            val resultWithThumbnail =
-                                withVideoThumbnail(currentController, result, savedThumbnail)
-                            _events.emit(CameraKEvent.RecordingMaxDurationReached(path, elapsed))
-                            _events.emit(CameraKEvent.RecordingStopped(resultWithThumbnail))
-                            break
+                        if (configuration.maxDurationMs <= 0 || elapsed < configuration.maxDurationMs) {
+                            continue
                         }
+                        // Held for the whole hand-off so a manual stop cannot cut it in half and
+                        // drop the segment that was already written to disk.
+                        val chainedPath = recordingTransitionMutex.withLock {
+                            // Auto-stop — guard against race with manual stopRecording()
+                            if (!_uiState.value.isRecording) return@withLock null
+                            val completedPath = path
+                            val savedThumbnail = videoThumbnailBitmap
+                            videoThumbnailBitmap = null
+                            val result = currentController.stopRecording()
+                            // The capture pipeline is free again — take the next segment before
+                            // spending time on the finished one, so the gap the user sees stays at
+                            // the finalize.
+                            val nextPath = startNextSegmentOrNull(
+                                controller = currentController,
+                                configuration = configuration,
+                                completedResult = result,
+                            )
+                            val completedResult =
+                                completeRecordingSegment(currentController, result, savedThumbnail)
+                            _events.emit(CameraKEvent.RecordingMaxDurationReached(completedPath, elapsed))
+                            _events.emit(CameraKEvent.RecordingStopped(completedResult))
+                            nextPath?.also { _events.emit(CameraKEvent.RecordingStarted(it)) }
+                        } ?: break
+
+                        path = chainedPath
+                        startMs = Clock.System.now().toEpochMilliseconds()
+                        pausedAccumulatorMs = 0L
+                        pauseStartMs = 0L
                     }
                 }
             } catch (e: CancellationException) {
@@ -547,14 +637,18 @@ class CameraKStateHolder(
 
         coroutineScope.launch {
             try {
-                recordingTimerJob?.cancel()
-                recordingTimerJob = null
-                val savedThumbnail = videoThumbnailBitmap
-                resetRecordingState()
-                val result = currentController.stopRecording()
-                val resultWithThumbnail =
-                    withVideoThumbnail(currentController, result, savedThumbnail)
-                _events.emit(CameraKEvent.RecordingStopped(resultWithThumbnail))
+                recordingTransitionMutex.withLock {
+                    // A chained hand-off may have finished the take while this stop waited for the lock.
+                    if (!_uiState.value.isRecording) return@withLock
+                    recordingTimerJob?.cancel()
+                    recordingTimerJob = null
+                    val savedThumbnail = videoThumbnailBitmap
+                    resetRecordingState()
+                    val result = currentController.stopRecording()
+                    val completedResult =
+                        completeRecordingSegment(currentController, result, savedThumbnail)
+                    _events.emit(CameraKEvent.RecordingStopped(completedResult))
+                }
             } catch (e: CancellationException) {
                 resetRecordingState()
                 throw e

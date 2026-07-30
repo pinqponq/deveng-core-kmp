@@ -393,6 +393,9 @@ actual class CameraController(
         }
     }
 
+    /** Desktop recordings need no lens fix-up — the preview is not mirrored. */
+    actual suspend fun applyRecordingPostProcessing(result: VideoCaptureResult): VideoCaptureResult = result
+
     actual suspend fun pauseRecording() {
         isPausedRecording = true
     }
