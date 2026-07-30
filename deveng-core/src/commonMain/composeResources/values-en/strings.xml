@@ -2,6 +2,8 @@
 <resources>
     <string name="shared_content_desc_icon_heart_favorite">Favorite Icon</string>
     <string name="shared_content_desc_icon_left">Back icon</string>
+    <string name="shared_content_desc_scroll_to_top">Scroll to top</string>
+    <string name="shared_content_desc_scroll_to_bottom">Scroll to bottom</string>
     <string name="shared_content_desc_profile_photo">Profile photo</string>
     <string name="shared_currency_text">TL</string>
     <string name="shared_understand">I got it</string>

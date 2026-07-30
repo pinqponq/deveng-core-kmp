@@ -358,7 +358,9 @@ internal fun App() {
         var showCameraScreen by remember { mutableStateOf(false) }
         var showQrGeneratorScreen by remember { mutableStateOf(false) }
         var showQrScannerScreen by remember { mutableStateOf(false) }
+        var showScrollToEdgeScreen by remember { mutableStateOf(false) }
         when {
+            showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
             showQrGeneratorScreen -> QrGeneratorDemoScreen(onBack = { showQrGeneratorScreen = false })
             showQrScannerScreen -> QrScannerDemoScreen(onBack = { showQrScannerScreen = false })
             showCameraScreen -> CameraScreen(onBack = { showCameraScreen = false })
@@ -366,6 +368,7 @@ internal fun App() {
                 onOpenCamera = { showCameraScreen = true },
                 onOpenQrGenerator = { showQrGeneratorScreen = true },
                 onOpenQrScanner = { showQrScannerScreen = true },
+                onOpenScrollToEdge = { showScrollToEdgeScreen = true },
             )
         }
     }
@@ -626,6 +629,7 @@ private fun ThemingDemo(
     onOpenCamera: () -> Unit = {},
     onOpenQrGenerator: () -> Unit = {},
     onOpenQrScanner: () -> Unit = {},
+    onOpenScrollToEdge: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1003,6 +1007,12 @@ private fun ThemingDemo(
                             text = "Open QR Scanner",
                             containerColor = Color(0xFF2196F3),
                             onClick = onOpenQrScanner
+                        )
+
+                        CustomButton(
+                            text = "Open Scroll-to-Edge Demo",
+                            containerColor = Color(0xFF00897B),
+                            onClick = onOpenScrollToEdge
                         )
 
                         RatingRow(
