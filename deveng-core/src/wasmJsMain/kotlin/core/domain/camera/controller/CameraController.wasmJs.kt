@@ -212,6 +212,9 @@ actual class CameraController internal constructor(
     actual suspend fun stopRecording(): VideoCaptureResult =
         VideoCaptureResult.Error(IllegalStateException("Not recording"))
 
+    /** No recording pipeline on WASM, so there is nothing to post-process. */
+    actual suspend fun applyRecordingPostProcessing(result: VideoCaptureResult): VideoCaptureResult = result
+
     actual suspend fun pauseRecording() {}
     actual suspend fun resumeRecording() {}
 
