@@ -128,6 +128,9 @@ actual class CameraController(
     private var activeRecording: Recording? = null
     private var recordingOutputFile: File? = null
     private var recordingUsedFrontLens: Boolean = false
+
+    /** Lens of the clip waiting for [applyRecordingPostProcessing]; a chained recording may already be running. */
+    private var stoppedRecordingUsedFrontLens: Boolean = false
     private val recordingFinalizeChannel = Channel<VideoCaptureResult>(Channel.CONFLATED)
 
     /**
@@ -1777,11 +1780,18 @@ actual class CameraController(
         val recording = activeRecording ?: return VideoCaptureResult.Error(
             IllegalStateException("No active recording"),
         )
-        val recordedWithFrontLens = recordingUsedFrontLens
+        // Handed to applyRecordingPostProcessing(): the lens can already have been switched by the
+        // time the finished file is post-processed.
+        stoppedRecordingUsedFrontLens = recordingUsedFrontLens
         recordingUsedFrontLens = false
         recording.stop()
         activeRecording = null
-        val result = recordingFinalizeChannel.receive()
+        return recordingFinalizeChannel.receive()
+    }
+
+    actual suspend fun applyRecordingPostProcessing(result: VideoCaptureResult): VideoCaptureResult {
+        val recordedWithFrontLens = stoppedRecordingUsedFrontLens
+        stoppedRecordingUsedFrontLens = false
         if (!recordedWithFrontLens || result !is VideoCaptureResult.Success) {
             return result
         }

@@ -323,11 +323,27 @@ expect class CameraController {
     /**
      * Stops the active video recording and finalizes the output file.
      *
-     * Suspends until the file is fully written and closed.
+     * Suspends until the file is fully written and closed and the capture pipeline is free to start
+     * another recording. Platform fix-ups that rewrite the finished file (see
+     * [applyRecordingPostProcessing]) are deliberately left out so back-to-back recordings are not
+     * delayed by them; callers that hand the file to the user must apply them before doing so.
      *
      * @return [VideoCaptureResult.Success] with file path and duration, or [VideoCaptureResult.Error].
      */
     suspend fun stopRecording(): VideoCaptureResult
+
+    /**
+     * Applies platform fix-ups the finished recording needs before it can be shown or shared —
+     * currently the front-lens flip that makes playback match the mirrored selfie preview (Android
+     * and iOS; identity elsewhere).
+     *
+     * Rewrites the file in place and may take seconds for a long clip, so it runs after
+     * [stopRecording] has already released the capture pipeline.
+     *
+     * @param result The result returned by [stopRecording].
+     * @return The result to hand to the caller; errors pass through untouched.
+     */
+    suspend fun applyRecordingPostProcessing(result: VideoCaptureResult): VideoCaptureResult
 
     /**
      * Pauses the active video recording.

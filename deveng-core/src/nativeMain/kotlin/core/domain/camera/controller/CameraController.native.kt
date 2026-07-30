@@ -123,6 +123,9 @@ actual class CameraController(
     private var videoRecordingDelegate: VideoRecordingDelegate? = null
     private var videoOutputFilePath: String? = null
 
+    /** Lens of the clip waiting for [applyRecordingPostProcessing]; a chained recording may already be running. */
+    private var stoppedRecordingUsedFrontLens: Boolean = false
+
     actual var onPreviewTapListener: ((Float, Float) -> Unit)? = null
     actual var onPreviewDoubleTapListener: (() -> Unit)? = null
     actual var shouldSuppressTapToFocus: ((Float, Float) -> Boolean)? = null
@@ -822,7 +825,7 @@ actual class CameraController(
     ): ImageBitmap? =
         core.domain.camera.ios.extractVideoThumbnailFromFile(
             filePath = filePath,
-            // [stopRecording] already unmirror-exports when the bridge is set; flip pixels only as fallback.
+            // [applyRecordingPostProcessing] already unmirror-exports when the bridge is set; flip pixels only as fallback.
             compensateMirroredRecording = isFrontCamera && IosFrontCameraVideoBridge.unmirrorRecordedVideoInPlace == null,
         )
 
@@ -871,29 +874,39 @@ actual class CameraController(
             return@suspendCancellableCoroutine
         }
 
-        val recordedWithFrontLens = customCameraController.getCurrentLens() == CameraLens.FRONT
+        // Read here, not in applyRecordingPostProcessing(): a chained recording can switch the lens
+        // before the finished clip is post-processed.
+        stoppedRecordingUsedFrontLens = customCameraController.getCurrentLens() == CameraLens.FRONT
         delegate.onFinished = { result ->
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT.toLong(), 0u)) {
-                val finalResult =
-                    if (recordedWithFrontLens && result is VideoCaptureResult.Success) {
-                        val ok = IosFrontCameraVideoBridge.unmirrorRecordedVideoInPlace?.invoke(result.filePath) == true
-                        if (!ok) {
-                            platform.Foundation.NSLog(
-                                "CameraK: front video unmirror failed path=${result.filePath}",
-                            )
-                        }
-                        result
-                    } else {
-                        result
-                    }
-                dispatch_async(dispatch_get_main_queue()) {
-                    cont.resume(finalResult)
-                }
+            dispatch_async(dispatch_get_main_queue()) {
+                cont.resume(result)
             }
         }
 
         dispatch_async(dispatch_get_main_queue()) {
             output.stopRecording()
+        }
+    }
+
+    actual suspend fun applyRecordingPostProcessing(
+        result: VideoCaptureResult,
+    ): VideoCaptureResult = suspendCancellableCoroutine { cont ->
+        val recordedWithFrontLens = stoppedRecordingUsedFrontLens
+        stoppedRecordingUsedFrontLens = false
+        if (!recordedWithFrontLens || result !is VideoCaptureResult.Success) {
+            cont.resume(result)
+            return@suspendCancellableCoroutine
+        }
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT.toLong(), 0u)) {
+            val unmirrored = IosFrontCameraVideoBridge.unmirrorRecordedVideoInPlace?.invoke(result.filePath) == true
+            if (!unmirrored) {
+                platform.Foundation.NSLog(
+                    "CameraK: front video unmirror failed path=${result.filePath}",
+                )
+            }
+            dispatch_async(dispatch_get_main_queue()) {
+                cont.resume(result)
+            }
         }
     }
 

@@ -304,6 +304,7 @@ private fun formatRecordingProgress(elapsedMs: Long, maxDurationMs: Long): Strin
  * @param thumbnailTopEndContent Slot for content placed at the top-end of the thumbnail (e.g. a count badge). Design is fully controlled by the caller.
  * @param stateHolder Optional [CameraKStateHolder] from [rememberCameraKState] (via onHolder). When set, shows Photo/Video tab selection and the center button acts as capture in Photo mode or start/stop in Video mode.
  * @param maxVideoRecordingDurationMs Maximum video length in milliseconds when recording via [stateHolder]. `0` means unlimited (see [VideoConfiguration.maxDurationMs]). When greater than zero, the recording timer shows `elapsed / max` (e.g. `0:45 / 1:30`).
+ * @param shouldChainNewVideoSegmentAtMaxDuration When true, reaching [maxVideoRecordingDurationMs] hands the finished clip to [onRecordingStopped] and immediately records a new one, so the user ends the take by stopping it rather than by the cap (see [VideoConfiguration.shouldChainNewSegmentAtMaxDuration]). Ignored without a duration cap, and in [singleCaptureModeEnabled] where a take is a single clip by definition.
  * @param onRecordingStopped Optional callback when a video recording stops (success or error). Use it to load a first-frame thumbnail and pass it as [lastRecordedVideoThumbnail].
  * @param lastRecordedVideoThumbnail Optional bitmap to show as thumbnail for the last recorded video (e.g. first frame). Shown when the last capture was video; replaced when user takes a photo.
  * @param showTapToFocusExclusionDebugOverlay When true, draws a very faint red overlay on regions where tap-to-focus is suppressed (for tuning/debug).
@@ -331,6 +332,7 @@ fun DefaultCameraPreview(
     singleCaptureModeEnabled: Boolean = false,
     stateHolder: CameraKStateHolder? = null,
     maxVideoRecordingDurationMs: Long = 0L,
+    shouldChainNewVideoSegmentAtMaxDuration: Boolean = false,
     onRecordingStarted: (() -> Unit)? = null,
     onRecordingStopped: ((VideoCaptureResult) -> Unit)? = null,
     lastRecordedVideoThumbnail: ImageBitmap? = null,
@@ -1064,7 +1066,11 @@ fun DefaultCameraPreview(
                             // guard — starting a recording spends the single-use slot immediately.
                             if (singleCaptureModeEnabled) hasClaimedSingleCapture = true
                             stateHolder?.startRecording(
-                                VideoConfiguration(maxDurationMs = maxVideoRecordingDurationMs),
+                                VideoConfiguration(
+                                    maxDurationMs = maxVideoRecordingDurationMs,
+                                    shouldChainNewSegmentAtMaxDuration = shouldChainNewVideoSegmentAtMaxDuration &&
+                                        !singleCaptureModeEnabled,
+                                ),
                             )
                         },
                         onVideoStop = { stateHolder?.stopRecording() },
