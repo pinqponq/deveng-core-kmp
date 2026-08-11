@@ -31,10 +31,12 @@ import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -157,7 +159,7 @@ fun CustomTextField(
     unfocusedBorderColor: Color? = null,
     cursorColor: Color? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
 ) {
     val componentTheme = LocalComponentTheme.current
     val customTextFieldTheme = componentTheme.customTextField
@@ -221,6 +223,17 @@ fun CustomTextField(
     var isFocused by remember { mutableStateOf(false) }
     var wasFocused by remember { mutableStateOf(false) }
 
+    // The field renders from an internal TextFieldValue so that the cursor/selection is owned here,
+    // not reset by Material's String-based TextField overload. Callers still hoist a plain String;
+    // we only pull an external value back in when the field is NOT being actively edited (programmatic
+    // reset / prefill). While focused, the internal buffer is authoritative — this is what prevents a
+    // stale value echoed back through async hoisted state (e.g. an MVI StateFlow round-trip) from
+    // snapping the cursor to the end while the user types quickly.
+    var textFieldValueState by remember { mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length))) }
+    if (!isFocused && value != textFieldValueState.text) {
+        textFieldValueState = TextFieldValue(text = value, selection = TextRange(value.length))
+    }
+
     val focusManager = LocalFocusManager.current
 
     LaunchedEffect(key1 = requestFocus) {
@@ -273,7 +286,7 @@ fun CustomTextField(
 
                 if (isTextCharCountVisible) {
                     Text(
-                        text = stringResource(Res.string.char_count, value.length, maxLength),
+                        text = stringResource(Res.string.char_count, textFieldValueState.text.length, maxLength),
                         style = finalCharCountTextStyle
                     )
                 }
@@ -289,11 +302,20 @@ fun CustomTextField(
         ) {
             Box {
                 TextField(
-                    value = value,
-                    onValueChange = {
-                        if (isEditable && it.length <= maxLength) {
-                            onValueChange(it)
+                    value = textFieldValueState,
+                    onValueChange = { newValue ->
+                        val accepted = isEditable && newValue.text.length <= maxLength
+                        if (accepted) {
+                            val textChanged = newValue.text != textFieldValueState.text
+                            // Keep the user's caret/selection exactly where they put it; only report
+                            // the plain-text change upward when the text actually changed.
+                            textFieldValueState = newValue
+                            if (textChanged) {
+                                onValueChange(newValue.text)
+                            }
                         }
+                        // Rejected (maxLength / not editable): leave textFieldValueState untouched so
+                        // the extra character is dropped and the caret does not move.
                     },
                     modifier = textFieldModifier
                         .fillMaxWidth()
