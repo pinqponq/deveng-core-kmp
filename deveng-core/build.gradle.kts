@@ -90,6 +90,20 @@ kotlin {
             implementation(libs.androidx.startup.runtime)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.mlkit.barcode.scanning)
+            implementation(libs.onnxruntime.android)
+        }
+
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+
+        val androidInstrumentedTest by getting {
+            dependencies {
+                implementation(libs.androidx.test.runner)
+                implementation(libs.androidx.test.ext.junit)
+            }
         }
 
         val desktopMain by getting {
@@ -107,6 +121,7 @@ android {
 
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 }
 

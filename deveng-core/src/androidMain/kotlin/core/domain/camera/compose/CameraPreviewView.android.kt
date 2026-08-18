@@ -49,7 +49,9 @@ actual fun CameraPreviewView(controller: CameraController, modifier: Modifier) {
             // Prefer full FoV and pin preview content to bottom on tall screens.
             // This keeps bottom camera controls visually on top of the preview.
             scaleType = PreviewView.ScaleType.FIT_END
-            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+            // Prefer SurfaceView so preview composition stays independent from model-analysis work.
+            // PreviewView automatically falls back to TextureView on unsupported devices/configs.
+            implementationMode = PreviewView.ImplementationMode.PERFORMANCE
         }
     }
     LaunchedEffect(showTransitionOverlay, transitionBitmap) {

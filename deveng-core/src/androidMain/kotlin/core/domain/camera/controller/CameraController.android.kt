@@ -2,6 +2,7 @@ package core.domain.camera.controller
 
 import android.os.Handler
 import android.os.Looper
+import android.os.Process as AndroidProcess
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -55,6 +56,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import core.domain.camera.analysis.CameraFrameAnalyzer
+import core.domain.camera.analysis.CameraFrameAnalyzerAdapter
+import core.domain.camera.analysis.FrameAnalysisOutputFormat
+import core.domain.camera.analysis.LogcatFrameAnalysisDiagnostics
 import core.domain.camera.enums.AspectRatio
 import core.domain.camera.enums.CameraDeviceType
 import core.domain.camera.enums.CameraLens
@@ -122,6 +127,20 @@ actual class CameraController(
 
     // Multiple analyzer support: plugins register their analyzers here
     private val registeredAnalyzers = mutableListOf<ImageAnalysis.Analyzer>()
+    private val registeredFrameAnalyzers = mutableListOf<RegisteredFrameAnalyzer>()
+    private val imageAnalysisCallbackExecutor = Executors.newSingleThreadExecutor { task ->
+        backgroundAnalysisThread("CameraK-FrameCallback", task)
+    }
+    private val frameAnalyzerExecutor = Executors.newFixedThreadPool(2) { task ->
+        backgroundAnalysisThread("CameraK-ModelAnalysis", task)
+    }
+
+    private data class RegisteredFrameAnalyzer(
+        val analyzer: CameraFrameAnalyzer<*>,
+        val adapter: CameraFrameAnalyzerAdapter<*>,
+        val outputImageFormat: FrameAnalysisOutputFormat,
+        val targetResolution: Size?,
+    )
 
     // Video recording
     private var videoCapture: VideoCapture<Recorder>? = null
@@ -901,8 +920,8 @@ actual class CameraController(
 
     fun updateImageAnalyzer() {
         camera?.let {
-            cameraProvider?.unbind(imageAnalyzer)
             imageAnalyzer?.let { analyzer ->
+                cameraProvider?.unbind(analyzer)
                 cameraProvider?.bindToLifecycle(
                     lifecycleOwner,
                     CameraSelector.Builder().requireLensFacing(cameraLens.toCameraXLensFacing())
@@ -920,7 +939,58 @@ actual class CameraController(
      */
     fun registerImageAnalyzer(analyzer: ImageAnalysis.Analyzer) {
         registeredAnalyzers.add(analyzer)
-        rebuildMultiplexedAnalyzer()
+        try {
+            rebuildMultiplexedAnalyzer()
+        } catch (error: Throwable) {
+            registeredAnalyzers.remove(analyzer)
+            rebuildMultiplexedAnalyzer()
+            throw error
+        }
+    }
+
+    /**
+     * Registers a model-independent analyzer without exposing CameraX's [ImageProxy] ownership
+     * contract to the analyzer implementation.
+     *
+     * The result and error callbacks are invoked on the controller's analysis executor. The
+     * analyzer is started immediately and is stopped/closed when it is unregistered or the
+     * controller is cleaned up.
+     */
+    fun <R> registerFrameAnalyzer(
+        analyzer: CameraFrameAnalyzer<R>,
+        onResult: (R) -> Unit,
+        onError: (Throwable) -> Unit = {},
+        debugLogTag: String? = null,
+        analyzeEveryNthFrame: Int = 1,
+        minAnalysisIntervalMs: Long = 0,
+        outputImageFormat: FrameAnalysisOutputFormat = FrameAnalysisOutputFormat.YUV_420_888,
+        targetResolution: Size? = null,
+    ) {
+        val adapter = CameraFrameAnalyzerAdapter(
+            analyzer = analyzer,
+            executor = frameAnalyzerExecutor,
+            onResult = onResult,
+            onError = onError,
+            analyzeEveryNthFrame = analyzeEveryNthFrame,
+            minAnalysisIntervalMs = minAnalysisIntervalMs,
+            diagnostics = debugLogTag?.let(::LogcatFrameAnalysisDiagnostics),
+        )
+        val registration = RegisteredFrameAnalyzer(
+            analyzer = analyzer,
+            adapter = adapter,
+            outputImageFormat = outputImageFormat,
+            targetResolution = targetResolution,
+        )
+        registeredFrameAnalyzers += registration
+        try {
+            adapter.start()
+            rebuildMultiplexedAnalyzer()
+        } catch (error: Throwable) {
+            registeredFrameAnalyzers.remove(registration)
+            adapter.close()
+            rebuildMultiplexedAnalyzer()
+            throw error
+        }
     }
 
     /**
@@ -931,28 +1001,125 @@ actual class CameraController(
         rebuildMultiplexedAnalyzer()
     }
 
+    /**
+     * Unregisters a previously registered generic frame analyzer.
+     */
+    fun unregisterFrameAnalyzer(analyzer: CameraFrameAnalyzer<*>) {
+        val registrationIndex = registeredFrameAnalyzers.indexOfFirst { it.analyzer === analyzer }
+        if (registrationIndex < 0) return
+
+        val registration = registeredFrameAnalyzers.removeAt(registrationIndex)
+        rebuildMultiplexedAnalyzer()
+        registration.adapter.close()
+    }
+
     private fun rebuildMultiplexedAnalyzer() {
-        if (registeredAnalyzers.isEmpty()) {
-            if (imageAnalyzer != null) {
-                try { cameraProvider?.unbind(imageAnalyzer) } catch (_: Exception) {}
-                imageAnalyzer = null
+        val analyzers = buildList<ImageAnalysis.Analyzer> {
+            addAll(registeredAnalyzers)
+            registeredFrameAnalyzers.forEach { add(it.adapter) }
+        }
+
+        if (analyzers.isEmpty()) {
+            imageAnalyzer?.let { previous ->
+                try { cameraProvider?.unbind(previous) } catch (_: Exception) {}
             }
+            imageAnalyzer = null
             return
         }
 
-        val composite = MultiplexingAnalyzer(registeredAnalyzers.toList())
-        imageAnalyzer = ImageAnalysis.Builder()
+        val previousImageAnalyzer = imageAnalyzer
+        val composite = MultiplexingAnalyzer(analyzers)
+        val outputImageFormat = resolveAnalysisOutputImageFormat()
+        val targetResolution = resolveAnalysisTargetResolution()
+        val analysisBuilder = ImageAnalysis.Builder()
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .setOutputImageFormat(outputImageFormat.toCameraXOutputImageFormat())
+        val analysisResolutionSelector = ResolutionSelector.Builder()
+            // Keep ImageAnalysis in the same aspect-ratio family as Preview. Otherwise a
+            // square/4:3 analysis stream can make source-coordinate overlays drift vertically
+            // when PreviewView uses FIT_END with the 16:9 preview stream.
+            .setAspectRatioStrategy(aspectRatio.toCameraXAspectRatioStrategy())
+        targetResolution?.let { target ->
+            analysisResolutionSelector.setResolutionStrategy(
+                ResolutionStrategy(
+                    target,
+                    ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
+                ),
+            )
+        }
+        analysisBuilder.setResolutionSelector(analysisResolutionSelector.build())
+        val nextImageAnalyzer = analysisBuilder
             .build()
             .apply {
-                setAnalyzer(ContextCompat.getMainExecutor(context), composite)
+                setAnalyzer(imageAnalysisCallbackExecutor, composite)
             }
+        imageAnalyzer = nextImageAnalyzer
+        Log.d(
+            "CameraK",
+            "frameAnalysis: outputFormat=$outputImageFormat " +
+                "targetResolution=${targetResolution?.let { "${it.width}x${it.height}" } ?: "default"}",
+        )
+
+        if (camera == null) {
+            // The use case will be included in the initial use-case group at bindCamera time.
+            return
+        }
 
         try {
-            updateImageAnalyzer()
-        } catch (_: Exception) {
-            // Camera may not be initialized yet; will be bound at bindCamera time
+            previousImageAnalyzer?.let { cameraProvider?.unbind(it) }
+            cameraProvider?.bindToLifecycle(
+                lifecycleOwner,
+                CameraSelector.Builder().requireLensFacing(cameraLens.toCameraXLensFacing()).build(),
+                nextImageAnalyzer,
+            )
+        } catch (error: Exception) {
+            imageAnalyzer = previousImageAnalyzer
+            try {
+                previousImageAnalyzer?.let { previous ->
+                    cameraProvider?.bindToLifecycle(
+                        lifecycleOwner,
+                        CameraSelector.Builder().requireLensFacing(cameraLens.toCameraXLensFacing()).build(),
+                        previous,
+                    )
+                }
+            } catch (_: Exception) {
+                // Preserve the original bind failure; cleanup will unbind all use cases.
+            }
+            throw error
         }
+    }
+
+    private fun resolveAnalysisOutputImageFormat(): FrameAnalysisOutputFormat {
+        val requestedFormats = registeredFrameAnalyzers
+            .map { it.outputImageFormat }
+            .distinct()
+        check(requestedFormats.size <= 1) {
+            "Frame analyzers sharing one ImageAnalysis use case must request the same output format."
+        }
+        val requestedFormat = requestedFormats.singleOrNull()
+            ?: FrameAnalysisOutputFormat.YUV_420_888
+        check(
+            registeredAnalyzers.isEmpty() ||
+                requestedFormat == FrameAnalysisOutputFormat.YUV_420_888,
+        ) {
+            "Raw ImageAnalysis analyzers cannot share an RGBA frame analyzer use case."
+        }
+        return requestedFormat
+    }
+
+    private fun FrameAnalysisOutputFormat.toCameraXOutputImageFormat(): Int = when (this) {
+        FrameAnalysisOutputFormat.YUV_420_888 -> ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888
+        FrameAnalysisOutputFormat.RGBA_8888 -> ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888
+    }
+
+    private fun resolveAnalysisTargetResolution(): Size? {
+        val requestedResolutions = registeredFrameAnalyzers
+            .mapNotNull { it.targetResolution }
+            .distinct()
+        check(requestedResolutions.size <= 1) {
+            "Frame analyzers sharing one ImageAnalysis use case must request the same target resolution."
+        }
+        return requestedResolutions.singleOrNull()
     }
 
     @Deprecated(
@@ -1846,11 +2013,23 @@ actual class CameraController(
     actual fun cleanup() {
         activeRecording?.stop()
         activeRecording = null
+        registeredFrameAnalyzers.toList().forEach { it.adapter.close() }
+        registeredFrameAnalyzers.clear()
         registeredAnalyzers.clear()
         recordingFinalizeChannel.close()
+        imageAnalysisCallbackExecutor.shutdown()
+        frameAnalyzerExecutor.shutdown()
         imageProcessingExecutor.shutdown()
         memoryManager.clearBufferPools()
     }
+
+    private fun backgroundAnalysisThread(name: String, task: Runnable): Thread = Thread(
+        {
+            AndroidProcess.setThreadPriority(AndroidProcess.THREAD_PRIORITY_BACKGROUND)
+            task.run()
+        },
+        name,
+    )
 }
 
 /**
@@ -1858,7 +2037,7 @@ actual class CameraController(
  * Uses [RefCountedImageProxy] so each analyzer can call `close()` independently;
  * the underlying buffer is released only when all analyzers have finished.
  */
-private class MultiplexingAnalyzer(
+internal class MultiplexingAnalyzer(
     private val analyzers: List<ImageAnalysis.Analyzer>,
 ) : ImageAnalysis.Analyzer {
     override fun analyze(imageProxy: ImageProxy) {
@@ -1867,12 +2046,23 @@ private class MultiplexingAnalyzer(
             return
         }
         if (analyzers.size == 1) {
-            analyzers[0].analyze(imageProxy)
+            try {
+                analyzers[0].analyze(imageProxy)
+            } catch (_: Exception) {
+                // A per-frame analyzer failure must not leave the CameraX frame owned forever.
+                imageProxy.close()
+            }
             return
         }
         val refCount = java.util.concurrent.atomic.AtomicInteger(analyzers.size)
         for (analyzer in analyzers) {
-            analyzer.analyze(RefCountedImageProxy(imageProxy, refCount))
+            val analyzerProxy = RefCountedImageProxy(imageProxy, refCount)
+            try {
+                analyzer.analyze(analyzerProxy)
+            } catch (_: Exception) {
+                // Release only this analyzer's ownership and allow the remaining analyzers to run.
+                analyzerProxy.close()
+            }
         }
     }
 }
@@ -1881,12 +2071,14 @@ private class MultiplexingAnalyzer(
  * Wraps an [ImageProxy] with reference-counted close semantics.
  * The real proxy is closed only when the last holder calls [close].
  */
-private class RefCountedImageProxy(
+internal class RefCountedImageProxy(
     private val delegate: ImageProxy,
     private val refCount: java.util.concurrent.atomic.AtomicInteger,
 ) : ImageProxy by delegate {
+    private val closed = java.util.concurrent.atomic.AtomicBoolean(false)
+
     override fun close() {
-        if (refCount.decrementAndGet() <= 0) {
+        if (closed.compareAndSet(false, true) && refCount.decrementAndGet() <= 0) {
             delegate.close()
         }
     }

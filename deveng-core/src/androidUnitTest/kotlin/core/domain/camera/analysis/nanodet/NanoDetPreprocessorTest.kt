@@ -1,0 +1,76 @@
+package core.domain.camera.analysis.nanodet
+
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class NanoDetPreprocessorTest {
+    @Test
+    fun argbPixelsAreConvertedToNormalizedBgrChwInOnePass() {
+        val pixels = intArrayOf(
+            0xFFFF0000.toInt(),
+            0xFF00FF00.toInt(),
+            0xFF0000FF.toInt(),
+            0xFF0C2238.toInt(),
+        )
+
+        val tensor = argbToNormalizedBgrChw(pixels, width = 2, height = 2)
+
+        assertChannel(tensor, channel = 0, expectedRgb = listOf(0f, 0f, 255f, 56f))
+        assertChannel(tensor, channel = 1, expectedRgb = listOf(0f, 255f, 0f, 34f))
+        assertChannel(tensor, channel = 2, expectedRgb = listOf(255f, 0f, 0f, 12f))
+    }
+
+    @Test
+    fun optimizedArgbNormalizationFillsDirectBufferAndResetsPosition() {
+        val pixels = intArrayOf(
+            0xFFFF0000.toInt(),
+            0xFF00FF00.toInt(),
+            0xFF0000FF.toInt(),
+            0xFF0C2238.toInt(),
+        )
+
+        val destination = ByteBuffer
+            .allocateDirect(12 * Float.SIZE_BYTES)
+            .order(ByteOrder.nativeOrder())
+            .asFloatBuffer()
+        destination.position(5)
+
+        argbToNormalizedBgrChwInto(
+            pixels = pixels,
+            width = 2,
+            height = 2,
+            destination = destination,
+            scratch = FloatArray(12),
+        )
+
+        assertEquals(0, destination.position())
+        val tensor = FloatArray(destination.capacity()) { destination.get(it) }
+        assertChannel(tensor, channel = 0, expectedRgb = listOf(0f, 0f, 255f, 56f))
+        assertChannel(tensor, channel = 1, expectedRgb = listOf(0f, 255f, 0f, 34f))
+        assertChannel(tensor, channel = 2, expectedRgb = listOf(255f, 0f, 0f, 12f))
+    }
+
+    @Test
+    fun preprocessingTimingTotalIncludesEveryMeasuredStage() {
+        val timings = NanoDetPreprocessTimings(
+            frameTransferNanos = 1,
+            rotateScaleNanos = 2,
+            pixelReadNanos = 3,
+            normalizationNanos = 4,
+            previewSnapshotNanos = 5,
+        )
+
+        assertEquals(15, timings.totalNanos)
+    }
+
+    private fun assertChannel(tensor: FloatArray, channel: Int, expectedRgb: List<Float>) {
+        val planeSize = expectedRgb.size
+        expectedRgb.forEachIndexed { index, rgb ->
+            val expected = (rgb - NanoDetModelContract.mean[channel]) /
+                NanoDetModelContract.standardDeviation[channel]
+            assertEquals(expected, tensor[channel * planeSize + index], absoluteTolerance = 0.0001f)
+        }
+    }
+}

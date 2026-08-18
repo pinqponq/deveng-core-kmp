@@ -170,7 +170,10 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Preview
 @Composable
-internal fun App() {
+internal fun App(
+    onOpenNanoDetValidation: (() -> Unit)? = null,
+    nanoDetValidationContent: (@Composable () -> Unit)? = null,
+) {
     val customTheme = ComponentTheme(
         // Custom font family (using system font as example)
         typography = TypographyTheme(
@@ -355,6 +358,10 @@ internal fun App() {
 
     // Step 2: Apply theme using library's AppTheme
     AppTheme(componentTheme = customTheme) {
+        if (nanoDetValidationContent != null) {
+            nanoDetValidationContent()
+            return@AppTheme
+        }
         var showCameraScreen by remember { mutableStateOf(false) }
         var showQrGeneratorScreen by remember { mutableStateOf(false) }
         var showQrScannerScreen by remember { mutableStateOf(false) }
@@ -369,6 +376,7 @@ internal fun App() {
                 onOpenQrGenerator = { showQrGeneratorScreen = true },
                 onOpenQrScanner = { showQrScannerScreen = true },
                 onOpenScrollToEdge = { showScrollToEdgeScreen = true },
+                onOpenNanoDetValidation = onOpenNanoDetValidation,
             )
         }
     }
@@ -630,6 +638,7 @@ private fun ThemingDemo(
     onOpenQrGenerator: () -> Unit = {},
     onOpenQrScanner: () -> Unit = {},
     onOpenScrollToEdge: () -> Unit = {},
+    onOpenNanoDetValidation: (() -> Unit)? = null,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -996,6 +1005,14 @@ private fun ThemingDemo(
                             containerColor = Color(0xFF4CAF50),
                             onClick = onOpenCamera
                         )
+
+                        onOpenNanoDetValidation?.let { openValidation ->
+                            CustomButton(
+                                text = "NanoDet Validation",
+                                containerColor = Color(0xFFFF7043),
+                                onClick = openValidation,
+                            )
+                        }
 
                         CustomButton(
                             text = "Open QR Generator",
