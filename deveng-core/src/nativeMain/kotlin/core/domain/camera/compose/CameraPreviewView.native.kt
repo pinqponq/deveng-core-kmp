@@ -8,32 +8,23 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitViewController
 import core.domain.camera.controller.CameraController
-import platform.Foundation.NSNotificationCenter
-import platform.UIKit.UIDeviceOrientationDidChangeNotification
 
 /**
  * iOS camera preview. Gesture handling (tap-to-focus, double-tap switch, pinch zoom)
  * is done via native UIKit gesture recognizers on the controller's view so they fire
  * on the very first touch (Compose overlays lose the first touch to UIKit interop routing).
+ *
+ * The preview's video orientation is not driven from here: the controller re-resolves it on every
+ * layout pass, which is when the interface has actually rotated. Reacting to device rotation
+ * instead used to turn the image sideways inside a preview the host had pinned to portrait.
  */
 @Composable
 actual fun CameraPreviewView(controller: CameraController, modifier: Modifier) {
     key(controller) {
         DisposableEffect(controller) {
             controller.logPreviewDebug("COMPOSE_UIKitView_MOUNT")
-            val notificationCenter = NSNotificationCenter.defaultCenter
-            val observer = notificationCenter.addObserverForName(
-                UIDeviceOrientationDidChangeNotification,
-                null,
-                null,
-            ) { _ ->
-                controller.getCameraPreviewLayer()?.connection?.videoOrientation =
-                    controller.currentVideoOrientation()
-            }
-
             onDispose {
                 controller.logPreviewDebug("COMPOSE_UIKitView_DISPOSE")
-                notificationCenter.removeObserver(observer)
             }
         }
 

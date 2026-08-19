@@ -14,13 +14,13 @@ import platform.Foundation.NSData
 import platform.Foundation.NSError
 import platform.Foundation.NSLog
 import platform.UIKit.UIDevice
-import platform.UIKit.UIDeviceOrientation
 import platform.UIKit.UIScreen
 import platform.UIKit.UIView
 import platform.darwin.DISPATCH_QUEUE_PRIORITY_HIGH
 import platform.darwin.NSObject
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_global_queue
+import core.domain.camera.ios.IosCaptureVideoOrientation
 import core.domain.camera.ios.IosPreviewDbgLog
 import core.domain.camera.ios.applyClampedPreviewLayerFrame
 import core.domain.camera.ios.clampedPreviewLayerFrameForView
@@ -473,9 +473,10 @@ class CustomCameraController(
             existing.removeFromSuperlayer()
         }
 
+        val videoOrientation = IosCaptureVideoOrientation.refresh(view)
         val newPreviewLayer = AVCaptureVideoPreviewLayer(session = session).apply {
             videoGravity = AVLayerVideoGravityResizeAspectFill
-            connection?.videoOrientation = currentVideoOrientation()
+            connection?.videoOrientation = videoOrientation
         }
 
         view.layer.addSublayer(newPreviewLayer)
@@ -491,16 +492,11 @@ class CustomCameraController(
         }
     }
 
-    fun currentVideoOrientation(): AVCaptureVideoOrientation {
-        val orientation = UIDevice.currentDevice.orientation
-        return when (orientation) {
-            UIDeviceOrientation.UIDeviceOrientationPortrait -> AVCaptureVideoOrientationPortrait
-            UIDeviceOrientation.UIDeviceOrientationPortraitUpsideDown -> AVCaptureVideoOrientationPortraitUpsideDown
-            UIDeviceOrientation.UIDeviceOrientationLandscapeLeft -> AVCaptureVideoOrientationLandscapeRight
-            UIDeviceOrientation.UIDeviceOrientationLandscapeRight -> AVCaptureVideoOrientationLandscapeLeft
-            else -> AVCaptureVideoOrientationPortrait
-        }
-    }
+    /**
+     * Orientation the preview layer and the capture outputs are configured with — see
+     * [IosCaptureVideoOrientation] for why it follows the interface and not the device.
+     */
+    fun currentVideoOrientation(): AVCaptureVideoOrientation = IosCaptureVideoOrientation.current
 
     fun setFlashMode(mode: AVCaptureFlashMode) {
         val supportedFlashModes = photoOutput?.supportedFlashModes() as? List<*>
@@ -1176,7 +1172,8 @@ class CustomCameraController(
         val screenBounds = screen.bounds.useContents { "${size.width.toInt()}x${size.height.toInt()}" }
         append(
             "screen(bounds=$screenBounds scale=${screen.scale} " +
-                "deviceOrientation=${UIDevice.currentDevice.orientation})",
+                "deviceOrientation=${UIDevice.currentDevice.orientation} " +
+                "captureOrientation=${IosCaptureVideoOrientation.current})",
         )
         if (extra.isNotEmpty()) append(" | $extra")
     }

@@ -18,6 +18,7 @@ import core.domain.camera.utils.toByteArray
 import core.domain.camera.utils.toUIImage
 import core.util.bytearray.toImageBitmap
 import core.domain.camera.utils.toCapturePreviewImageBitmap
+import core.domain.camera.ios.IosCaptureVideoOrientation
 import core.domain.camera.ios.IosFrontCameraVideoBridge
 import core.domain.camera.ios.IosPreviewDbgLog
 import core.domain.camera.ios.applyClampedPreviewLayerFrame
@@ -50,10 +51,6 @@ import platform.AVFoundation.AVCaptureTorchModeAuto
 import platform.AVFoundation.AVCaptureTorchModeOff
 import platform.AVFoundation.AVCaptureTorchModeOn
 import platform.AVFoundation.AVCaptureVideoOrientation
-import platform.AVFoundation.AVCaptureVideoOrientationLandscapeLeft
-import platform.AVFoundation.AVCaptureVideoOrientationLandscapeRight
-import platform.AVFoundation.AVCaptureVideoOrientationPortrait
-import platform.AVFoundation.AVCaptureVideoOrientationPortraitUpsideDown
 import platform.AVFoundation.AVMediaTypeAudio
 import platform.Foundation.NSData
 import platform.Foundation.NSDate
@@ -63,8 +60,6 @@ import platform.Foundation.timeIntervalSince1970
 import platform.Photos.PHAssetChangeRequest
 import platform.Photos.PHPhotoLibrary
 import platform.Foundation.NSSelectorFromString
-import platform.UIKit.UIDevice
-import platform.UIKit.UIDeviceOrientation
 import platform.UIKit.UIScreen
 import platform.UIKit.UIGestureRecognizerStateBegan
 import platform.UIKit.UIGestureRecognizerStateChanged
@@ -280,16 +275,8 @@ actual class CameraController(
         customCameraController.safeAddOutput(output)
     }
 
-    internal fun currentVideoOrientation(): AVCaptureVideoOrientation {
-        val orientation = UIDevice.currentDevice.orientation
-        return when (orientation) {
-            UIDeviceOrientation.UIDeviceOrientationPortrait -> AVCaptureVideoOrientationPortrait
-            UIDeviceOrientation.UIDeviceOrientationPortraitUpsideDown -> AVCaptureVideoOrientationPortraitUpsideDown
-            UIDeviceOrientation.UIDeviceOrientationLandscapeLeft -> AVCaptureVideoOrientationLandscapeRight
-            UIDeviceOrientation.UIDeviceOrientationLandscapeRight -> AVCaptureVideoOrientationLandscapeLeft
-            else -> AVCaptureVideoOrientationPortrait
-        }
-    }
+    private fun currentVideoOrientation(): AVCaptureVideoOrientation =
+        customCameraController.currentVideoOrientation()
 
     /**
      * Preview stays mirrored on the front lens for selfie UX; recorded files must not be mirrored
@@ -446,9 +433,24 @@ actual class CameraController(
         }
     }
 
+    /**
+     * Re-resolves the capture orientation from the interface and pushes it onto the live preview
+     * connection. The still and movie outputs read the same resolved value when they are configured
+     * for a capture, so nothing has to be pushed onto them here.
+     */
+    @OptIn(ExperimentalForeignApi::class)
+    private fun refreshPreviewVideoOrientation() {
+        val videoOrientation = IosCaptureVideoOrientation.refresh(view)
+        val connection = customCameraController.cameraPreviewLayer?.connection ?: return
+        if (connection.isVideoOrientationSupported()) {
+            connection.videoOrientation = videoOrientation
+        }
+    }
+
     @OptIn(ExperimentalForeignApi::class)
     override fun viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        refreshPreviewVideoOrientation()
         applyClampedPreviewLayerFrameIfNeeded(reason = "viewDidLayoutSubviews")
     }
 
@@ -729,6 +731,9 @@ actual class CameraController(
         }
 
         customCameraController.switchCamera()
+        // Switching lenses rebuilds the session's connections, so the orientation has to be put
+        // back on them — a lens switch is not a layout change and produces no layout pass.
+        refreshPreviewVideoOrientation()
         configureMovieFileOutputVideoConnection()
         IosPreviewDbgLog.logSafe {
             customCameraController.describePreviewPipeline("UI_toggleCameraLens_AFTER", view)
