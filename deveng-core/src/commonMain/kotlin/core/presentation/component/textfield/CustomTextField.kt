@@ -230,7 +230,11 @@ fun CustomTextField(
     // stale value echoed back through async hoisted state (e.g. an MVI StateFlow round-trip) from
     // snapping the cursor to the end while the user types quickly.
     var textFieldValueState by remember { mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length))) }
-    if (!isFocused && value != textFieldValueState.text) {
+    // An external reset to empty (e.g. clearing the field after a message send) is never a stale
+    // typing echo, so it must sync even while focused — otherwise the field appears stuck showing
+    // text the caller already cleared from its own state.
+    val isExternalClear = value.isEmpty() && textFieldValueState.text.isNotEmpty()
+    if ((!isFocused || isExternalClear) && value != textFieldValueState.text) {
         textFieldValueState = TextFieldValue(text = value, selection = TextRange(value.length))
     }
 
