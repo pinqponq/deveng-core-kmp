@@ -314,6 +314,7 @@ private fun formatRecordingProgress(elapsedMs: Long, maxDurationMs: Long): Strin
  * @param onPhotoCaptureFailed Invoked when still capture throws before [onImageCaptured] runs; pair with [onPhotoCaptureEngaged] to clear app state.
  * @param showLastCaptureThumbnail When false, the last-capture thumbnail (and the gallery-icon fallback shown when no thumbnail exists yet) is not rendered — for capture flows where reviewing/re-opening a previous frame doesn't apply (e.g. single-shot / view-once capture).
  * @param singleCaptureModeEnabled When true, only one capture — a photo OR a video recording — is allowed per composition: the shutter is disabled after a photo is taken or a recording starts (an in-progress recording can still be stopped), and Photo/Video mode switching is disabled once that slot is claimed. To reset, recompose with a fresh key/controller (e.g. leaving and re-entering the camera screen).
+ * @param extraBottomChromePadding Additional bottom padding added below the bottom control chrome (zoom chips, shutter, gallery, mode row), on top of the default gap, to lift it above a host overlay such as a floating bottom navigation bar. Defaults to 0.dp (no change); hosts with such an overlay pass a positive value.
  * @param modifier Modifier for the root layout.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -338,6 +339,7 @@ fun DefaultCameraPreview(
     lastRecordedVideoThumbnail: ImageBitmap? = null,
     showTapToFocusExclusionDebugOverlay: Boolean = false,
     hostPlatform: Platform = Platform.ANDROID,
+    extraBottomChromePadding: Dp = 0.dp,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -879,7 +881,7 @@ fun DefaultCameraPreview(
                 .align(Alignment.BottomCenter)
                 .zIndex(bottomChromeZIndex)
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 20.dp),
+                .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 20.dp + extraBottomChromePadding),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
