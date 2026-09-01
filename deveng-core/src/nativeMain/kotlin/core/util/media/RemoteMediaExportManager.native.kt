@@ -9,6 +9,7 @@ import platform.Foundation.NSURL
 import platform.Foundation.dataWithContentsOfURL
 import platform.Foundation.timeIntervalSince1970
 import platform.Foundation.writeToURL
+import kotlinx.coroutines.withTimeoutOrNull
 import platform.Photos.PHAssetChangeRequest
 import platform.Photos.PHPhotoLibrary
 import platform.UIKit.UIActivityViewController
@@ -18,6 +19,12 @@ import kotlinx.coroutines.withContext
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 actual class RemoteMediaExportManager {
+    private companion object {
+        // NSData.dataWithContentsOfURL blocks the calling thread; the timeout fires at the
+        // coroutine level so the operation returns null after this window even though the
+        // underlying thread may still be waiting on the OS connection.
+        private const val RESOURCE_TIMEOUT_MS = 120_000L
+    }
 
     actual suspend fun shareSingleFileFromUrl(
         fileUrl: String,
@@ -27,7 +34,7 @@ actual class RemoteMediaExportManager {
         if (fileUrl.isBlank()) return@withContext false
         return@withContext runCatching {
             val url = NSURL.URLWithString(fileUrl) ?: return@runCatching false
-            val data = NSData.dataWithContentsOfURL(url) ?: return@runCatching false
+            val data = downloadDataSynchronously(url) ?: return@runCatching false
             val tempFile = writeTempFile(data, fileName)
             NSOperationQueue.mainQueue.addOperationWithBlock {
                 shareFiles(listOf(tempFile))
@@ -43,7 +50,7 @@ actual class RemoteMediaExportManager {
             val tempFiles = files.mapNotNull { remoteFile ->
                 if (remoteFile.fileUrl.isBlank()) return@mapNotNull null
                 val url = NSURL.URLWithString(remoteFile.fileUrl) ?: return@mapNotNull null
-                val data = NSData.dataWithContentsOfURL(url) ?: return@mapNotNull null
+                val data = downloadDataSynchronously(url) ?: return@mapNotNull null
                 writeTempFile(data, remoteFile.fileName)
             }
             if (tempFiles.isEmpty()) return@runCatching false
@@ -62,7 +69,7 @@ actual class RemoteMediaExportManager {
         if (fileUrl.isBlank()) return@withContext false
         return@withContext runCatching {
             val url = NSURL.URLWithString(fileUrl) ?: return@runCatching false
-            val data = NSData.dataWithContentsOfURL(url) ?: return@runCatching false
+            val data = downloadDataSynchronously(url) ?: return@runCatching false
             val tempFile = writeTempFile(data, fileName)
             saveToPhotos(tempFile, mimeType)
         }.getOrDefault(false)
@@ -76,13 +83,22 @@ actual class RemoteMediaExportManager {
             files.forEach { remoteFile ->
                 if (remoteFile.fileUrl.isBlank()) return@forEach
                 val url = NSURL.URLWithString(remoteFile.fileUrl) ?: return@forEach
-                val data = NSData.dataWithContentsOfURL(url) ?: return@forEach
+                val data = downloadDataSynchronously(url) ?: return@forEach
                 val tempFile = writeTempFile(data, remoteFile.fileName)
                 if (saveToPhotos(tempFile, remoteFile.mimeType)) count++
             }
             count
         }.getOrDefault(0)
     }
+
+    /**
+     * Downloads data synchronously with explicit connection and resource timeouts so that large
+     * video files do not hang indefinitely on slow or stalled connections.
+     */
+    private suspend fun downloadDataSynchronously(url: NSURL): NSData? =
+        withTimeoutOrNull(RESOURCE_TIMEOUT_MS) {
+            NSData.dataWithContentsOfURL(url)
+        }
 
     private fun writeTempFile(data: NSData, fileName: String): NSURL {
         val tempDir = NSURL.fileURLWithPath(NSTemporaryDirectory(), isDirectory = true)

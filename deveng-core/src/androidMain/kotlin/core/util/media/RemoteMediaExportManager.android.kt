@@ -12,8 +12,9 @@ import androidx.core.content.FileProvider
 import core.util.image.ExifExportDiagnostics
 import core.util.image.JpegDebugProbe
 import core.util.image.PhotoSaveUtils
-import core.util.video.VideoFileDbgProbe
 import java.io.File
+import java.io.InputStream
+import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -25,6 +26,8 @@ actual class RemoteMediaExportManager(
     private companion object {
         const val TAG = "RemoteMediaExportManager"
         private const val EXPORT_TAG = ExifExportDiagnostics.LOG_TAG
+        private const val CONNECT_TIMEOUT_MS = 30_000
+        private const val READ_TIMEOUT_MS = 120_000
     }
 
     actual suspend fun shareSingleFileFromUrl(
@@ -37,7 +40,7 @@ actual class RemoteMediaExportManager(
         }
 
         return@withContext runCatching {
-            val bytes = URL(fileUrl).openStream().use { inputStream ->
+            val bytes = openStreamWithTimeout(fileUrl).use { inputStream ->
                 inputStream.readBytes()
             }
             shareBytesInternal(
@@ -69,7 +72,7 @@ actual class RemoteMediaExportManager(
                     return@forEachIndexed
                 }
 
-                val bytes = URL(remoteFile.fileUrl).openStream().use { inputStream ->
+                val bytes = openStreamWithTimeout(remoteFile.fileUrl).use { inputStream ->
                     inputStream.readBytes()
                 }
                 if (bytes.isEmpty()) {
@@ -128,27 +131,18 @@ actual class RemoteMediaExportManager(
         }
         return@withContext runCatching {
             Log.d(EXPORT_TAG, "saveSingle START fileName=$fileName mimeType=$mimeType url=${urlForLog(fileUrl)}")
-            val bytes = URL(fileUrl).openStream().use { inputStream ->
-                inputStream.readBytes()
-            }
-            Log.d(
-                EXPORT_TAG,
-                "saveSingle DOWNLOADED size=${bytes.size} ${JpegDebugProbe.describe(bytes)} " +
-                    ExifExportDiagnostics.describeExif(bytes),
-            )
-            val exportBytes = normalizeImageBytesForExport(bytes, mimeType, fileName)
-            if (mimeType.startsWith("video/")) {
-                logDownloadedVideoProbe(
-                    phase = "GALLERY_SAVE_SINGLE_DOWNLOADED",
-                    fileName = fileName,
-                    fileBytes = exportBytes,
+            val saved = if (mimeType.startsWith("video/")) {
+                streamVideoToMediaStore(fileUrl = fileUrl, fileName = fileName, mimeType = mimeType)
+            } else {
+                val bytes = openStreamWithTimeout(fileUrl).use { it.readBytes() }
+                Log.d(
+                    EXPORT_TAG,
+                    "saveSingle DOWNLOADED size=${bytes.size} ${JpegDebugProbe.describe(bytes)} " +
+                        ExifExportDiagnostics.describeExif(bytes),
                 )
+                val exportBytes = normalizeImageBytesForExport(bytes, mimeType, fileName)
+                saveBytesToMediaStore(fileName = fileName, mimeType = mimeType, fileBytes = exportBytes)
             }
-            val saved = saveBytesToMediaStore(
-                fileName = fileName,
-                mimeType = mimeType,
-                fileBytes = exportBytes,
-            )
             Log.d(EXPORT_TAG, "saveSingle DONE saved=$saved fileName=$fileName")
             saved
         }.onFailure { throwable ->
@@ -174,31 +168,30 @@ actual class RemoteMediaExportManager(
                     "saveBulk item fileName=${remoteFile.fileName} mime=${remoteFile.mimeType} " +
                         "url=${urlForLog(remoteFile.fileUrl)}",
                 )
-                val bytes = URL(remoteFile.fileUrl).openStream().use { inputStream ->
-                    inputStream.readBytes()
-                }
-                Log.d(
-                    EXPORT_TAG,
-                    "saveBulk DOWNLOADED fileName=${remoteFile.fileName} size=${bytes.size} " +
-                        "${JpegDebugProbe.describe(bytes)} ${ExifExportDiagnostics.describeExif(bytes)}",
-                )
-                val exportBytes = normalizeImageBytesForExport(
-                    bytes = bytes,
-                    mimeType = remoteFile.mimeType,
-                    fileName = remoteFile.fileName,
-                )
-                if (remoteFile.mimeType.startsWith("video/")) {
-                    logDownloadedVideoProbe(
-                        phase = "GALLERY_SAVE_BULK_DOWNLOADED",
+                val isSaved = if (remoteFile.mimeType.startsWith("video/")) {
+                    streamVideoToMediaStore(
+                        fileUrl = remoteFile.fileUrl,
                         fileName = remoteFile.fileName,
+                        mimeType = remoteFile.mimeType,
+                    )
+                } else {
+                    val bytes = openStreamWithTimeout(remoteFile.fileUrl).use { it.readBytes() }
+                    Log.d(
+                        EXPORT_TAG,
+                        "saveBulk DOWNLOADED fileName=${remoteFile.fileName} size=${bytes.size} " +
+                            "${JpegDebugProbe.describe(bytes)} ${ExifExportDiagnostics.describeExif(bytes)}",
+                    )
+                    val exportBytes = normalizeImageBytesForExport(
+                        bytes = bytes,
+                        mimeType = remoteFile.mimeType,
+                        fileName = remoteFile.fileName,
+                    )
+                    saveBytesToMediaStore(
+                        fileName = remoteFile.fileName,
+                        mimeType = remoteFile.mimeType,
                         fileBytes = exportBytes,
                     )
                 }
-                val isSaved = saveBytesToMediaStore(
-                    fileName = remoteFile.fileName,
-                    mimeType = remoteFile.mimeType,
-                    fileBytes = exportBytes,
-                )
                 Log.d(EXPORT_TAG, "saveBulk item DONE fileName=${remoteFile.fileName} saved=$isSaved")
                 if (isSaved) {
                     successfulSaveCount++
@@ -249,26 +242,62 @@ actual class RemoteMediaExportManager(
         return true
     }
 
+    private fun openStreamWithTimeout(fileUrl: String): InputStream {
+        val connection = URL(fileUrl).openConnection() as HttpURLConnection
+        connection.connectTimeout = CONNECT_TIMEOUT_MS
+        connection.readTimeout = READ_TIMEOUT_MS
+        connection.connect()
+        return connection.inputStream
+    }
+
     /**
-     * Coil in-app respects EXIF; many system gallery apps use raw pixel dimensions unless
-     * orientation is baked into pixels with ORIENTATION_NORMAL.
+     * Streams video bytes directly from the network into MediaStore without loading the full file
+     * into memory. This avoids OOM for large videos and respects the download timeout properly.
      */
-    private fun logDownloadedVideoProbe(phase: String, fileName: String, fileBytes: ByteArray) {
-        val temp = File.createTempFile("gallery_video_probe_", ".mp4", context.cacheDir)
-        try {
-            temp.writeBytes(fileBytes)
-            Log.d(
-                EXPORT_TAG,
-                "[RindleVideoDbg] phase=$phase fileName=$fileName downloadBytes=${fileBytes.size} | " +
-                    VideoFileDbgProbe.describe(temp.absolutePath),
-            )
+    private fun streamVideoToMediaStore(
+        fileUrl: String,
+        fileName: String,
+        mimeType: String,
+    ): Boolean {
+        val normalizedFileName = fileName.ifBlank { "media_${System.currentTimeMillis()}" }
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, normalizedFileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_MOVIES)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+        }
+        val resolver = context.contentResolver
+        val itemUri = resolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, contentValues)
+            ?: return false
+        return try {
+            Log.d(EXPORT_TAG, "streamVideo START fileName=$fileName url=${urlForLog(fileUrl)}")
+            val connection = URL(fileUrl).openConnection() as HttpURLConnection
+            connection.connectTimeout = CONNECT_TIMEOUT_MS
+            connection.readTimeout = READ_TIMEOUT_MS
+            connection.connect()
+            val totalBytes = connection.inputStream.use { networkStream ->
+                resolver.openOutputStream(itemUri)?.use { outputStream ->
+                    networkStream.copyTo(outputStream)
+                } ?: 0L
+            }
+            Log.d(EXPORT_TAG, "streamVideo DOWNLOADED totalBytes=$totalBytes fileName=$fileName")
+            if (totalBytes == 0L) {
+                resolver.delete(itemUri, null, null)
+                return false
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                resolver.update(itemUri, ContentValues().apply {
+                    put(MediaStore.MediaColumns.IS_PENDING, 0)
+                }, null, null)
+            }
+            Log.d(EXPORT_TAG, "streamVideo OK fileName=$fileName")
+            true
         } catch (e: Exception) {
-            Log.w(
-                EXPORT_TAG,
-                "[RindleVideoDbg] phase=$phase fileName=$fileName probeFailed err=${e.message}",
-            )
-        } finally {
-            temp.delete()
+            Log.e(EXPORT_TAG, "streamVideo FAILED fileName=$fileName url=${urlForLog(fileUrl)}", e)
+            resolver.delete(itemUri, null, null)
+            false
         }
     }
 
