@@ -18,6 +18,13 @@ import androidx.compose.runtime.Immutable
  *                           [core.domain.camera.state.CameraKStateHolder.stopRecording] is called.
  *                           A long take is captured as consecutive clips instead of being cut off.
  *                           Ignored when [maxDurationMs] is 0.
+ * @property shouldMirrorFrontLensToMatchPreview Whether a front-lens recording is flipped horizontally
+ *                           so playback matches the mirrored selfie preview. Set false when the clip is
+ *                           handed to someone other than the person who recorded it — a mirrored selfie
+ *                           reads as reversed to every other viewer. Applied by
+ *                           [core.domain.camera.controller.CameraController.applyRecordingPostProcessing]
+ *                           on hosts that mirror recordings (Android); hosts that already save
+ *                           non-mirrored files (iOS) are unaffected either way.
  */
 @Immutable
 data class VideoConfiguration(
@@ -27,4 +34,5 @@ data class VideoConfiguration(
     val outputDirectory: String? = null,
     val filePrefix: String = "VID",
     val shouldChainNewSegmentAtMaxDuration: Boolean = false,
+    val shouldMirrorFrontLensToMatchPreview: Boolean = true,
 )

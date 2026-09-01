@@ -335,7 +335,8 @@ expect class CameraController {
     /**
      * Applies platform fix-ups the finished recording needs before it can be shown or shared —
      * currently the front-lens flip that makes playback match the mirrored selfie preview (Android
-     * and iOS; identity elsewhere).
+     * and iOS; identity elsewhere). Skipped on Android when the recording was started with
+     * [core.domain.camera.video.VideoConfiguration.shouldMirrorFrontLensToMatchPreview] off.
      *
      * Rewrites the file in place and may take seconds for a long clip, so it runs after
      * [stopRecording] has already released the capture pipeline.

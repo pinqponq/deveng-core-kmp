@@ -1070,6 +1070,9 @@ fun DefaultCameraPreview(
                                     maxDurationMs = maxVideoRecordingDurationMs,
                                     shouldChainNewSegmentAtMaxDuration = shouldChainNewVideoSegmentAtMaxDuration &&
                                         !singleCaptureModeEnabled,
+                                    // A single-capture clip is made to be handed to someone else, who would
+                                    // read a mirrored selfie as reversed — see the property's own docs.
+                                    shouldMirrorFrontLensToMatchPreview = !singleCaptureModeEnabled,
                                 ),
                             )
                         },

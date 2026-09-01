@@ -129,8 +129,14 @@ actual class CameraController(
     private var recordingOutputFile: File? = null
     private var recordingUsedFrontLens: Boolean = false
 
+    /** [VideoConfiguration.shouldMirrorFrontLensToMatchPreview] of the recording in progress. */
+    private var recordingShouldMirrorFrontLens: Boolean = true
+
     /** Lens of the clip waiting for [applyRecordingPostProcessing]; a chained recording may already be running. */
     private var stoppedRecordingUsedFrontLens: Boolean = false
+
+    /** [recordingShouldMirrorFrontLens] of the clip waiting for [applyRecordingPostProcessing]. */
+    private var stoppedRecordingShouldMirrorFrontLens: Boolean = true
     private val recordingFinalizeChannel = Channel<VideoCaptureResult>(Channel.CONFLATED)
 
     /**
@@ -1722,9 +1728,11 @@ actual class CameraController(
         }
 
         recordingUsedFrontLens = cameraLens == CameraLens.FRONT
+        recordingShouldMirrorFrontLens = configuration.shouldMirrorFrontLensToMatchPreview
         Log.d(
             "CameraK",
             "[RindleVideoDbg] phase=RECORD_START lens=$cameraLens front=$recordingUsedFrontLens " +
+                "mirrorFront=$recordingShouldMirrorFrontLens " +
                 "includeVideoInSession=${shouldIncludeVideoInCameraSession()}",
         )
         val outputFile = createVideoOutputFile(configuration)
@@ -1783,7 +1791,9 @@ actual class CameraController(
         // Handed to applyRecordingPostProcessing(): the lens can already have been switched by the
         // time the finished file is post-processed.
         stoppedRecordingUsedFrontLens = recordingUsedFrontLens
+        stoppedRecordingShouldMirrorFrontLens = recordingShouldMirrorFrontLens
         recordingUsedFrontLens = false
+        recordingShouldMirrorFrontLens = true
         recording.stop()
         activeRecording = null
         return recordingFinalizeChannel.receive()
@@ -1791,8 +1801,17 @@ actual class CameraController(
 
     actual suspend fun applyRecordingPostProcessing(result: VideoCaptureResult): VideoCaptureResult {
         val recordedWithFrontLens = stoppedRecordingUsedFrontLens
+        val shouldMirrorToMatchPreview = stoppedRecordingShouldMirrorFrontLens
         stoppedRecordingUsedFrontLens = false
+        stoppedRecordingShouldMirrorFrontLens = true
         if (!recordedWithFrontLens || result !is VideoCaptureResult.Success) {
+            return result
+        }
+        if (!shouldMirrorToMatchPreview) {
+            Log.d(
+                "CameraK",
+                "[RindleVideoDbg] phase=RECORD_MIRROR_EXPORT_SKIPPED path=${result.filePath}",
+            )
             return result
         }
         val mirrored = withContext(NonCancellable) {
