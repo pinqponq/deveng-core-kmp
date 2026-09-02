@@ -29,4 +29,6 @@ actual object PhotoSaveUtils {
     actual fun readLocationFromExif(imageBytes: ByteArray): Pair<Double, Double>? = null
 
     actual fun readCaptureDateTimeFromExif(imageBytes: ByteArray): ExifCaptureDateTime? = null
+
+    actual fun readGalleryCaptureEpochMillis(mediaUri: String): Long? = null
 }

@@ -93,6 +93,20 @@ expect object PhotoSaveUtils {
      *   is missing, malformed, or the platform is unsupported.
      */
     fun readCaptureDateTimeFromExif(imageBytes: ByteArray): ExifCaptureDateTime?
+
+    /**
+     * Reads the capture time the platform gallery records for a picked media item — the value gallery
+     * apps display, present even when the file's own EXIF `DateTimeOriginal` was stripped (messaging
+     * apps, screenshots, downloads). Use as the fallback capture instant when [readCaptureDateTimeFromExif]
+     * returns `null`. Unlike EXIF this is an absolute UTC instant with no capture-timezone information.
+     *
+     * On Android this reads `MediaStore.DATE_TAKEN` (falling back to `DATE_MODIFIED`) for [mediaUri] and
+     * requires [setApplicationContext] to have been called. Other platforms return `null`.
+     *
+     * @param mediaUri the platform media uri of the picked item (Android `content://` uri as a string).
+     * @return the capture instant as milliseconds since the UTC epoch, or `null` when unknown or unsupported.
+     */
+    fun readGalleryCaptureEpochMillis(mediaUri: String): Long?
 }
 
 /**

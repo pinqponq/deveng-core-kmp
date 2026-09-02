@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.media.ExifInterface
 import android.media.MediaScannerConnection
+import android.net.Uri
+import android.provider.MediaStore
 import android.util.Log
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -169,6 +171,36 @@ actual object PhotoSaveUtils {
         null
     }
 
+    actual fun readGalleryCaptureEpochMillis(mediaUri: String): Long? {
+        val context = appContext ?: return null
+        return try {
+            queryGalleryCaptureEpochMillis(context = context, mediaUri = mediaUri)
+        } catch (e: Exception) {
+            Log.w(ExifExportDiagnostics.LOG_TAG, "readGalleryCaptureEpochMillis failed uri=$mediaUri: ${e.message}", e)
+            null
+        }
+    }
+
+    private fun queryGalleryCaptureEpochMillis(context: Context, mediaUri: String): Long? {
+        val uri = Uri.parse(mediaUri)
+        val projection = arrayOf(
+            MediaStore.MediaColumns.DATE_TAKEN,
+            MediaStore.MediaColumns.DATE_MODIFIED,
+        )
+        context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+            if (!cursor.moveToFirst()) return null
+            val dateTakenMillis = cursor.columnIndexOrNull(MediaStore.MediaColumns.DATE_TAKEN)
+                ?.let { if (cursor.isNull(it)) null else cursor.getLong(it) }
+            val dateModifiedSeconds = cursor.columnIndexOrNull(MediaStore.MediaColumns.DATE_MODIFIED)
+                ?.let { if (cursor.isNull(it)) null else cursor.getLong(it) }
+            return dateTakenMillis ?: dateModifiedSeconds?.let { seconds -> seconds * MILLIS_PER_SECOND }
+        }
+        return null
+    }
+
+    private fun android.database.Cursor.columnIndexOrNull(columnName: String): Int? =
+        getColumnIndex(columnName).takeIf { it >= 0 }
+
     private fun applyExifOrientationToBitmap(bitmap: Bitmap, orientation: Int): Bitmap {
         val matrix = Matrix()
         when (orientation) {
@@ -211,4 +243,6 @@ actual object PhotoSaveUtils {
         val secondsRational = (seconds * 1000).toInt()
         return "${degrees}/1,${minutes}/1,$secondsRational/1000"
     }
+
+    private const val MILLIS_PER_SECOND = 1000L
 }

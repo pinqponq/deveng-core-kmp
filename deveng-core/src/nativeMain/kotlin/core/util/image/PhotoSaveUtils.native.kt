@@ -25,6 +25,7 @@ import platform.Foundation.NSNumber
 import platform.Foundation.NSString
 import platform.Foundation.NSURL
 import platform.Foundation.create
+import platform.Foundation.timeIntervalSince1970
 import platform.ImageIO.CGImageDestinationAddImageFromSource
 import platform.ImageIO.CGImageDestinationAddImageAndMetadata
 import platform.ImageIO.CGImageDestinationCreateWithData
@@ -36,6 +37,7 @@ import platform.ImageIO.CGImageSourceCopyMetadataAtIndex
 import platform.ImageIO.CGImageSourceCopyPropertiesAtIndex
 import platform.ImageIO.CGImageSourceCreateImageAtIndex
 import platform.ImageIO.CGImageSourceCreateWithData
+import platform.Photos.PHAsset
 import platform.Photos.PHAssetChangeRequest
 import platform.Photos.PHPhotoLibrary
 import platform.posix.memcpy
@@ -302,6 +304,23 @@ actual object PhotoSaveUtils {
         } finally {
             CFRelease(source)
         }
+    }
+
+    /**
+     * On iOS [mediaUri] is a `PHAsset` local identifier (the picker exposes one when configured with a
+     * `PHPhotoLibrary`). Reads the asset's `creationDate` — the capture time the Photos app shows —
+     * so imports whose file has no EXIF date (screenshots, Live Photos, downloaded images) still carry
+     * a real capture instant. Returns `null` when the id is blank, the asset cannot be fetched (no
+     * Photos read authorization), or it has no creation date; the import then falls back to upload time.
+     */
+    actual fun readGalleryCaptureEpochMillis(mediaUri: String): Long? {
+        if (mediaUri.isEmpty()) {
+            return null
+        }
+        val fetchResult = PHAsset.fetchAssetsWithLocalIdentifiers(listOf(mediaUri), options = null)
+        val asset = fetchResult.firstObject as? PHAsset
+        val creationDate = asset?.creationDate ?: return null
+        return (creationDate.timeIntervalSince1970 * 1000.0).toLong()
     }
 
     private fun ByteArray.toCFData(): platform.CoreFoundation.CFDataRef? = usePinned { pinned ->
