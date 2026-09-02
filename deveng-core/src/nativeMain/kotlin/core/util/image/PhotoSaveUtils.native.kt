@@ -47,6 +47,10 @@ actual object PhotoSaveUtils {
     private val gpsLatitudeRefKey: NSString = NSString.create(string = "LatitudeRef")
     private val gpsLongitudeKey: NSString = NSString.create(string = "Longitude")
     private val gpsLongitudeRefKey: NSString = NSString.create(string = "LongitudeRef")
+    private val exifDictionaryKey: NSString = NSString.create(string = "{Exif}")
+    private val exifDateTimeOriginalKey: NSString = NSString.create(string = "DateTimeOriginal")
+    private val exifDateTimeDigitizedKey: NSString = NSString.create(string = "DateTimeDigitized")
+    private val exifOffsetTimeOriginalKey: NSString = NSString.create(string = "OffsetTimeOriginal")
 
     actual fun setApplicationContext(context: Any?) {}
 
@@ -262,6 +266,36 @@ actual object PhotoSaveUtils {
                 val gps = dict.objectForKey(gpsDictionaryKey) as? NSDictionary
                     ?: return null
                 readGpsLatLon(gps)
+            } finally {
+                CFRelease(props)
+            }
+        } finally {
+            CFRelease(source)
+        }
+    }
+
+    actual fun readCaptureDateTimeFromExif(imageBytes: ByteArray): ExifCaptureDateTime? {
+        if (imageBytes.isEmpty()) {
+            return null
+        }
+        val inData = imageBytes.toCFData() ?: return null
+        val source = CGImageSourceCreateWithData(inData, options = null)
+        CFRelease(inData)
+        if (source == null) {
+            return null
+        }
+        return try {
+            val props = CGImageSourceCopyPropertiesAtIndex(isrc = source, index = 0u, options = null)
+                ?: return null
+            try {
+                val dict = (props as? NSDictionary) ?: return null
+                val exif = dict.objectForKey(exifDictionaryKey) as? NSDictionary
+                    ?: return null
+                val dateTime = (exif.objectForKey(exifDateTimeOriginalKey) as? NSString)?.description
+                    ?: (exif.objectForKey(exifDateTimeDigitizedKey) as? NSString)?.description
+                    ?: return null
+                val offset = (exif.objectForKey(exifOffsetTimeOriginalKey) as? NSString)?.description
+                parseExifDateTime(raw = dateTime, offsetRaw = offset)
             } finally {
                 CFRelease(props)
             }

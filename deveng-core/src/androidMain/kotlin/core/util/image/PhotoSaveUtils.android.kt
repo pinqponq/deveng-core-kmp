@@ -151,6 +151,24 @@ actual object PhotoSaveUtils {
         null
     }
 
+    actual fun readCaptureDateTimeFromExif(imageBytes: ByteArray): ExifCaptureDateTime? = try {
+        val tempFile = File.createTempFile("exif_read_datetime", ".jpg")
+        try {
+            tempFile.writeBytes(imageBytes)
+            val exif = ExifInterface(tempFile.absolutePath)
+            val dateTime = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL)
+                ?: exif.getAttribute(ExifInterface.TAG_DATETIME)
+            val offset = exif.getAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL)
+                ?: exif.getAttribute(ExifInterface.TAG_OFFSET_TIME)
+            parseExifDateTime(raw = dateTime, offsetRaw = offset)
+        } finally {
+            tempFile.delete()
+        }
+    } catch (e: Exception) {
+        Log.w(ExifExportDiagnostics.LOG_TAG, "readCaptureDateTimeFromExif failed: ${e.message}", e)
+        null
+    }
+
     private fun applyExifOrientationToBitmap(bitmap: Bitmap, orientation: Int): Bitmap {
         val matrix = Matrix()
         when (orientation) {

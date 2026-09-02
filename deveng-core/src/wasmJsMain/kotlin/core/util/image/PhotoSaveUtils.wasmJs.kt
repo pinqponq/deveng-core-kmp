@@ -50,4 +50,6 @@ actual object PhotoSaveUtils {
     ): ByteArray = imageBytes
 
     actual fun readLocationFromExif(imageBytes: ByteArray): Pair<Double, Double>? = null
+
+    actual fun readCaptureDateTimeFromExif(imageBytes: ByteArray): ExifCaptureDateTime? = null
 }
