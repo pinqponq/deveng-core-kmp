@@ -359,8 +359,10 @@ internal fun App() {
         var showQrGeneratorScreen by remember { mutableStateOf(false) }
         var showQrScannerScreen by remember { mutableStateOf(false) }
         var showScrollToEdgeScreen by remember { mutableStateOf(false) }
+        var showMediaViewerScreen by remember { mutableStateOf(false) }
         when {
             showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
+            showMediaViewerScreen -> MediaViewerDemoScreen(onBack = { showMediaViewerScreen = false })
             showQrGeneratorScreen -> QrGeneratorDemoScreen(onBack = { showQrGeneratorScreen = false })
             showQrScannerScreen -> QrScannerDemoScreen(onBack = { showQrScannerScreen = false })
             showCameraScreen -> CameraScreen(onBack = { showCameraScreen = false })
@@ -369,6 +371,7 @@ internal fun App() {
                 onOpenQrGenerator = { showQrGeneratorScreen = true },
                 onOpenQrScanner = { showQrScannerScreen = true },
                 onOpenScrollToEdge = { showScrollToEdgeScreen = true },
+                onOpenMediaViewer = { showMediaViewerScreen = true },
             )
         }
     }
@@ -630,6 +633,7 @@ private fun ThemingDemo(
     onOpenQrGenerator: () -> Unit = {},
     onOpenQrScanner: () -> Unit = {},
     onOpenScrollToEdge: () -> Unit = {},
+    onOpenMediaViewer: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1013,6 +1017,12 @@ private fun ThemingDemo(
                             text = "Open Scroll-to-Edge Demo",
                             containerColor = Color(0xFF00897B),
                             onClick = onOpenScrollToEdge
+                        )
+
+                        CustomButton(
+                            text = "Open MediaViewer (Vertical) Demo",
+                            containerColor = Color(0xFF7C3AED),
+                            onClick = onOpenMediaViewer
                         )
 
                         RatingRow(
