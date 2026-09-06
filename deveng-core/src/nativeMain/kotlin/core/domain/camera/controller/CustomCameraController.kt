@@ -97,11 +97,8 @@ class CustomCameraController(
      * - AVCaptureDeviceTypeBuiltInMacroCamera
      */
     fun setupSession(cameraDeviceType: CameraDeviceType = CameraDeviceType.DEFAULT) {
-        // Perform heavy setup off the main thread to reduce UI stalls (#73).
-        // The try/catch must live INSIDE the dispatch block: dispatch_async returns immediately,
-        // so a throw from the block body runs on the background queue after this function returns.
-        // With the guard outside the block it never fires, and an uncaught Kotlin/Native exception
-        // on that queue terminates the process. cleanup/onError run on the main queue.
+        // Heavy setup runs off the main thread to reduce UI stalls (#73). The try/catch must be
+        // INSIDE the dispatch block; a throw on the background queue would otherwise terminate the process.
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH.toLong(), 0u)) {
             try {
                 captureSession = AVCaptureSession()
@@ -128,6 +125,7 @@ class CustomCameraController(
                     }
                     return@dispatch_async
                 }
+
                 captureSession?.commitConfiguration()
 
                 // Switch to target resolution/aspect ratio preset on main queue once initial setup completes
@@ -266,30 +264,32 @@ class CustomCameraController(
     }
 
     private fun setupPhotoOutput(): Boolean {
-        photoOutput = AVCapturePhotoOutput()
-        photoOutput?.setHighResolutionCaptureEnabled(false)
+        val output = AVCapturePhotoOutput()
+        output.setHighResolutionCaptureEnabled(false)
 
         // Always raise the ceiling to QUALITY so per-capture settings can request night mode
         // when the user enables it. Per-capture prioritization still respects qualityPrioritization
         // for non-night captures, so SPEED/BALANCED users see no slowdown.
-        photoOutput?.setMaxPhotoQualityPrioritization(AVCapturePhotoQualityPrioritizationQuality)
+        output.setMaxPhotoQualityPrioritization(AVCapturePhotoQualityPrioritizationQuality)
 
         if (qualityPrioritization == QualityPrioritization.QUALITY ||
             qualityPrioritization == QualityPrioritization.NONE
         ) {
-            photoOutput?.setHighResolutionCaptureEnabled(true)
+            output.setHighResolutionCaptureEnabled(true)
         }
 
-        photoOutput?.setPreparedPhotoSettingsArray(emptyList<String>(), completionHandler = { settings, error ->
+        output.setPreparedPhotoSettingsArray(emptyList<String>(), completionHandler = { settings, error ->
             if (error != null) {
                 NSLog("CameraK Error: setupPhotoOutput setPreparedPhotoSettingsArray error: ${error.localizedDescription}")
                 onError?.invoke(CameraException.ConfigurationError(error.localizedDescription))
             }
         })
 
-        val canAdd = captureSession?.canAddOutput(photoOutput!!) == true
+        photoOutput = output
+
+        val canAdd = captureSession?.canAddOutput(output) == true
         return if (canAdd) {
-            captureSession?.addOutput(photoOutput!!)
+            captureSession?.addOutput(output)
             true
         } else {
             NSLog("CameraK Error: setupPhotoOutput Cannot add photo output (canAddOutput=false)")
