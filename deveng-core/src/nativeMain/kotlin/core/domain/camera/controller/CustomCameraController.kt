@@ -97,9 +97,13 @@ class CustomCameraController(
      * - AVCaptureDeviceTypeBuiltInMacroCamera
      */
     fun setupSession(cameraDeviceType: CameraDeviceType = CameraDeviceType.DEFAULT) {
-        try {
-            // Perform heavy setup off the main thread to reduce UI stalls (#73)
-            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH.toLong(), 0u)) {
+        // Perform heavy setup off the main thread to reduce UI stalls (#73).
+        // The try/catch must live INSIDE the dispatch block: dispatch_async returns immediately,
+        // so a throw from the block body runs on the background queue after this function returns.
+        // With the guard outside the block it never fires, and an uncaught Kotlin/Native exception
+        // on that queue terminates the process. cleanup/onError run on the main queue.
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH.toLong(), 0u)) {
+            try {
                 captureSession = AVCaptureSession()
                 captureSession?.beginConfiguration()
 
@@ -116,7 +120,14 @@ class CustomCameraController(
                     return@dispatch_async
                 }
 
-                setupPhotoOutput()
+                if (!setupPhotoOutput()) {
+                    NSLog("CameraK Error: setupSession setupPhotoOutput returned false -> ConfigurationError")
+                    dispatch_async(dispatch_get_main_queue()) {
+                        cleanupSession()
+                        onError?.invoke(CameraException.ConfigurationError("Cannot add photo output"))
+                    }
+                    return@dispatch_async
+                }
                 captureSession?.commitConfiguration()
 
                 // Switch to target resolution/aspect ratio preset on main queue once initial setup completes
@@ -126,15 +137,19 @@ class CustomCameraController(
                     highQualityEnabled = qualityPrioritization != QualityPrioritization.SPEED
                     onSessionReady?.invoke()
                 }
+            } catch (e: CameraException) {
+                NSLog("CameraK Error: setupSession caught CameraException: ${e::class.simpleName} - ${e.message}")
+                dispatch_async(dispatch_get_main_queue()) {
+                    cleanupSession()
+                    onError?.invoke(e)
+                }
+            } catch (e: Exception) {
+                NSLog("CameraK Error: setupSession caught Exception: ${e.message}")
+                dispatch_async(dispatch_get_main_queue()) {
+                    cleanupSession()
+                    onError?.invoke(CameraException.ConfigurationError(e.message ?: "Unknown error"))
+                }
             }
-        } catch (e: CameraException) {
-            NSLog("CameraK Error: setupSession caught CameraException: ${e::class.simpleName} - ${e.message}")
-            cleanupSession()
-            onError?.invoke(e)
-        } catch (e: Exception) {
-            NSLog("CameraK Error: setupSession caught Exception: ${e.message}")
-            cleanupSession()
-            onError?.invoke(CameraException.ConfigurationError(e.message ?: "Unknown error"))
         }
     }
 
@@ -250,7 +265,7 @@ class CustomCameraController(
         }
     }
 
-    private fun setupPhotoOutput() {
+    private fun setupPhotoOutput(): Boolean {
         photoOutput = AVCapturePhotoOutput()
         photoOutput?.setHighResolutionCaptureEnabled(false)
 
@@ -273,11 +288,12 @@ class CustomCameraController(
         })
 
         val canAdd = captureSession?.canAddOutput(photoOutput!!) == true
-        if (canAdd) {
+        return if (canAdd) {
             captureSession?.addOutput(photoOutput!!)
+            true
         } else {
             NSLog("CameraK Error: setupPhotoOutput Cannot add photo output (canAddOutput=false)")
-            throw CameraException.ConfigurationError("Cannot add photo output")
+            false
         }
     }
 
