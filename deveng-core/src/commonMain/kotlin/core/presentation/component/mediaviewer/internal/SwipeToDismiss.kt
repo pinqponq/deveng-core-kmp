@@ -20,10 +20,21 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 /**
+ * Wraps [content] in a drag that dismisses it, shrinking and fading it as the drag goes on.
+ *
+ * @param enabled Whether the dismiss drag is detected at all. The pointer node stays in place
+ *   either way, since removing it mid-gesture can cancel sibling detectors while fingers are down.
+ * @param threshold Fraction of the container's extent along [orientation] the drag must cover to
+ *   dismiss on release.
+ * @param velocityThreshold Release velocity that dismisses regardless of how far the drag got.
+ * @param onDismiss Called once the drag has asked for dismissal.
+ * @param onProgressChanged Reports the drag's fraction of the container, 0 to 1, as it moves.
+ * @param onDragging Reports whether a dismiss drag is currently under way.
  * @param orientation Axis the dismiss drag is detected on. Must differ from the pager's own
  *   paging axis, or the two gesture detectors fight over the same drag — vertical paging needs
  *   [Orientation.Horizontal] here, and horizontal paging (the default media viewer) needs
  *   [Orientation.Vertical].
+ * @param content The content being dragged.
  */
 @Composable
 fun SwipeToDismissBox(

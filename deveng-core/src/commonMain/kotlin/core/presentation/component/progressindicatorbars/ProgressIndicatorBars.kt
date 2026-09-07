@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +31,9 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  * @param indicatorHeight Height of each indicator bar. If null, uses theme default.
  * @param indicatorSpacing Spacing between indicator bars. If null, uses theme default.
  * @param indicatorCornerRadius Corner radius of the indicator bars. If null, uses theme default.
+ * @param currentPageProgress How far the current indicator is filled, 0 to 1. Defaults to 1, which
+ *                      fills it outright; a story-style run passes the elapsed fraction of the
+ *                      page's turn so the bar drains in real time.
  */
 @Composable
 fun ProgressIndicatorBars(
@@ -41,7 +45,8 @@ fun ProgressIndicatorBars(
     defaultIndicatorColor: Color? = null,
     indicatorHeight: Dp? = null,
     indicatorSpacing: Dp? = null,
-    indicatorCornerRadius: Dp? = null
+    indicatorCornerRadius: Dp? = null,
+    currentPageProgress: Float = 1f
 ) {
     val componentTheme = LocalComponentTheme.current
     val progressIndicatorBarsTheme = componentTheme.progressIndicatorBars
@@ -65,15 +70,29 @@ fun ProgressIndicatorBars(
                 IndicatorType.HIGH_LIGHT_UNTIL_CURRENT -> index <= currentPage
             }
 
+            // Everything before the current page is filled outright; only the current one follows
+            // currentPageProgress, so a caller that leaves it at 1 gets the original behaviour.
+            val indicatorFillFraction = when {
+                index < currentPage -> 1f
+                index == currentPage && isCurrentIndicatorHighLighted -> currentPageProgress.coerceIn(0f, 1f)
+                isCurrentIndicatorHighLighted -> 1f
+                else -> 0f
+            }
+
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .height(finalIndicatorHeight)
                     .clip(RoundedCornerShape(finalIndicatorCornerRadius))
-                    .background(
-                        if (isCurrentIndicatorHighLighted) finalFilledIndicatorColor else finalDefaultIndicatorColor
-                    )
-            )
+                    .background(finalDefaultIndicatorColor)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(indicatorFillFraction)
+                        .fillMaxHeight()
+                        .background(finalFilledIndicatorColor)
+                )
+            }
         }
     }
 }
