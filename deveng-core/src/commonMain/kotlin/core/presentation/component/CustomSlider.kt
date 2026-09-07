@@ -53,6 +53,9 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  * @param leadingSlot Optional composable slot displayed to the left of the slider (e.g., a volume down icon).
  * @param trailingSlot Optional composable slot displayed to the right of the slider (e.g., a volume up icon).
  * @param isEnabled Whether the slider is enabled for user interaction. Default is true.
+ * @param isCurrentValueVisible Whether the current value is printed above the slider. Off for
+ *              sliders whose value is not a number the user reads — a video seek bar's position,
+ *              say, which the track already shows.
  * @param isRangeLabelsVisible Whether to display the minimum and maximum values at the edges of the slider. Default is false.
  * @param sliderRowSpacing Horizontal spacing between the slider and its leading/trailing slots. If null, uses the component theme default.
  * @param errorMessageTopSpacing Spacing between the slider row and the error message. If null, uses the component theme default.
@@ -82,6 +85,7 @@ fun CustomSlider(
     leadingSlot: Slot? = null,
     trailingSlot: Slot? = null,
     isEnabled: Boolean = true,
+    isCurrentValueVisible: Boolean = true,
     isRangeLabelsVisible: Boolean = false,
     sliderRowSpacing: Dp? = null,
     errorMessageTopSpacing: Dp? = null,
@@ -107,25 +111,32 @@ fun CustomSlider(
         modifier = containerModifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            title?.let {
-                Text(
-                    text = it,
-                    style = finalTitleTextStyle
-                )
+        // With neither a title nor a readout there is nothing to head the slider with, and drawing
+        // the row anyway would leave a blank band above it.
+        val isHeaderVisible = title != null || isCurrentValueVisible
+        if (isHeaderVisible) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                title?.let {
+                    Text(
+                        text = it,
+                        style = finalTitleTextStyle
+                    )
+                }
+
+                if (isCurrentValueVisible) {
+                    Text(
+                        text = valueFormatter(initialValue),
+                        style = finalCurrentValueTextStyle
+                    )
+                }
             }
 
-            Text(
-                text = valueFormatter(initialValue),
-                style = finalCurrentValueTextStyle
-            )
+            Spacer(modifier = Modifier.height(10.dp))
         }
-
-        Spacer(modifier = Modifier.height(10.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
