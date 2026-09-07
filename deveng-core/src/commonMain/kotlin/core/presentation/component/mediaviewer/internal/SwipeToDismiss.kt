@@ -19,6 +19,12 @@ import androidx.compose.ui.layout.onSizeChanged
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
+/**
+ * @param orientation Axis the dismiss drag is detected on. Must differ from the pager's own
+ *   paging axis, or the two gesture detectors fight over the same drag — vertical paging needs
+ *   [Orientation.Horizontal] here, and horizontal paging (the default media viewer) needs
+ *   [Orientation.Vertical].
+ */
 @Composable
 fun SwipeToDismissBox(
     enabled: Boolean,
@@ -27,16 +33,17 @@ fun SwipeToDismissBox(
     onDismiss: () -> Unit,
     onProgressChanged: (Float) -> Unit,
     onDragging: (Boolean) -> Unit,
+    orientation: Orientation = Orientation.Vertical,
     content: @Composable () -> Unit,
 ) {
-    val offsetY = remember { Animatable(0f) }
-    var containerHeight by remember { mutableFloatStateOf(1f) }
+    val offset = remember { Animatable(0f) }
+    var containerExtent by remember { mutableFloatStateOf(1f) }
     val scope = rememberCoroutineScope()
 
     val draggableState = rememberDraggableState { delta ->
         scope.launch {
-            offsetY.snapTo(offsetY.value + delta)
-            val progress = (abs(offsetY.value) / containerHeight).coerceIn(0f, 1f)
+            offset.snapTo(offset.value + delta)
+            val progress = (abs(offset.value) / containerExtent).coerceIn(0f, 1f)
             onProgressChanged(progress)
         }
     }
@@ -44,22 +51,27 @@ fun SwipeToDismissBox(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .onSizeChanged { containerHeight = it.height.toFloat().coerceAtLeast(1f) }
+            .onSizeChanged {
+                containerExtent = when (orientation) {
+                    Orientation.Vertical -> it.height
+                    Orientation.Horizontal -> it.width
+                }.toFloat().coerceAtLeast(1f)
+            }
             // Keep pointer node stable; toggling modifier on/off mid-pinch can cancel
             // sibling gesture detectors while fingers are still down.
             .draggable(
                 enabled = enabled,
                 state = draggableState,
-                orientation = Orientation.Vertical,
+                orientation = orientation,
                 onDragStarted = { onDragging(true) },
                 onDragStopped = { velocity ->
-                    val fraction = abs(offsetY.value) / containerHeight
+                    val fraction = abs(offset.value) / containerExtent
                     if (fraction >= threshold || abs(velocity) >= velocityThreshold) {
                         onDragging(false)
                         onDismiss()
                     } else {
                         scope.launch {
-                            offsetY.animateTo(0f, spring())
+                            offset.animateTo(0f, spring())
                             onProgressChanged(0f)
                             onDragging(false)
                         }
@@ -68,8 +80,11 @@ fun SwipeToDismissBox(
             )
             .graphicsLayer {
                 if (enabled) {
-                    val progress = (abs(offsetY.value) / containerHeight).coerceIn(0f, 1f)
-                    translationY = offsetY.value
+                    val progress = (abs(offset.value) / containerExtent).coerceIn(0f, 1f)
+                    when (orientation) {
+                        Orientation.Vertical -> translationY = offset.value
+                        Orientation.Horizontal -> translationX = offset.value
+                    }
                     val scale = 1f - (progress * 0.2f)
                     scaleX = scale
                     scaleY = scale

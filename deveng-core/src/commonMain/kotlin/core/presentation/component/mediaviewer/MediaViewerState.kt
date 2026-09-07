@@ -15,6 +15,9 @@ class MediaViewerState internal constructor(val pagerState: PagerState) {
 
     val currentPage: Int get() = pagerState.currentPage
 
+    /** The page a fling/drag has come to rest on, as opposed to [currentPage] which updates mid-gesture. */
+    val settledPage: Int get() = pagerState.settledPage
+
     var isZoomed: Boolean by mutableStateOf(false)
         internal set
 
