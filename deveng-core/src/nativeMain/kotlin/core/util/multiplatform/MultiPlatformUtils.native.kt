@@ -125,13 +125,7 @@ actual class MultiPlatformUtils {
     actual fun shareText(text: String) {
         if (text.isBlank()) return
 
-        val activityController = platform.UIKit.UIActivityViewController(
-            activityItems = listOf(text),
-            applicationActivities = null
-        )
-
-        val rootViewController = UIApplication.sharedApplication.keyWindow?.rootViewController
-        rootViewController?.presentViewController(activityController, animated = true, completion = null)
+        IosShareSheetPresenter.presentOnMainQueue(activityItems = listOf(text))
     }
 }
 
