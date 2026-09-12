@@ -1,9 +1,9 @@
 package core.util.media
 
+import core.util.multiplatform.IosShareSheetPresenter
 import platform.Foundation.NSCondition
 import platform.Foundation.NSData
 import platform.Foundation.NSDate
-import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
 import platform.Foundation.dataWithContentsOfURL
@@ -12,8 +12,6 @@ import platform.Foundation.writeToURL
 import kotlinx.coroutines.withTimeoutOrNull
 import platform.Photos.PHAssetChangeRequest
 import platform.Photos.PHPhotoLibrary
-import platform.UIKit.UIActivityViewController
-import platform.UIKit.UIApplication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -36,10 +34,7 @@ actual class RemoteMediaExportManager {
             val url = NSURL.URLWithString(fileUrl) ?: return@runCatching false
             val data = downloadDataSynchronously(url) ?: return@runCatching false
             val tempFile = writeTempFile(data, fileName)
-            NSOperationQueue.mainQueue.addOperationWithBlock {
-                shareFiles(listOf(tempFile))
-            }
-            true
+            presentShareSheet(listOf(tempFile))
         }.getOrDefault(false)
     }
 
@@ -54,10 +49,7 @@ actual class RemoteMediaExportManager {
                 writeTempFile(data, remoteFile.fileName)
             }
             if (tempFiles.isEmpty()) return@runCatching false
-            NSOperationQueue.mainQueue.addOperationWithBlock {
-                shareFiles(tempFiles)
-            }
-            true
+            presentShareSheet(tempFiles)
         }.getOrDefault(false)
     }
 
@@ -108,18 +100,14 @@ actual class RemoteMediaExportManager {
         }
     }
 
-    private fun shareFiles(fileUrls: List<NSURL>) {
-        val rootVC = UIApplication.sharedApplication.keyWindow?.rootViewController ?: return
-        var topVC = rootVC
-        while (topVC.presentedViewController != null) {
-            topVC = topVC.presentedViewController!!
+    /**
+     * Presents on the main thread and reports whether a window was available, so a share sheet
+     * that could not be shown is returned as a failure instead of a silent success.
+     */
+    private suspend fun presentShareSheet(fileUrls: List<NSURL>): Boolean =
+        withContext(Dispatchers.Main) {
+            IosShareSheetPresenter.present(activityItems = fileUrls)
         }
-        val activityVC = UIActivityViewController(
-            activityItems = fileUrls,
-            applicationActivities = null,
-        )
-        topVC.presentViewController(activityVC, animated = true, completion = null)
-    }
 
     private fun saveToPhotos(fileUrl: NSURL, mimeType: String): Boolean {
         var result = false
