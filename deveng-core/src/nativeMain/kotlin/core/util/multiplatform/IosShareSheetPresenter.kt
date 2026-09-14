@@ -7,6 +7,7 @@ import platform.UIKit.UISceneActivationStateForegroundActive
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
 import platform.UIKit.UIWindow
+import platform.UIKit.UIWindowLevelNormal
 import platform.UIKit.UIWindowScene
 import platform.UIKit.popoverPresentationController
 import platform.darwin.dispatch_async
@@ -73,7 +74,7 @@ internal object IosShareSheetPresenter {
     }
 
     private fun findTopViewController(): UIViewController? {
-        var topViewController = findKeyWindow()?.rootViewController ?: return null
+        var topViewController = findAppWindow()?.rootViewController ?: return null
         while (true) {
             val presentedViewController = topViewController.presentedViewController
             if (presentedViewController == null || presentedViewController.isBeingDismissed()) break
@@ -82,13 +83,25 @@ internal object IosShareSheetPresenter {
         return topViewController
     }
 
-    private fun findKeyWindow(): UIWindow? {
+    /**
+     * Compose Multiplatform shows dialogs and popups in a separate window above the app
+     * (`windowLevel` alert + 1) and makes it the key window while the dialog has focus. That window
+     * drops its root view controller as soon as the dialog closes, so a share sheet presented from
+     * it disappears with the dialog. Only normal-level windows are considered for that reason.
+     */
+    private fun findAppWindow(): UIWindow? {
         val windowScenes = UIApplication.sharedApplication.connectedScenes
             .filterIsInstance<UIWindowScene>()
         val windowScene = windowScenes.firstOrNull { windowScene ->
             windowScene.activationState == UISceneActivationStateForegroundActive
         } ?: windowScenes.firstOrNull() ?: return null
-        val windows = windowScene.windows.filterIsInstance<UIWindow>()
-        return windows.firstOrNull { window -> window.isKeyWindow() } ?: windows.firstOrNull()
+        val appWindows = windowScene.windows
+            .filterIsInstance<UIWindow>()
+            .filter { window ->
+                window.windowLevel == UIWindowLevelNormal &&
+                    !window.isHidden() &&
+                    window.rootViewController != null
+            }
+        return appWindows.firstOrNull { window -> window.isKeyWindow() } ?: appWindows.firstOrNull()
     }
 }
