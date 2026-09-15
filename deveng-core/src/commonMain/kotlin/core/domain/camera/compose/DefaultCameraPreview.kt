@@ -313,6 +313,8 @@ private fun formatRecordingProgress(elapsedMs: Long, maxDurationMs: Long): Strin
  * @param onPhotoCaptureEngaged Invoked after the still-capture request is queued (before [onImageCaptured]) — use to flip app-level “saving” UI and avoid thumbnail races.
  * @param onPhotoCaptureFailed Invoked when still capture throws before [onImageCaptured] runs; pair with [onPhotoCaptureEngaged] to clear app state.
  * @param showLastCaptureThumbnail When false, the last-capture thumbnail (and the gallery-icon fallback shown when no thumbnail exists yet) is not rendered — for capture flows where reviewing/re-opening a previous frame doesn't apply (e.g. single-shot / view-once capture).
+ * @param isCaptureEnabled When false, the shutter is shown disabled and neither takes a photo nor starts a recording; use it to gate capture behind a host rule (e.g. a required pairing).
+ * @param onDisabledShutterClick Invoked when the shutter is tapped while [isCaptureEnabled] is false, so the host can explain why capture is unavailable.
  * @param singleCaptureModeEnabled When true, only one capture — a photo OR a video recording — is allowed per composition: the shutter is disabled after a photo is taken or a recording starts (an in-progress recording can still be stopped), and Photo/Video mode switching is disabled once that slot is claimed. To reset, recompose with a fresh key/controller (e.g. leaving and re-entering the camera screen).
  * @param extraBottomChromePadding Additional bottom padding added below the bottom control chrome (zoom chips, shutter, gallery, mode row), on top of the default gap, to lift it above a host overlay such as a floating bottom navigation bar. Defaults to 0.dp (no change); hosts with such an overlay pass a positive value.
  * @param modifier Modifier for the root layout.
@@ -331,6 +333,8 @@ fun DefaultCameraPreview(
     thumbnailTopEndContent: @Composable () -> Unit = {},
     showLastCaptureThumbnail: Boolean = true,
     singleCaptureModeEnabled: Boolean = false,
+    isCaptureEnabled: Boolean = true,
+    onDisabledShutterClick: () -> Unit = {},
     stateHolder: CameraKStateHolder? = null,
     maxVideoRecordingDurationMs: Long = 0L,
     shouldChainNewVideoSegmentAtMaxDuration: Boolean = false,
@@ -572,6 +576,7 @@ fun DefaultCameraPreview(
         // second tap landing in that window would otherwise queue a second real capture before
         // the disabled-shutter recomposition ever lands. Setting the flag synchronously here
         // (not after the capture resolves) closes that race down to a single Compose frame.
+        if (!isCaptureEnabled) return@capturePhoto
         if (singleCaptureModeEnabled && hasClaimedSingleCapture) return@capturePhoto
         if (singleCaptureModeEnabled) hasClaimedSingleCapture = true
         awaitingThumbnailUnlockAfterCapture = true
@@ -1057,11 +1062,12 @@ fun DefaultCameraPreview(
                         // Disabled once the single-capture slot is claimed (photo taken, or video
                         // recording started) — EXCEPT while actively recording, so the in-progress
                         // recording can still be stopped via this same button.
-                        enabled = !(
+                        enabled = isCaptureEnabled && !(
                             singleCaptureModeEnabled &&
                                 hasClaimedSingleCapture &&
                                 !recordingUiState.isRecording
                             ),
+                        onDisabledClick = if (isCaptureEnabled) null else onDisabledShutterClick,
                         onPhotoCapture = capturePhotoDuringPreview,
                         onVideoStart = {
                             // Claim synchronously at record-start, mirroring capturePhotoDuringPreview's
@@ -1338,6 +1344,8 @@ private fun ShutterButton(
     onVideoStart: () -> Unit,
     onVideoStop: () -> Unit,
     enabled: Boolean = true,
+    /** When set, a tap on the disabled shutter is still received and forwarded here instead of being dropped. */
+    onDisabledClick: (() -> Unit)? = null,
 ) {
     val isVideoMode = mode == CameraCaptureMode.Video && stateHolder != null
     val outerColor = if (isRecording) Color.Red else Color.White
@@ -1351,10 +1359,14 @@ private fun ShutterButton(
             .size(72.dp)
             .alpha(if (enabled) 1f else 0.45f)
             .clickable(
-                enabled = enabled,
+                enabled = enabled || onDisabledClick != null,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = {
+                    if (!enabled) {
+                        onDisabledClick?.invoke()
+                        return@clickable
+                    }
                     if (isVideoMode) {
                         if (isRecording) onVideoStop() else onVideoStart()
                     } else {
