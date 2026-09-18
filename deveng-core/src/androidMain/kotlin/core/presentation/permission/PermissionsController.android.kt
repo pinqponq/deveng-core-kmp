@@ -8,6 +8,7 @@ actual interface PermissionsController {
     actual suspend fun isPermissionGranted(permission: Permission): Boolean
     actual suspend fun getPermissionState(permission: Permission): PermissionState
     actual fun openAppSettings()
+    actual fun openNotificationSettings()
 
     fun bind(activity: ComponentActivity)
 

@@ -2,6 +2,7 @@ package core.presentation.permission
 
 import android.Manifest
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -169,10 +170,13 @@ class PermissionsControllerImpl(
         val isAllGranted: Boolean = status.all { it == PackageManager.PERMISSION_GRANTED }
         if (isAllGranted) return PermissionState.Granted
 
-        val isAllRequestRationale: Boolean = permissions.all {
-            shouldShowRequestPermissionRationale(it).not()
+        // The system only returns true for shouldShowRequestPermissionRationale between the
+        // first denial and the point where it stops showing the dialog, so it is the single
+        // signal that separates a denial we may ask about again from one we may not.
+        val isRetryableDenial: Boolean = permissions.any {
+            shouldShowRequestPermissionRationale(it)
         }
-        return if (isAllRequestRationale) PermissionState.Denied
+        return if (isRetryableDenial) PermissionState.Denied
         else PermissionState.NotGranted
     }
 
@@ -192,12 +196,32 @@ class PermissionsControllerImpl(
     }
 
     override fun openAppSettings() {
-        val intent = Intent().apply {
+        applicationContext.startActivity(buildApplicationDetailsIntent())
+    }
+
+    override fun openNotificationSettings() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            openAppSettings()
+            return
+        }
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, applicationContext.packageName)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        try {
+            applicationContext.startActivity(intent)
+        } catch (notificationSettingsMissing: ActivityNotFoundException) {
+            // Not every manufacturer ROM ships the per-application notification screen.
+            openAppSettings()
+        }
+    }
+
+    private fun buildApplicationDetailsIntent(): Intent {
+        return Intent().apply {
             action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
             data = Uri.fromParts("package", applicationContext.packageName, null)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
-        applicationContext.startActivity(intent)
     }
 
     @Suppress("CyclomaticComplexMethod")

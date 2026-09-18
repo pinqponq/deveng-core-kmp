@@ -34,4 +34,13 @@ expect interface PermissionsController {
      * Open system UI of application settings to change permissions state
      */
     fun openAppSettings()
+
+    /**
+     * Open the system notification settings of the application, so the user can turn
+     * notifications back on after a denial that can no longer be asked about.
+     *
+     * Falls back to [openAppSettings] on platforms and OS versions without a dedicated
+     * notification settings screen.
+     */
+    fun openNotificationSettings()
 }
