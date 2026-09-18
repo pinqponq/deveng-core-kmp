@@ -1,6 +1,10 @@
 package core.util.multiplatform
 
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.toKString
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
@@ -10,6 +14,7 @@ import platform.CoreLocation.CLLocationManagerDelegateProtocol
 import platform.CoreLocation.kCLAuthorizationStatusAuthorizedAlways
 import platform.CoreLocation.kCLAuthorizationStatusAuthorizedWhenInUse
 import platform.CoreLocation.kCLLocationAccuracyBest
+import platform.Foundation.NSBundle
 import platform.Foundation.NSDate
 import platform.Foundation.NSError
 import platform.Foundation.NSLocale
@@ -20,7 +25,13 @@ import platform.UIKit.UIApplication
 import platform.UIKit.UIDevice
 import platform.UIKit.UIPasteboard
 import platform.darwin.NSObject
+import platform.posix.uname
+import platform.posix.utsname
 import kotlin.coroutines.resume
+
+private const val BUNDLE_SHORT_VERSION_KEY = "CFBundleShortVersionString"
+private const val BUNDLE_VERSION_KEY = "CFBundleVersion"
+private const val UNKNOWN_VALUE = "Unknown"
 
 @Suppress(names = ["EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING"])
 actual class MultiPlatformUtils {
@@ -64,8 +75,8 @@ actual class MultiPlatformUtils {
             platform = Platform.NATIVE,
             systemLanguage = languageCode.substringBefore("-"),
             uuid = UIDevice.currentDevice.identifierForVendor?.UUIDString ?: "unknown_ios_uid",
-            deviceName = "${UIDevice.currentDevice.name} - ${UIDevice.currentDevice.systemVersion} - ${UIDevice.currentDevice.model}",
-            packageVersionName = "0.0.0"
+            deviceName = "${UIDevice.currentDevice.model} - ${UIDevice.currentDevice.systemVersion} - ${readHardwareModelIdentifier()}",
+            packageVersionName = readPackageVersionName()
         )
     }
 
@@ -127,6 +138,29 @@ actual class MultiPlatformUtils {
 
         IosShareSheetPresenter.presentOnMainQueue(activityItems = listOf(text))
     }
+}
+
+private fun readPackageVersionName(): String {
+    val bundle = NSBundle.mainBundle
+    val shortVersion = bundle.objectForInfoDictionaryKey(BUNDLE_SHORT_VERSION_KEY) as? String
+    val buildNumber = bundle.objectForInfoDictionaryKey(BUNDLE_VERSION_KEY) as? String
+
+    return "${shortVersion ?: UNKNOWN_VALUE} - ${buildNumber ?: UNKNOWN_VALUE}"
+}
+
+/**
+ * [UIDevice.model] only ever reports the product family ("iPhone"), and since iOS 16 [UIDevice.name]
+ * falls back to that same family name unless the app holds the user-assigned device name entitlement.
+ * The hardware identifier ("iPhone17,2") is therefore the only model detail available to us.
+ */
+@OptIn(ExperimentalForeignApi::class)
+private fun readHardwareModelIdentifier(): String = memScoped {
+    val systemInfo = alloc<utsname>()
+    if (uname(systemInfo.ptr) != 0) {
+        return@memScoped UNKNOWN_VALUE
+    }
+
+    systemInfo.machine.toKString()
 }
 
 private fun CLLocation.ageMillis(): Long {
