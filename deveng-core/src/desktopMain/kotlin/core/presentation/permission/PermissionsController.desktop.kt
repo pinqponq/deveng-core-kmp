@@ -35,4 +35,13 @@ actual interface PermissionsController {
      */
     actual fun openAppSettings()
 
+    /**
+     * Open the system notification settings of the application, so the user can turn
+     * notifications back on after a denial that can no longer be asked about.
+     *
+     * Falls back to [openAppSettings] on platforms and OS versions without a dedicated
+     * notification settings screen.
+     */
+    actual fun openNotificationSettings()
+
 }

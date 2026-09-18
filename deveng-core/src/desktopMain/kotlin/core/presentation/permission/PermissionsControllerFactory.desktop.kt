@@ -23,5 +23,9 @@ actual fun rememberPermissionsControllerFactory(): PermissionsControllerFactory 
             override fun openAppSettings() {
 
             }
+
+            override fun openNotificationSettings() {
+
+            }
         }
     }

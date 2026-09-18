@@ -2,11 +2,15 @@ package core.presentation.permission
 
 import core.presentation.permission.Permission
 import core.presentation.permission.PermissionState
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.useContents
 import platform.AVFoundation.AVMediaTypeAudio
 import platform.AVFoundation.AVMediaTypeVideo
 import platform.Contacts.CNContactStore
+import platform.Foundation.NSProcessInfo
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication
+import platform.UIKit.UIApplicationOpenNotificationSettingsURLString
 import platform.UIKit.UIApplicationOpenSettingsURLString
 
 class PermissionsControllerIos : PermissionsControllerProtocol {
@@ -26,8 +30,28 @@ class PermissionsControllerIos : PermissionsControllerProtocol {
     }
 
     override fun openAppSettings() {
-        val settingsUrl: NSURL = NSURL.URLWithString(UIApplicationOpenSettingsURLString)!!
+        openSettingsUrl(UIApplicationOpenSettingsURLString)
+    }
+
+    override fun openNotificationSettings() {
+        if (isNotificationSettingsPageAvailable()) {
+            openSettingsUrl(UIApplicationOpenNotificationSettingsURLString)
+        } else {
+            openAppSettings()
+        }
+    }
+
+    private fun openSettingsUrl(urlString: String) {
+        // A settings URL is always well formed, so a null NSURL here would be a programming error.
+        val settingsUrl: NSURL = NSURL.URLWithString(urlString)!!
         UIApplication.sharedApplication.openURL(settingsUrl, mapOf<Any?, Any>(), null)
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    private fun isNotificationSettingsPageAvailable(): Boolean {
+        return NSProcessInfo.processInfo.operatingSystemVersion.useContents {
+            majorVersion >= IOS_VERSION_WITH_NOTIFICATION_SETTINGS_PAGE
+        }
     }
 
     private fun getDelegate(permission: Permission): PermissionDelegate {
@@ -48,5 +72,9 @@ class PermissionsControllerIos : PermissionsControllerProtocol {
 
             Permission.MOTION -> MotionPermissionDelegate()
         }
+    }
+
+    private companion object {
+        const val IOS_VERSION_WITH_NOTIFICATION_SETTINGS_PAGE = 16L
     }
 }
