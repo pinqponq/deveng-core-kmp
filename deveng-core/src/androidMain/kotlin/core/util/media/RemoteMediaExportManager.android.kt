@@ -28,6 +28,7 @@ actual class RemoteMediaExportManager(
         private const val EXPORT_TAG = ExifExportDiagnostics.LOG_TAG
         private const val CONNECT_TIMEOUT_MS = 30_000
         private const val READ_TIMEOUT_MS = 120_000
+        private const val SHARED_MEDIA_DIR_NAME = "shared_media"
     }
 
     actual suspend fun shareSingleFileFromUrl(
@@ -40,14 +41,11 @@ actual class RemoteMediaExportManager(
         }
 
         return@withContext runCatching {
-            val bytes = openStreamWithTimeout(fileUrl).use { inputStream ->
-                inputStream.readBytes()
-            }
-            shareBytesInternal(
-                fileName = fileName,
-                mimeType = mimeType,
-                fileBytes = bytes,
-            )
+            val sharedFile = downloadToSharedFile(
+                fileUrl = fileUrl,
+                fileName = fileName.ifBlank { "shared_${System.currentTimeMillis()}" },
+            ) ?: return@runCatching false
+            shareFileInternal(sharedFile = sharedFile, mimeType = mimeType)
         }.onFailure { throwable ->
             Log.e(TAG, "shareSingleFileFromUrl failed url=$fileUrl", throwable)
         }.getOrDefault(false)
@@ -61,36 +59,18 @@ actual class RemoteMediaExportManager(
         }
 
         return@withContext runCatching {
-            val sharedDir = File(context.cacheDir, "shared_media").apply {
-                mkdirs()
-            }
-            val authority = "${context.applicationContext.packageName}.provider"
-
             val uris = ArrayList<Uri>()
             files.forEachIndexed { index, remoteFile ->
                 if (remoteFile.fileUrl.isBlank()) {
                     return@forEachIndexed
                 }
 
-                val bytes = openStreamWithTimeout(remoteFile.fileUrl).use { inputStream ->
-                    inputStream.readBytes()
-                }
-                if (bytes.isEmpty()) {
-                    return@forEachIndexed
-                }
-
                 val fallbackName = "shared_${System.currentTimeMillis()}_$index"
-                val normalizedFileName = remoteFile.fileName.ifBlank { fallbackName }
-                val tempFile = File(sharedDir, normalizedFileName).apply {
-                    writeBytes(bytes)
-                }
-
-                val fileUri = FileProvider.getUriForFile(
-                    context,
-                    authority,
-                    tempFile,
-                )
-                uris.add(fileUri)
+                val sharedFile = downloadToSharedFile(
+                    fileUrl = remoteFile.fileUrl,
+                    fileName = remoteFile.fileName.ifBlank { fallbackName },
+                ) ?: return@forEachIndexed
+                uris.add(sharedFileUri(sharedFile))
             }
 
             if (uris.isEmpty()) {
@@ -203,29 +183,11 @@ actual class RemoteMediaExportManager(
         }.getOrDefault(0)
     }
 
-    private fun shareBytesInternal(
-        fileName: String,
+    private fun shareFileInternal(
+        sharedFile: File,
         mimeType: String,
-        fileBytes: ByteArray,
     ): Boolean {
-        if (fileBytes.isEmpty()) {
-            return false
-        }
-
-        val sharedDir = File(context.cacheDir, "shared_media").apply {
-            mkdirs()
-        }
-        val normalizedFileName = fileName.ifBlank { "shared_${System.currentTimeMillis()}" }
-        val tempFile = File(sharedDir, normalizedFileName).apply {
-            writeBytes(fileBytes)
-        }
-
-        val authority = "${context.applicationContext.packageName}.provider"
-        val fileUri = FileProvider.getUriForFile(
-            context,
-            authority,
-            tempFile,
-        )
+        val fileUri = sharedFileUri(sharedFile)
 
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
             type = mimeType
@@ -240,6 +202,41 @@ actual class RemoteMediaExportManager(
 
         context.startActivity(chooserIntent)
         return true
+    }
+
+    /**
+     * Streams the remote file into the FileProvider cache directory instead of reading it into a
+     * byte array: a video of a few dozen MB already exhausts the heap while `readBytes()` doubles its
+     * buffer. Returns null when the server sent no bytes.
+     */
+    private fun downloadToSharedFile(
+        fileUrl: String,
+        fileName: String,
+    ): File? {
+        val sharedDir = File(context.cacheDir, SHARED_MEDIA_DIR_NAME).apply {
+            mkdirs()
+        }
+        val sharedFile = File(sharedDir, fileName)
+        try {
+            openStreamWithTimeout(fileUrl).use { inputStream ->
+                sharedFile.outputStream().use { outputStream -> inputStream.copyTo(outputStream) }
+            }
+        } catch (throwable: Throwable) {
+            sharedFile.delete()
+            throw throwable
+        }
+
+        if (sharedFile.length() == 0L) {
+            sharedFile.delete()
+            return null
+        }
+
+        return sharedFile
+    }
+
+    private fun sharedFileUri(sharedFile: File): Uri {
+        val authority = "${context.applicationContext.packageName}.provider"
+        return FileProvider.getUriForFile(context, authority, sharedFile)
     }
 
     private fun openStreamWithTimeout(fileUrl: String): InputStream {

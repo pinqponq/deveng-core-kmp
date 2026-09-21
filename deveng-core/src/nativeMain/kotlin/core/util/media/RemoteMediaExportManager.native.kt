@@ -1,27 +1,39 @@
 package core.util.media
 
 import core.util.multiplatform.IosShareSheetPresenter
+import kotlin.coroutines.resume
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import platform.Foundation.NSCondition
-import platform.Foundation.NSData
 import platform.Foundation.NSDate
+import platform.Foundation.NSFileManager
+import platform.Foundation.NSHTTPURLResponse
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
-import platform.Foundation.dataWithContentsOfURL
+import platform.Foundation.NSURLSession
+import platform.Foundation.NSURLSessionConfiguration
+import platform.Foundation.downloadTaskWithURL
 import platform.Foundation.timeIntervalSince1970
-import platform.Foundation.writeToURL
-import kotlinx.coroutines.withTimeoutOrNull
 import platform.Photos.PHAssetChangeRequest
 import platform.Photos.PHPhotoLibrary
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 actual class RemoteMediaExportManager {
     private companion object {
-        // NSData.dataWithContentsOfURL blocks the calling thread; the timeout fires at the
-        // coroutine level so the operation returns null after this window even though the
-        // underlying thread may still be waiting on the OS connection.
-        private const val RESOURCE_TIMEOUT_MS = 120_000L
+        // Idle timeout between received packets, matching the Android read timeout. There is no cap
+        // on the total duration, so a large video on a slow connection still completes.
+        private const val REQUEST_TIMEOUT_SECONDS = 120.0
+        private const val SUCCESS_STATUS_CODES_START = 200L
+        private const val SUCCESS_STATUS_CODES_END = 299L
+    }
+
+    private val downloadSession: NSURLSession by lazy {
+        val configuration = NSURLSessionConfiguration.defaultSessionConfiguration().apply {
+            timeoutIntervalForRequest = REQUEST_TIMEOUT_SECONDS
+        }
+        NSURLSession.sessionWithConfiguration(configuration)
     }
 
     actual suspend fun shareSingleFileFromUrl(
@@ -32,8 +44,7 @@ actual class RemoteMediaExportManager {
         if (fileUrl.isBlank()) return@withContext false
         return@withContext runCatching {
             val url = NSURL.URLWithString(fileUrl) ?: return@runCatching false
-            val data = downloadDataSynchronously(url) ?: return@runCatching false
-            val tempFile = writeTempFile(data, fileName)
+            val tempFile = downloadToTempFile(url, fileName) ?: return@runCatching false
             presentShareSheet(listOf(tempFile))
         }.getOrDefault(false)
     }
@@ -45,8 +56,7 @@ actual class RemoteMediaExportManager {
             val tempFiles = files.mapNotNull { remoteFile ->
                 if (remoteFile.fileUrl.isBlank()) return@mapNotNull null
                 val url = NSURL.URLWithString(remoteFile.fileUrl) ?: return@mapNotNull null
-                val data = downloadDataSynchronously(url) ?: return@mapNotNull null
-                writeTempFile(data, remoteFile.fileName)
+                downloadToTempFile(url, remoteFile.fileName)
             }
             if (tempFiles.isEmpty()) return@runCatching false
             presentShareSheet(tempFiles)
@@ -61,8 +71,7 @@ actual class RemoteMediaExportManager {
         if (fileUrl.isBlank()) return@withContext false
         return@withContext runCatching {
             val url = NSURL.URLWithString(fileUrl) ?: return@runCatching false
-            val data = downloadDataSynchronously(url) ?: return@runCatching false
-            val tempFile = writeTempFile(data, fileName)
+            val tempFile = downloadToTempFile(url, fileName) ?: return@runCatching false
             saveToPhotos(tempFile, mimeType)
         }.getOrDefault(false)
     }
@@ -75,8 +84,7 @@ actual class RemoteMediaExportManager {
             files.forEach { remoteFile ->
                 if (remoteFile.fileUrl.isBlank()) return@forEach
                 val url = NSURL.URLWithString(remoteFile.fileUrl) ?: return@forEach
-                val data = downloadDataSynchronously(url) ?: return@forEach
-                val tempFile = writeTempFile(data, remoteFile.fileName)
+                val tempFile = downloadToTempFile(url, remoteFile.fileName) ?: return@forEach
                 if (saveToPhotos(tempFile, remoteFile.mimeType)) count++
             }
             count
@@ -84,20 +92,38 @@ actual class RemoteMediaExportManager {
     }
 
     /**
-     * Downloads data synchronously with explicit connection and resource timeouts so that large
-     * video files do not hang indefinitely on slow or stalled connections.
+     * Downloads straight to a file in the temporary directory. The previous
+     * `NSData.dataWithContentsOfURL` held the whole file in memory (a large video could get the app
+     * killed) and, being a blocking call, could not be interrupted by a coroutine timeout.
+     * Returns null when the request fails or the server answers with a non-2xx status.
      */
-    private suspend fun downloadDataSynchronously(url: NSURL): NSData? =
-        withTimeoutOrNull(RESOURCE_TIMEOUT_MS) {
-            NSData.dataWithContentsOfURL(url)
+    private suspend fun downloadToTempFile(url: NSURL, fileName: String): NSURL? =
+        suspendCancellableCoroutine { continuation ->
+            val task = downloadSession.downloadTaskWithURL(url) { location, response, error ->
+                val statusCode = (response as? NSHTTPURLResponse)?.statusCode
+                val isSuccessStatus = statusCode == null ||
+                    statusCode in SUCCESS_STATUS_CODES_START..SUCCESS_STATUS_CODES_END
+                if (error != null || location == null || !isSuccessStatus) {
+                    continuation.resume(null)
+                    return@downloadTaskWithURL
+                }
+
+                // The system deletes `location` as soon as this handler returns, so it is moved now.
+                continuation.resume(moveToTempFile(location, fileName))
+            }
+            continuation.invokeOnCancellation { task.cancel() }
+            task.resume()
         }
 
-    private fun writeTempFile(data: NSData, fileName: String): NSURL {
+    @OptIn(ExperimentalForeignApi::class)
+    private fun moveToTempFile(downloadedFile: NSURL, fileName: String): NSURL? {
         val tempDir = NSURL.fileURLWithPath(NSTemporaryDirectory(), isDirectory = true)
         val name = fileName.ifBlank { "media_${NSDate().timeIntervalSince1970.toLong()}" }
-        return tempDir.URLByAppendingPathComponent(name)!!.also { fileUrl ->
-            data.writeToURL(fileUrl, atomically = true)
-        }
+        val destination = tempDir.URLByAppendingPathComponent(name) ?: return null
+        val fileManager = NSFileManager.defaultManager
+        fileManager.removeItemAtURL(destination, error = null)
+        val isMoved = fileManager.moveItemAtURL(downloadedFile, toURL = destination, error = null)
+        return if (isMoved) destination else null
     }
 
     /**
