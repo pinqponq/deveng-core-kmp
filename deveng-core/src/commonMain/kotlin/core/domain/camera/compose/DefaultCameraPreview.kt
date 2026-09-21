@@ -307,6 +307,7 @@ private fun formatRecordingProgress(elapsedMs: Long, maxDurationMs: Long): Strin
  * @param shouldChainNewVideoSegmentAtMaxDuration When true, reaching [maxVideoRecordingDurationMs] hands the finished clip to [onRecordingStopped] and immediately records a new one, so the user ends the take by stopping it rather than by the cap (see [VideoConfiguration.shouldChainNewSegmentAtMaxDuration]). Ignored without a duration cap, and in [singleCaptureModeEnabled] where a take is a single clip by definition.
  * @param onRecordingStopped Optional callback when a video recording stops (success or error). Use it to load a first-frame thumbnail and pass it as [lastRecordedVideoThumbnail].
  * @param lastRecordedVideoThumbnail Optional bitmap to show as thumbnail for the last recorded video (e.g. first frame). Shown when the last capture was video; replaced when user takes a photo.
+ * @param captureModeSelection When set, the host owns the Photo/Video choice: the preview shows its [CameraCaptureModeSelection.isVideoModeSelected] and reports mode-row taps instead of switching by itself (e.g. to ask for microphone access first). Null keeps the choice inside the preview.
  * @param showTapToFocusExclusionDebugOverlay When true, draws a very faint red overlay on regions where tap-to-focus is suppressed (for tuning/debug).
  * @param hostPlatform Host OS for tap-to-focus exposure slider placement: [Platform.IOS] or [Platform.NATIVE] places the slider to the right of the reticle; [Platform.ANDROID] keeps it below the ring (also used for [Platform.WEB] and [Platform.DESKTOP]). The app must pass the correct value; core does not detect the platform.
  * @param thumbnailSaveInProgress When true, shows a progress indicator on the last-capture thumbnail and blocks thumbnail taps (e.g. while persisting to disk). Thumbnail is also blocked for the in-flight interval from shutter until [onImageCaptured] returns.
@@ -337,6 +338,7 @@ fun DefaultCameraPreview(
     onRecordingStarted: (() -> Unit)? = null,
     onRecordingStopped: ((VideoCaptureResult) -> Unit)? = null,
     lastRecordedVideoThumbnail: ImageBitmap? = null,
+    captureModeSelection: CameraCaptureModeSelection? = null,
     showTapToFocusExclusionDebugOverlay: Boolean = false,
     hostPlatform: Platform = Platform.ANDROID,
     extraBottomChromePadding: Dp = 0.dp,
@@ -374,7 +376,12 @@ fun DefaultCameraPreview(
      */
     var hasClaimedSingleCapture by remember { mutableStateOf(false) }
     var nightModeSupported by remember { mutableStateOf(controller.isNightModeSupported()) }
-    var captureMode by remember { mutableStateOf(CameraCaptureMode.Photo) }
+    var internalCaptureMode by remember { mutableStateOf(CameraCaptureMode.Photo) }
+    val captureMode = when {
+        captureModeSelection == null -> internalCaptureMode
+        captureModeSelection.isVideoModeSelected -> CameraCaptureMode.Video
+        else -> CameraCaptureMode.Photo
+    }
     LaunchedEffect(captureMode) {
         val isVideoMode = captureMode == CameraCaptureMode.Video
         controller.setPreviewStabilizationEnabled(isVideoMode)
@@ -1090,7 +1097,11 @@ fun DefaultCameraPreview(
                             ModeSwitcher(
                                 currentMode = captureMode,
                                 onModeChange = { newMode ->
-                                    captureMode = newMode
+                                    if (captureModeSelection != null) {
+                                        captureModeSelection.onCaptureModeSelect(newMode == CameraCaptureMode.Video)
+                                    } else {
+                                        internalCaptureMode = newMode
+                                    }
                                 },
                                 enabled = !recordingUiState.isRecording &&
                                     !(singleCaptureModeEnabled && hasClaimedSingleCapture),
