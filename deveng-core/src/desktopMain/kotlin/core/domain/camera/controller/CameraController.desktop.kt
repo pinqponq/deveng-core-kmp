@@ -283,6 +283,12 @@ actual class CameraController(
 
     actual fun setPreviewStabilizationEnabled(enabled: Boolean) {}
 
+    actual fun setStillCaptureSettings(
+        qualityPrioritization: QualityPrioritization,
+        targetResolution: Pair<Int, Int>?,
+        targetResolutionFront: Pair<Int, Int>?,
+    ) {}
+
     actual fun applyCaptureModeSessionPreset(isVideoMode: Boolean) {}
 
     actual fun isNightModeSupported(): Boolean = false

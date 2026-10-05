@@ -43,13 +43,15 @@ private fun CameraDeviceType.toAVCaptureDeviceType(): String? = when (this) {
 }
 
 class CustomCameraController(
-    val qualityPrioritization: QualityPrioritization,
+    qualityPrioritization: QualityPrioritization,
     private var initialCameraLens: CameraLens = CameraLens.BACK,
     private val aspectRatio: AspectRatio = AspectRatio.RATIO_9_16,
-    private val targetResolutionBack: Pair<Int, Int>? = null,
-    private val targetResolutionFront: Pair<Int, Int>? = null,
+    private var targetResolutionBack: Pair<Int, Int>? = null,
+    private var targetResolutionFront: Pair<Int, Int>? = null,
 ) : NSObject(),
     AVCapturePhotoCaptureDelegateProtocol {
+    var qualityPrioritization: QualityPrioritization = qualityPrioritization
+        private set
     var captureSession: AVCaptureSession? = null
     private var backCamera: AVCaptureDevice? = null
     private var frontCamera: AVCaptureDevice? = null
@@ -261,6 +263,34 @@ class CustomCameraController(
                 extra = "preset=$preset reason=$reason applied=${session.sessionPreset}",
             )
         }
+    }
+
+    /**
+     * Applies new still-photo settings to the running session. High-resolution capture on the output is
+     * only ever turned on, never off: a capture that asks for it while the output has it off throws, and
+     * leaving it on costs nothing for SPEED/BALANCED captures, which do not ask for it.
+     */
+    fun updateStillCaptureSettings(
+        qualityPrioritization: QualityPrioritization,
+        targetResolutionBack: Pair<Int, Int>?,
+        targetResolutionFront: Pair<Int, Int>?,
+    ) {
+        this.qualityPrioritization = qualityPrioritization
+        this.targetResolutionBack = targetResolutionBack
+        this.targetResolutionFront = targetResolutionFront
+        highQualityEnabled = qualityPrioritization != QualityPrioritization.SPEED
+
+        val session = captureSession
+        val output = photoOutput
+        val needsHighResolutionCapture = qualityPrioritization == QualityPrioritization.QUALITY ||
+            qualityPrioritization == QualityPrioritization.NONE
+        if (session != null && output != null && needsHighResolutionCapture && !output.isHighResolutionCaptureEnabled()) {
+            session.beginConfiguration()
+            output.setHighResolutionCaptureEnabled(true)
+            session.commitConfiguration()
+        }
+        NSLog("CameraK: updateStillCaptureSettings qualityPrioritization=$qualityPrioritization back=$targetResolutionBack front=$targetResolutionFront")
+        if (session != null && !captureModeIsVideo) applySessionPresetForPhotoMode()
     }
 
     private fun setupPhotoOutput(): Boolean {

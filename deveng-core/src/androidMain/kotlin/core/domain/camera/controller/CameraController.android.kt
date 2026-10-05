@@ -1484,6 +1484,29 @@ actual class CameraController(
         previewView?.let { bindCamera(it) }
     }
 
+    actual fun setStillCaptureSettings(
+        qualityPrioritization: QualityPrioritization,
+        targetResolution: Pair<Int, Int>?,
+        targetResolutionFront: Pair<Int, Int>?,
+    ) {
+        val isUnchanged = qualityPriority == qualityPrioritization &&
+            this.targetResolution == targetResolution &&
+            this.targetResolutionFront == targetResolutionFront
+        if (isUnchanged) return
+        qualityPriority = qualityPrioritization
+        this.targetResolution = targetResolution
+        this.targetResolutionFront = targetResolutionFront
+        Log.d(
+            "CameraK",
+            "setStillCaptureSettings qualityPriority=$qualityPrioritization targetResolution=$targetResolution " +
+                "targetResolutionFront=$targetResolutionFront",
+        )
+        // The capture mode and resolution of ImageCapture are fixed once built, so it has to be rebound.
+        previewView?.let { view ->
+            Handler(Looper.getMainLooper()).post { bindCamera(view) }
+        }
+    }
+
     actual fun isNightModeSupported(): Boolean = false
 
     actual fun setNightMode(enabled: Boolean) {}
