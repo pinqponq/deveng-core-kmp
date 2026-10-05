@@ -60,6 +60,8 @@ import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.abs
 
+private const val DEFAULT_INITIAL_YEAR_OFFSET = 18
+
 /**
  * A customizable wheel-style date picker that opens in a dialog.
  *
@@ -76,7 +78,10 @@ import kotlin.math.abs
  * @param placeholderText Placeholder shown when no date is selected.
  * @param errorMessage Optional error message displayed below the picker field.
  * @param targetDates Date target mode for wheel range. PAST for birth-date style, FUTURE for reservation style.
- * @param pastStartYear Start year used for PAST target range. Default is 1900.
+ * @param pastStartYear Oldest year used for PAST target range. Default is 1900.
+ * @param pastEndYear Newest year used for PAST target range. If null, the current year is used.
+ * @param initialYear Year the wheel opens on when [selectedDate] is null. If null, the current year
+ * minus 18 is used. Values outside the year range are clamped to it.
  * @param futureYearSpan Number of years added to currentYear for FUTURE target range. Default is 120.
  * @param dayLabel Optional label text for day wheel.
  * @param monthLabel Optional label text for month wheel.
@@ -110,6 +115,8 @@ fun WheelDatePicker(
     errorMessage: String? = null,
     targetDates: TargetDates = TargetDates.PAST,
     pastStartYear: Int = 1900,
+    pastEndYear: Int? = null,
+    initialYear: Int? = null,
     futureYearSpan: Int = 120,
     dayLabel: String = stringResource(Res.string.shared_day),
     monthLabel: String = stringResource(Res.string.shared_month),
@@ -169,9 +176,9 @@ fun WheelDatePicker(
     val normalizedFutureYearSpan = remember(futureYearSpan) {
         futureYearSpan.coerceAtLeast(0)
     }
-    val yearRange = remember(targetDates, currentYear, pastStartYear, normalizedFutureYearSpan) {
+    val yearRange = remember(targetDates, currentYear, pastStartYear, pastEndYear, normalizedFutureYearSpan) {
         when (targetDates) {
-            TargetDates.PAST -> pastStartYear..currentYear
+            TargetDates.PAST -> pastStartYear..(pastEndYear ?: currentYear)
             TargetDates.FUTURE -> currentYear..(currentYear + normalizedFutureYearSpan)
         }
     }
@@ -184,21 +191,26 @@ fun WheelDatePicker(
         val names = monthNames ?: getMonthNames(Locale.current.language)
         if (names.size == 12) names else getMonthNames("en")
     }
+    val initialDate = remember(selectedDate, currentDate, initialYear, years) {
+        selectedDate ?: currentDate.withYear(
+            year = (initialYear ?: (currentYear - DEFAULT_INITIAL_YEAR_OFFSET)).coerceIn(years.first(), years.last())
+        )
+    }
     var showDialog by remember { mutableStateOf(false) }
-    var selectedYear by remember(showDialog, selectedDate) {
-        mutableIntStateOf((selectedDate ?: currentDate).year.coerceIn(years.first(), years.last()))
+    var selectedYear by remember(showDialog, initialDate) {
+        mutableIntStateOf(initialDate.year.coerceIn(years.first(), years.last()))
     }
-    var selectedMonth by remember(showDialog, selectedDate) {
-        mutableIntStateOf((selectedDate ?: currentDate).monthNumber)
+    var selectedMonth by remember(showDialog, initialDate) {
+        mutableIntStateOf(initialDate.monthNumber)
     }
-    var selectedDay by remember(showDialog, selectedDate) {
-        mutableIntStateOf((selectedDate ?: currentDate).dayOfMonth)
+    var selectedDay by remember(showDialog, initialDate) {
+        mutableIntStateOf(initialDate.dayOfMonth)
     }
 
     val maxDay = remember(selectedYear, selectedMonth) {
         daysInMonth(year = selectedYear, month = selectedMonth)
     }
-    val selectableMonths = remember(selectedYear, finalSelectableDates, selectedDate, currentDate) {
+    val selectableMonths = remember(selectedYear, finalSelectableDates, initialDate) {
         (1..12)
             .filter { month ->
                 (1..daysInMonth(selectedYear, month)).any { day ->
@@ -207,7 +219,7 @@ fun WheelDatePicker(
                     )
                 }
             }
-            .ifEmpty { listOf((selectedDate ?: currentDate).monthNumber.coerceIn(1, 12)) }
+            .ifEmpty { listOf(initialDate.monthNumber.coerceIn(1, 12)) }
     }
     LaunchedEffect(selectableMonths) {
         if (selectedMonth !in selectableMonths) {
@@ -367,8 +379,8 @@ private fun WheelDateColumn(
                         (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2
                     val centeredItem = layoutInfo.visibleItemsInfo.minByOrNull { itemInfo ->
                         abs((itemInfo.offset + itemInfo.size / 2) - viewportCenter)
-                    }
-                    val roundedIndex = centeredItem?.index?.coerceIn(0, items.lastIndex) ?: 0
+                    } ?: return@collect
+                    val roundedIndex = centeredItem.index.coerceIn(0, items.lastIndex)
 
                     if (items[roundedIndex] != selectedValue) {
                         onValueChange(items[roundedIndex])
@@ -444,6 +456,10 @@ private fun LocalDate.toDisplayText(): String {
     val day = day.toString().padStart(2, '0')
     val month = month.number.toString().padStart(2, '0')
     return "$day/$month/$year"
+}
+
+private fun LocalDate.withYear(year: Int): LocalDate {
+    return LocalDate(year, monthNumber, dayOfMonth.coerceAtMost(daysInMonth(year = year, month = monthNumber)))
 }
 
 private fun daysInMonth(year: Int, month: Int): Int {

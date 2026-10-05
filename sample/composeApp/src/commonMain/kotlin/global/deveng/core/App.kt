@@ -659,6 +659,7 @@ private fun ThemingDemo(
     var pickerSelection by remember { mutableStateOf<String?>(null) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
     var wheelSelectedDate by remember { mutableStateOf<LocalDate?>(LocalDate(2026, 4, 28)) }
+    var wheelBirthDate by remember { mutableStateOf<LocalDate?>(null) }
     var selectedStartDate by remember { mutableStateOf<LocalDate?>(null) }
     var selectedEndDate by remember { mutableStateOf<LocalDate?>(null) }
     var searchText by remember { mutableStateOf("") }
@@ -1808,6 +1809,17 @@ private fun ThemingDemo(
                             targetDates = TargetDates.PAST,
                             isLabelsVisible = false,
                             onDateChange = { wheelSelectedDate = it }
+                        )
+
+                        WheelDatePicker(
+                            title = "Birth date (newest year 2011, opens on 2008)",
+                            selectedDate = wheelBirthDate,
+                            selectedDateText = wheelBirthDate?.format(slashDateFormat),
+                            targetDates = TargetDates.PAST,
+                            pastStartYear = 1950,
+                            pastEndYear = 2011,
+                            initialYear = 2008,
+                            onDateChange = { wheelBirthDate = it }
                         )
 
                         SectionTitle("CustomDateRangePicker Examples")
