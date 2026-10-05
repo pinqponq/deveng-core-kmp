@@ -218,6 +218,20 @@ expect class CameraController {
     fun setPreviewStabilizationEnabled(enabled: Boolean)
 
     /**
+     * Changes the still-photo settings while the camera is open, e.g. a faster mode for quick snaps.
+     * Same meaning as the matching [core.domain.camera.state.CameraConfiguration] fields; null caps mean
+     * the highest available size, and the front lens falls back to [targetResolution].
+     * Android: SPEED/BALANCED capture with zero shutter lag while flash is off; any change rebinds the
+     * session — expect a brief viewfinder interruption. iOS: updates the photo prioritization and, in
+     * photo mode, the session preset for the new cap. Desktop and web: no-op.
+     */
+    fun setStillCaptureSettings(
+        qualityPrioritization: QualityPrioritization,
+        targetResolution: Pair<Int, Int>?,
+        targetResolutionFront: Pair<Int, Int>?,
+    )
+
+    /**
      * Aligns the native capture session with photo vs video UI mode (iOS: session preset).
      * Call when the user switches between photo and video in the camera UI — not when recording
      * starts or stops. No-op on platforms that do not multiplex still/video through one preset.

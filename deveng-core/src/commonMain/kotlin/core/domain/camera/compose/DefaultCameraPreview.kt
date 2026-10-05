@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
@@ -47,6 +48,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -68,6 +71,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.alpha
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
 import core.domain.camera.controller.CameraController
 import core.domain.camera.state.CameraKEvent
 import core.domain.camera.state.CameraKStateHolder
@@ -315,6 +322,9 @@ private fun formatRecordingProgress(elapsedMs: Long, maxDurationMs: Long): Strin
  * @param onPhotoCaptureFailed Invoked when still capture throws before [onImageCaptured] runs; pair with [onPhotoCaptureEngaged] to clear app state.
  * @param showLastCaptureThumbnail When false, the last-capture thumbnail (and the gallery-icon fallback shown when no thumbnail exists yet) is not rendered — for capture flows where reviewing/re-opening a previous frame doesn't apply (e.g. single-shot / view-once capture).
  * @param singleCaptureModeEnabled When true, only one capture — a photo OR a video recording — is allowed per composition: the shutter is disabled after a photo is taken or a recording starts (an in-progress recording can still be stopped), and Photo/Video mode switching is disabled once that slot is claimed. To reset, recompose with a fresh key/controller (e.g. leaving and re-entering the camera screen).
+ * @param shutterGlowColor When set, the shutter's outer ring takes this color and a candle-like glow of it flickers around the button, e.g. to show the next capture goes somewhere special. Null (default) keeps the plain white shutter.
+ * @param isShutterFlashEnabled When false, taking a photo does not briefly darken the preview. Defaults to true.
+ * @param shutterCenterContent Drawn inside the shutter's inner circle (e.g. an icon and a "Send" label) while not recording. Null (default) keeps the plain inner circle.
  * @param extraBottomChromePadding Additional bottom padding added below the bottom control chrome (zoom chips, shutter, gallery, mode row), on top of the default gap, to lift it above a host overlay such as a floating bottom navigation bar. Defaults to 0.dp (no change); hosts with such an overlay pass a positive value.
  * @param modifier Modifier for the root layout.
  */
@@ -342,6 +352,9 @@ fun DefaultCameraPreview(
     showTapToFocusExclusionDebugOverlay: Boolean = false,
     hostPlatform: Platform = Platform.ANDROID,
     extraBottomChromePadding: Dp = 0.dp,
+    shutterGlowColor: Color? = null,
+    shutterCenterContent: (@Composable () -> Unit)? = null,
+    isShutterFlashEnabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -700,7 +713,7 @@ fun DefaultCameraPreview(
             },
         )
         // Shutter flash effect when a photo is captured
-        if (showShutterFlash) {
+        if (showShutterFlash && isShutterFlashEnabled) {
             ShutterFlashOverlay(
                 trigger = shutterEffectTrigger,
                 onFlashComplete = { showShutterFlash = false },
@@ -1083,6 +1096,8 @@ fun DefaultCameraPreview(
                             )
                         },
                         onVideoStop = { stateHolder?.stopRecording() },
+                        glowColor = shutterGlowColor,
+                        centerContent = shutterCenterContent,
                     )
                 }
                 Box(
@@ -1349,9 +1364,15 @@ private fun ShutterButton(
     onVideoStart: () -> Unit,
     onVideoStop: () -> Unit,
     enabled: Boolean = true,
+    glowColor: Color? = null,
+    centerContent: (@Composable () -> Unit)? = null,
 ) {
     val isVideoMode = mode == CameraCaptureMode.Video && stateHolder != null
-    val outerColor = if (isRecording) Color.Red else Color.White
+    val outerColor = when {
+        isRecording -> Color.Red
+        glowColor != null -> glowColor
+        else -> Color.White
+    }
     val innerColor = if (isVideoMode) Color.Red.copy(alpha = 0.9f) else Color.White
     val innerSize = if (isRecording) 24.dp else 60.dp
     val innerShape = if (isRecording) RoundedCornerShape(8.dp) else CircleShape
@@ -1374,6 +1395,9 @@ private fun ShutterButton(
                 },
             ),
     ) {
+        if (glowColor != null) {
+            ShutterGlow(glowColor = glowColor)
+        }
         Box(
             modifier = Modifier
                 .size(72.dp)
@@ -1389,9 +1413,69 @@ private fun ShutterButton(
                     color = Color.White,
                     shape = innerShape,
                 ),
-        )
+            contentAlignment = Alignment.Center,
+        ) {
+            if (centerContent != null && !isRecording) {
+                centerContent()
+            }
+        }
     }
 }
+
+/**
+ * Candle-light glow drawn behind the shutter: an uneven keyframe loop of brightness and size, so it flickers
+ * like a flame instead of pulsing evenly. It spreads past the button bounds, which are not clipped.
+ */
+@Composable
+private fun ShutterGlow(glowColor: Color) {
+    val flickerTransition = rememberInfiniteTransition(label = "shutter_glow_flicker")
+    val flickerIntensity by flickerTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = ShutterGlowFlickerCycleMillis
+                1f at 0
+                0.78f at 180
+                0.95f at 320
+                0.84f at 520
+                1f at 760
+                0.72f at 980
+                0.92f at 1150
+                0.86f at 1420
+                1f at ShutterGlowFlickerCycleMillis
+            },
+        ),
+        label = "shutter_glow_intensity",
+    )
+    Box(
+        modifier = Modifier
+            // requiredSize lets the glow overflow the 72.dp shutter box instead of being squeezed into it.
+            .requiredSize(ShutterGlowDiameter)
+            .graphicsLayer {
+                alpha = flickerIntensity
+                scaleX = 0.9f + 0.1f * flickerIntensity
+                scaleY = 0.9f + 0.1f * flickerIntensity
+            }
+            .drawBehind {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colorStops = arrayOf(
+                            0.4f to glowColor.copy(alpha = 0.9f),
+                            0.55f to glowColor.copy(alpha = 0.5f),
+                            0.75f to glowColor.copy(alpha = 0.18f),
+                            1f to Color.Transparent,
+                        ),
+                        center = center,
+                        radius = size.minDimension / 2f,
+                    ),
+                )
+            },
+    )
+}
+
+private val ShutterGlowDiameter = 136.dp
+private const val ShutterGlowFlickerCycleMillis = 1700
 
 @Composable
 private fun FrontCameraModeChips(

@@ -795,6 +795,21 @@ actual class CameraController(
         customCameraController.applySessionPresetForCaptureMode(isVideoMode)
     }
 
+    actual fun setStillCaptureSettings(
+        qualityPrioritization: QualityPrioritization,
+        targetResolution: Pair<Int, Int>?,
+        targetResolutionFront: Pair<Int, Int>?,
+    ) {
+        qualityPriority = qualityPrioritization
+        this.targetResolution = targetResolution
+        this.targetResolutionFront = targetResolutionFront
+        customCameraController.updateStillCaptureSettings(
+            qualityPrioritization = qualityPrioritization,
+            targetResolutionBack = targetResolution,
+            targetResolutionFront = targetResolutionFront,
+        )
+    }
+
     actual fun isNightModeSupported(): Boolean = false
 
     actual fun setNightMode(enabled: Boolean) {}
