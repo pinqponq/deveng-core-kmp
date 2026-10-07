@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -89,7 +91,10 @@ internal fun NavigationBarDemoScreen(onBack: () -> Unit) {
             CustomButton(text = "Back", onClick = onBack)
             Text(text = "Selected: ${selectedDestination.title}")
             Text(text = "Placement: ${placement.name} (window: ${windowPlacement.name})")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 CustomButton(text = "Window", onClick = { forcedPlacement = null })
                 NavigationBarPlacement.entries.forEach { placementOption ->
                     CustomButton(text = placementOption.name, onClick = { forcedPlacement = placementOption })
