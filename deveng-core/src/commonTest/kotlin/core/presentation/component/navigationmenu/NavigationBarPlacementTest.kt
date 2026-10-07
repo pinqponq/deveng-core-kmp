@@ -82,6 +82,7 @@ class NavigationBarPlacementTest {
             expected.calculateLeftPadding(LayoutDirection.Ltr),
             actual.calculateLeftPadding(LayoutDirection.Ltr)
         )
+
         assertEquals(
             expected.calculateRightPadding(LayoutDirection.Ltr),
             actual.calculateRightPadding(LayoutDirection.Ltr)

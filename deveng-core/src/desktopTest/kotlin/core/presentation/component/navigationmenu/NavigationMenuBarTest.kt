@@ -131,7 +131,7 @@ class NavigationMenuBarTest {
     }
 
     @Test
-    fun indicatorInset_leavesTheEdgeOfTheSelectedItemClear() = runComposeUiTest {
+    fun indicatorInset_withSelectedItem_leavesItsEdgeClear() = runComposeUiTest {
         NavigationMenuBarRobot(composeUiTest = this)
             .setContent(placement = NavigationBarPlacement.Bottom, initiallySelectedDestination = BarDestination.Profile)
             .assertIndicatorOn(destination = BarDestination.Profile)
@@ -139,14 +139,14 @@ class NavigationMenuBarTest {
     }
 
     @Test
-    fun bottomBar_placesItemsInEqualCellsAlongTheRow() = runComposeUiTest {
+    fun bottomBar_withThreeItems_placesThemInEqualCellsAlongTheRow() = runComposeUiTest {
         NavigationMenuBarRobot(composeUiTest = this)
             .setContent(placement = NavigationBarPlacement.Bottom)
             .assertItemCellsFollowBarAxis()
     }
 
     @Test
-    fun sideBar_placesItemsInEqualCellsAlongTheColumn() = runComposeUiTest {
+    fun sideBar_withThreeItems_placesThemInEqualCellsAlongTheColumn() = runComposeUiTest {
         NavigationMenuBarRobot(composeUiTest = this)
             .setContent(placement = NavigationBarPlacement.End)
             .assertItemCellsFollowBarAxis()

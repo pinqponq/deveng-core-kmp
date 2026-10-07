@@ -27,7 +27,7 @@ import kotlin.test.Test
 class NavigationMenuBarScreenshotTest {
 
     @Test
-    fun bottomBar_withIndicatorAndCustomCenterItem() = captureBar(
+    fun bottomBar_withIndicatorAndCustomCenterItem_matchesBaseline() = captureBar(
         name = "navigation_menu_bottom_bar",
         placement = NavigationBarPlacement.Bottom,
         canvasSize = DpSize(width = 360.dp, height = 120.dp),
@@ -35,7 +35,7 @@ class NavigationMenuBarScreenshotTest {
     )
 
     @Test
-    fun sideBarAtStart_withIndicatorAndCustomCenterItem() = captureBar(
+    fun sideBarAtStart_withIndicatorAndCustomCenterItem_matchesBaseline() = captureBar(
         name = "navigation_menu_side_bar_start",
         placement = NavigationBarPlacement.Start,
         canvasSize = DpSize(width = 160.dp, height = 360.dp),
@@ -43,7 +43,7 @@ class NavigationMenuBarScreenshotTest {
     )
 
     @Test
-    fun sideBarAtEnd_withIndicatorAndCustomCenterItem() = captureBar(
+    fun sideBarAtEnd_withIndicatorAndCustomCenterItem_matchesBaseline() = captureBar(
         name = "navigation_menu_side_bar_end",
         placement = NavigationBarPlacement.End,
         canvasSize = DpSize(width = 160.dp, height = 360.dp),
@@ -93,6 +93,7 @@ class NavigationMenuBarScreenshotTest {
                 }
             }
         }
+
         onRoot().captureRoboImage(filePath = screenshotPath(name = name))
     }
 

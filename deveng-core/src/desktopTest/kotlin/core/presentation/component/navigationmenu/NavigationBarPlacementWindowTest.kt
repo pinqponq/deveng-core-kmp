@@ -39,6 +39,7 @@ class NavigationBarPlacementWindowTest {
                 placement = currentNavigationBarPlacement(sideBarAlignment = sideBarAlignment)
             }
         }
+
         waitForIdle()
 
         assertEquals(expected, placement)
