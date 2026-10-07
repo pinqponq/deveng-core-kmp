@@ -24,7 +24,7 @@ import org.jetbrains.compose.resources.DrawableResource
 class NavigationMenuScreenshotTest {
 
     @Test
-    fun verticalMode_expandedAtStart() = captureNavigationMenu(
+    fun verticalMode_expandedAtStart_matchesBaseline() = captureNavigationMenu(
         name = "navigation_menu_vertical_expanded_start",
         menuMode = MenuMode.Vertical,
         menuAlignment = MenuAlignment.Start,
@@ -32,7 +32,7 @@ class NavigationMenuScreenshotTest {
     )
 
     @Test
-    fun verticalMode_collapsedAtStart() = captureNavigationMenu(
+    fun verticalMode_collapsedAtStart_matchesBaseline() = captureNavigationMenu(
         name = "navigation_menu_vertical_collapsed_start",
         menuMode = MenuMode.Vertical,
         menuAlignment = MenuAlignment.Start,
@@ -40,7 +40,7 @@ class NavigationMenuScreenshotTest {
     )
 
     @Test
-    fun verticalMode_expandedAtEnd() = captureNavigationMenu(
+    fun verticalMode_expandedAtEnd_matchesBaseline() = captureNavigationMenu(
         name = "navigation_menu_vertical_expanded_end",
         menuMode = MenuMode.Vertical,
         menuAlignment = MenuAlignment.End,
@@ -48,7 +48,7 @@ class NavigationMenuScreenshotTest {
     )
 
     @Test
-    fun horizontalMode() = captureNavigationMenu(
+    fun horizontalMode_withSelectedItem_matchesBaseline() = captureNavigationMenu(
         name = "navigation_menu_horizontal",
         menuMode = MenuMode.Horizontal,
         menuAlignment = MenuAlignment.Start,
@@ -81,6 +81,7 @@ class NavigationMenuScreenshotTest {
                 }
             }
         }
+
         onRoot().captureRoboImage(filePath = screenshotPath(name = name))
     }
 
