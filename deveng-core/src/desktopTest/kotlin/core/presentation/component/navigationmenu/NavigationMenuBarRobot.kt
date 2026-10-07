@@ -1,5 +1,8 @@
 package core.presentation.component.navigationmenu
 
+import androidx.compose.foundation.IndicationNodeFactory
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
@@ -11,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
@@ -45,6 +49,7 @@ enum class BarDestination(val title: String, val icon: DrawableResource) {
 @OptIn(ExperimentalTestApi::class)
 class NavigationMenuBarRobot(private val composeUiTest: ComposeUiTest) {
     val clickedDestinationList = mutableListOf<BarDestination>()
+    private val recordingIndication = RecordingIndication()
     private var selectedDestination by mutableStateOf<BarDestination?>(null)
     private var isVertical = false
 
@@ -53,7 +58,8 @@ class NavigationMenuBarRobot(private val composeUiTest: ComposeUiTest) {
         initiallySelectedDestination: BarDestination? = BarDestination.Search,
         indicatorSize: DpSize? = null,
         isIndicatorVisible: Boolean = true,
-        customContentDestination: BarDestination? = null
+        customContentDestination: BarDestination? = null,
+        isItemRippleEnabled: Boolean = true
     ) = apply {
         selectedDestination = initiallySelectedDestination
         isVertical = placement.menuMode == MenuMode.SideBar
@@ -61,50 +67,54 @@ class NavigationMenuBarRobot(private val composeUiTest: ComposeUiTest) {
         composeUiTest.setContent {
             CompositionLocalProvider(LocalDensity provides Density(density = 1f)) {
                 AppTheme(darkTheme = false) {
-                    Box(modifier = Modifier.size(containerSize).testTag(CONTAINER_TAG)) {
-                        NavigationMenu(
-                            isExpanded = false,
-                            menuMode = placement.menuMode,
-                            menuAlignment = placement.menuAlignment,
-                            backgroundColor = BAR_COLOR,
-                            barThickness = BAR_THICKNESS,
-                            barIndicator = if (isIndicatorVisible) {
-                                NavigationMenuIndicator(
-                                    color = INDICATOR_COLOR,
-                                    shape = RectangleShape,
-                                    inset = INDICATOR_INSET,
-                                    size = indicatorSize
-                                )
-                            } else {
-                                null
-                            },
-                            barItemContent = if (customContentDestination == null) {
-                                null
-                            } else {
-                                { destination, isSelected ->
-                                    if (destination == customContentDestination) {
-                                        Text(text = customContentText(isSelected = isSelected))
-                                    } else {
-                                        NavigationMenuBarItemIcon(
-                                            icon = destination.icon,
-                                            iconTint = Color.White,
-                                            contentDescription = destination.title
-                                        )
+                    // AppTheme provides its own indication, so the recording one goes inside it.
+                    CompositionLocalProvider(LocalIndication provides recordingIndication) {
+                        Box(modifier = Modifier.size(containerSize).testTag(CONTAINER_TAG)) {
+                            NavigationMenu(
+                                isExpanded = false,
+                                menuMode = placement.menuMode,
+                                menuAlignment = placement.menuAlignment,
+                                backgroundColor = BAR_COLOR,
+                                barThickness = BAR_THICKNESS,
+                                barIndicator = if (isIndicatorVisible) {
+                                    NavigationMenuIndicator(
+                                        color = INDICATOR_COLOR,
+                                        shape = RectangleShape,
+                                        inset = INDICATOR_INSET,
+                                        size = indicatorSize
+                                    )
+                                } else {
+                                    null
+                                },
+                                isBarItemRippleEnabled = isItemRippleEnabled,
+                                barItemContent = if (customContentDestination == null) {
+                                    null
+                                } else {
+                                    { destination, isSelected ->
+                                        if (destination == customContentDestination) {
+                                            Text(text = customContentText(isSelected = isSelected))
+                                        } else {
+                                            NavigationMenuBarItemIcon(
+                                                icon = destination.icon,
+                                                iconTint = Color.White,
+                                                contentDescription = destination.title
+                                            )
+                                        }
                                     }
+                                },
+                                itemList = BarDestination.entries,
+                                isItemSelected = { destination -> destination == selectedDestination },
+                                itemText = { destination -> destination.title },
+                                itemTextStyle = { TextStyle() },
+                                itemIcon = { destination -> destination.icon },
+                                itemIconTint = { Color.White },
+                                itemIconDescription = { destination -> destination.title },
+                                onItemClick = { destination ->
+                                    clickedDestinationList += destination
+                                    selectedDestination = destination
                                 }
-                            },
-                            itemList = BarDestination.entries,
-                            isItemSelected = { destination -> destination == selectedDestination },
-                            itemText = { destination -> destination.title },
-                            itemTextStyle = { TextStyle() },
-                            itemIcon = { destination -> destination.icon },
-                            itemIconTint = { Color.White },
-                            itemIconDescription = { destination -> destination.title },
-                            onItemClick = { destination ->
-                                clickedDestinationList += destination
-                                selectedDestination = destination
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }
@@ -128,6 +138,11 @@ class NavigationMenuBarRobot(private val composeUiTest: ComposeUiTest) {
 
     fun assertTextDisplayed(text: String) = apply {
         composeUiTest.onNodeWithText(text).assertIsDisplayed()
+    }
+
+    fun assertItemRippleCount(expectedCount: Int) = apply {
+        composeUiTest.waitForIdle()
+        assertEquals(expectedCount, recordingIndication.createdNodeCount, "ripple count of the bar items")
     }
 
     fun assertItemCellsFollowBarAxis() = apply {
@@ -170,8 +185,6 @@ class NavigationMenuBarRobot(private val composeUiTest: ComposeUiTest) {
         }
     }
 
-    // A hovered or pressed item draws a translucent state layer over the indicator, so the probe
-    // accepts the indicator color with that tint instead of the exact color.
     private fun isIndicatorColor(color: Color): Boolean =
         color.red > INDICATOR_CHANNEL_MIN && color.blue > INDICATOR_CHANNEL_MIN && color.green < BAR_CHANNEL_MAX
 
@@ -200,4 +213,18 @@ class NavigationMenuBarRobot(private val composeUiTest: ComposeUiTest) {
         private fun customContentText(isSelected: Boolean): String =
             if (isSelected) CUSTOM_CONTENT_SELECTED_TEXT else CUSTOM_CONTENT_TEXT
     }
+}
+
+private class RecordingIndication : IndicationNodeFactory {
+    var createdNodeCount = 0
+        private set
+
+    override fun create(interactionSource: InteractionSource): DelegatableNode {
+        createdNodeCount++
+        return object : Modifier.Node() {}
+    }
+
+    override fun equals(other: Any?): Boolean = other === this
+
+    override fun hashCode(): Int = System.identityHashCode(this)
 }

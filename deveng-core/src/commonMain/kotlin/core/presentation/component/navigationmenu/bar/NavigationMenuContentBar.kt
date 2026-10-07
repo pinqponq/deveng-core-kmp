@@ -32,6 +32,7 @@ import org.jetbrains.compose.resources.DrawableResource
 internal fun <T> NavigationMenuContentBar(
     isVertical: Boolean,
     indicator: NavigationMenuIndicator?,
+    isItemRippleEnabled: Boolean,
     itemList: List<T>,
     isItemSelected: (T) -> Boolean,
     itemContent: (@Composable (item: T, isSelected: Boolean) -> Unit)?,
@@ -76,6 +77,7 @@ internal fun <T> NavigationMenuContentBar(
                     val isSelected = isItemSelected(item)
                     NavigationMenuContentItemBar(
                         isSelected = isSelected,
+                        isRippleEnabled = isItemRippleEnabled,
                         onItemClick = { onItemClick(item) },
                         itemModifier = Modifier.weight(1f).fillMaxWidth()
                     ) {
@@ -89,6 +91,7 @@ internal fun <T> NavigationMenuContentBar(
                     val isSelected = isItemSelected(item)
                     NavigationMenuContentItemBar(
                         isSelected = isSelected,
+                        isRippleEnabled = isItemRippleEnabled,
                         onItemClick = { onItemClick(item) },
                         itemModifier = Modifier.weight(1f).fillMaxHeight()
                     ) {

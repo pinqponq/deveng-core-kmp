@@ -1,5 +1,6 @@
 package core.presentation.component.navigationmenu.bar
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
@@ -16,6 +17,7 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 internal fun NavigationMenuContentItemBar(
     isSelected: Boolean,
+    isRippleEnabled: Boolean,
     onItemClick: () -> Unit,
     itemModifier: Modifier = Modifier,
     content: @Composable () -> Unit
@@ -23,6 +25,8 @@ internal fun NavigationMenuContentItemBar(
     Box(
         modifier = itemModifier.selectable(
             selected = isSelected,
+            interactionSource = null,
+            indication = if (isRippleEnabled) LocalIndication.current else null,
             role = Role.Tab,
             onClick = onItemClick
         ),

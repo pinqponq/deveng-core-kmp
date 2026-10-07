@@ -243,7 +243,7 @@ Tinder-style swipeable card stack: `SwipeCards`, `SwipeCardsState`, `rememberSwi
 
 ### NavigationMenu bar modes
 
-`MenuMode.BottomBar` renders a compact bar at the bottom; `MenuMode.SideBar` renders the same bar as a narrow column at the start or end (`MenuAlignment`). Both take an optional sliding `NavigationMenuIndicator` (color, shape, inset or fixed size, animation spec) and a `barItemContent` slot to draw an item differently (e.g. a center logo). `NavigationBarPlacement` picks bottom vs. side from the window size (`currentNavigationBarPlacement()`, built on `currentDeviceScreenType()`), and `contentPadding(barThickness)` keeps screen content clear of the bar.
+`MenuMode.BottomBar` renders a compact bar at the bottom; `MenuMode.SideBar` renders the same bar as a narrow column at the start or end (`MenuAlignment`). Both take an optional sliding `NavigationMenuIndicator` (color, shape, inset or fixed size, animation spec) and a `barItemContent` slot to draw an item differently (e.g. a center logo). `isBarItemRippleEnabled = false` turns off the press ripple of the bar items (default: on). `NavigationBarPlacement` picks bottom vs. side from the window size (`currentNavigationBarPlacement()`, built on `currentDeviceScreenType()`), and `contentPadding(barThickness)` keeps screen content clear of the bar.
 
 ```kotlin
 val placement = currentNavigationBarPlacement()

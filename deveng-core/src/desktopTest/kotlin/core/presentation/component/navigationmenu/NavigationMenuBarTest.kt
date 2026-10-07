@@ -156,4 +156,21 @@ class NavigationMenuBarTest {
         val FIXED_INDICATOR_SIZE = DpSize(width = 40.dp, height = 10.dp)
         val FIXED_INDICATOR_PROBE_MAIN_AXIS_OFFSET = 32.dp
     }
+
+    @Test
+    fun clickItem_byDefault_showsRipple() = runComposeUiTest {
+        NavigationMenuBarRobot(composeUiTest = this)
+            .setContent(placement = NavigationBarPlacement.Bottom)
+            .clickItem(destination = BarDestination.Profile)
+            .assertItemRippleCount(expectedCount = 1)
+    }
+
+    @Test
+    fun clickItem_withRippleDisabled_showsNoRipple() = runComposeUiTest {
+        NavigationMenuBarRobot(composeUiTest = this)
+            .setContent(placement = NavigationBarPlacement.Bottom, isItemRippleEnabled = false)
+            .clickItem(destination = BarDestination.Profile)
+            .assertItemRippleCount(expectedCount = 0)
+            .assertIndicatorOn(destination = BarDestination.Profile)
+    }
 }

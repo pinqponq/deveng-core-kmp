@@ -72,6 +72,7 @@ import org.jetbrains.compose.resources.DrawableResource
  * @param barThickness Height of the [MenuMode.BottomBar] or width of the [MenuMode.SideBar]. If null, uses theme default.
  *                     [NavigationBarPlacement.contentPadding] turns it into padding for the screen content.
  * @param barIndicator Indicator that slides to the selected item in the bar modes. If null, no indicator is drawn.
+ * @param isBarItemRippleEnabled Whether pressing an item in the bar modes shows the ripple. Defaults to true.
  * @param barItemContent Content of each item in the bar modes, e.g. to draw one item differently. The item stays
  *                       clickable and selectable. If null, each item shows its icon.
  * @param itemList List of items of type T to display as menu items.
@@ -109,6 +110,7 @@ fun <T> NavigationMenu(
     verticalItemSelectedBackgroundColor: Color? = null,
     barThickness: Dp? = null,
     barIndicator: NavigationMenuIndicator? = null,
+    isBarItemRippleEnabled: Boolean = true,
     barItemContent: (@Composable (item: T, isSelected: Boolean) -> Unit)? = null,
     itemList: List<T>,
     isItemSelected: (T) -> Boolean,
@@ -241,6 +243,7 @@ fun <T> NavigationMenu(
             NavigationMenuContentBar(
                 isVertical = menuMode == MenuMode.SideBar,
                 indicator = barIndicator,
+                isItemRippleEnabled = isBarItemRippleEnabled,
                 itemList = itemList,
                 isItemSelected = isItemSelected,
                 itemContent = barItemContent,
