@@ -30,7 +30,7 @@ class NavigationMenuBarScreenshotTest {
     fun bottomBar_withIndicatorAndCustomCenterItem_matchesBaseline() = captureBar(
         name = "navigation_menu_bottom_bar",
         placement = NavigationBarPlacement.Bottom,
-        canvasSize = DpSize(width = 360.dp, height = 120.dp),
+        canvasSize = BOTTOM_BAR_CANVAS_SIZE,
         barShape = RoundedCornerShape(topStart = CORNER_RADIUS, topEnd = CORNER_RADIUS)
     )
 
@@ -38,7 +38,7 @@ class NavigationMenuBarScreenshotTest {
     fun sideBarAtStart_withIndicatorAndCustomCenterItem_matchesBaseline() = captureBar(
         name = "navigation_menu_side_bar_start",
         placement = NavigationBarPlacement.Start,
-        canvasSize = DpSize(width = 160.dp, height = 360.dp),
+        canvasSize = SIDE_BAR_CANVAS_SIZE,
         barShape = RoundedCornerShape(topEnd = CORNER_RADIUS, bottomEnd = CORNER_RADIUS)
     )
 
@@ -46,7 +46,7 @@ class NavigationMenuBarScreenshotTest {
     fun sideBarAtEnd_withIndicatorAndCustomCenterItem_matchesBaseline() = captureBar(
         name = "navigation_menu_side_bar_end",
         placement = NavigationBarPlacement.End,
-        canvasSize = DpSize(width = 160.dp, height = 360.dp),
+        canvasSize = SIDE_BAR_CANVAS_SIZE,
         barShape = RoundedCornerShape(topStart = CORNER_RADIUS, bottomStart = CORNER_RADIUS)
     )
 
@@ -106,6 +106,8 @@ class NavigationMenuBarScreenshotTest {
     private companion object {
         const val CANVAS_MAX_PX = 800
         const val CENTER_ITEM_TEXT = "R"
+        val BOTTOM_BAR_CANVAS_SIZE = DpSize(width = 360.dp, height = 120.dp)
+        val SIDE_BAR_CANVAS_SIZE = DpSize(width = 160.dp, height = 360.dp)
         val BAR_THICKNESS = 54.dp
         val CORNER_RADIUS = 28.dp
         val BAR_COLOR = Color(0xFF0E0E0E)

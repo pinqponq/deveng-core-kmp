@@ -184,20 +184,20 @@ class NavigationMenuBarRobot(private val composeUiTest: ComposeUiTest) {
     }
 
     companion object {
-        val BAR_LENGTH = 300.dp
-        val CELL_LENGTH = BAR_LENGTH / BarDestination.entries.size
         val BAR_THICKNESS = 72.dp
-        val INDICATOR_INSET = 6.dp
-        val PROBE_OFFSET = 8.dp
-        val BAR_COLOR = Color.Black
-        val INDICATOR_COLOR = Color.Magenta
         const val CUSTOM_CONTENT_TEXT = "Center"
         const val CUSTOM_CONTENT_SELECTED_TEXT = "Center selected"
+        private val BAR_LENGTH = 300.dp
+        private val CELL_LENGTH = BAR_LENGTH / BarDestination.entries.size
+        private val INDICATOR_INSET = 6.dp
+        private val PROBE_OFFSET = 8.dp
+        private val BAR_COLOR = Color.Black
+        private val INDICATOR_COLOR = Color.Magenta
         private const val INDICATOR_CHANNEL_MIN = 0.8f
         private const val BAR_CHANNEL_MAX = 0.2f
         private const val CONTAINER_TAG = "navigationMenuBarTestContainer"
 
-        fun customContentText(isSelected: Boolean): String =
+        private fun customContentText(isSelected: Boolean): String =
             if (isSelected) CUSTOM_CONTENT_SELECTED_TEXT else CUSTOM_CONTENT_TEXT
     }
 }
