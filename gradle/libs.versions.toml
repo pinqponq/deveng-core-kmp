@@ -29,6 +29,10 @@ javacvPlatform = "1.5.12"
 datetime = "0.7.1"
 russhwolfsettings = "1.2.0"
 
+kotlinx-coroutines-test = "1.10.2"
+kover = "0.9.11"
+roborazzi = "1.76.0"
+
 # QR generator
 qrose = "1.1.2"
 # QR scanner
@@ -69,6 +73,9 @@ qrose = { module = "io.github.alexzhirkevich:qrose", version.ref = "qrose" }
 # QR scanner
 mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkit-barcode" }
 
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
+roborazzi-compose-desktop = { module = "io.github.takahirom.roborazzi:roborazzi-compose-desktop", version.ref = "roborazzi" }
+
 [plugins]
 
 multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
@@ -80,3 +87,5 @@ vanniktech-mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 figma-code-connect = { id = "com.figma.code.connect", version.ref = "figma-code-connect" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
