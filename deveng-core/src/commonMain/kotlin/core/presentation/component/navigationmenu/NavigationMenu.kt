@@ -236,6 +236,7 @@ fun <T> NavigationMenu(
                 itemIconDescription = itemIconDescription
             )
         }
+
         if (menuMode == MenuMode.BottomBar || menuMode == MenuMode.SideBar) {
             NavigationMenuContentBar(
                 isVertical = menuMode == MenuMode.SideBar,

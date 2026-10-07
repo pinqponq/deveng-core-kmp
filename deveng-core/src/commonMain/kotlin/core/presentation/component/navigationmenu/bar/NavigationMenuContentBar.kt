@@ -29,7 +29,7 @@ import core.presentation.component.navigationmenu.NavigationMenuIndicator
 import org.jetbrains.compose.resources.DrawableResource
 
 @Composable
-fun <T> NavigationMenuContentBar(
+internal fun <T> NavigationMenuContentBar(
     isVertical: Boolean,
     indicator: NavigationMenuIndicator?,
     itemList: List<T>,

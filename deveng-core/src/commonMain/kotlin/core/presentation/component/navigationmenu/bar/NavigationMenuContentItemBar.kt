@@ -14,7 +14,7 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-fun NavigationMenuContentItemBar(
+internal fun NavigationMenuContentItemBar(
     isSelected: Boolean,
     onItemClick: () -> Unit,
     itemModifier: Modifier = Modifier,
@@ -32,6 +32,15 @@ fun NavigationMenuContentItemBar(
     }
 }
 
+/**
+ * Default icon of a [core.presentation.component.navigationmenu.MenuMode.BottomBar] or
+ * [core.presentation.component.navigationmenu.MenuMode.SideBar] item, for use inside `barItemContent`
+ * when only some items are drawn differently. Draws nothing when [icon] or [iconTint] is null.
+ *
+ * @param icon Icon drawable resource.
+ * @param iconTint Tint applied to the icon.
+ * @param contentDescription Accessibility description of the icon.
+ */
 @Composable
 fun NavigationMenuBarItemIcon(
     icon: DrawableResource?,

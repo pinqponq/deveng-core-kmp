@@ -8,42 +8,57 @@ class DeviceScreenTypeTest {
 
     @Test
     fun fromWindowSizeClass_withCompactWidthAndMediumHeight_returnsMobilePortrait() {
-        assertDeviceScreenType(widthDp = 0, heightDp = 480, expected = DeviceScreenType.MOBILE_PORTRAIT)
+        assertDeviceScreenType(widthDp = ZERO_DP, heightDp = MEDIUM_HEIGHT_DP, expected = DeviceScreenType.MOBILE_PORTRAIT)
+        assertDeviceScreenType(widthDp = LAST_COMPACT_WIDTH_DP, heightDp = MEDIUM_HEIGHT_DP, expected = DeviceScreenType.MOBILE_PORTRAIT)
     }
 
     @Test
-    fun fromWindowSizeClass_withCompactWidthAndCompactHeight_returnsMobileLandscape() {
-        assertDeviceScreenType(widthDp = 480, heightDp = 0, expected = DeviceScreenType.MOBILE_LANDSCAPE)
+    fun fromWindowSizeClass_withLandscapePhoneWidthAndCompactHeight_returnsMobileLandscape() {
+        assertDeviceScreenType(widthDp = MEDIUM_HEIGHT_DP, heightDp = ZERO_DP, expected = DeviceScreenType.MOBILE_LANDSCAPE)
+        assertDeviceScreenType(widthDp = LAST_COMPACT_WIDTH_DP, heightDp = LAST_COMPACT_HEIGHT_DP, expected = DeviceScreenType.MOBILE_LANDSCAPE)
     }
 
     @Test
     fun fromWindowSizeClass_withMediumWidthAndExpandedHeight_returnsTabletPortrait() {
-        assertDeviceScreenType(widthDp = 600, heightDp = 900, expected = DeviceScreenType.TABLET_PORTRAIT)
+        assertDeviceScreenType(widthDp = MEDIUM_WIDTH_DP, heightDp = EXPANDED_HEIGHT_DP, expected = DeviceScreenType.TABLET_PORTRAIT)
+        assertDeviceScreenType(widthDp = LAST_MEDIUM_WIDTH_DP, heightDp = EXPANDED_HEIGHT_DP, expected = DeviceScreenType.TABLET_PORTRAIT)
     }
 
     @Test
     fun fromWindowSizeClass_withMediumWidthAndMediumHeight_returnsTabletLandscape() {
-        assertDeviceScreenType(widthDp = 600, heightDp = 480, expected = DeviceScreenType.TABLET_LANDSCAPE)
+        assertDeviceScreenType(widthDp = MEDIUM_WIDTH_DP, heightDp = MEDIUM_HEIGHT_DP, expected = DeviceScreenType.TABLET_LANDSCAPE)
+        assertDeviceScreenType(widthDp = LAST_MEDIUM_WIDTH_DP, heightDp = LAST_MEDIUM_HEIGHT_DP, expected = DeviceScreenType.TABLET_LANDSCAPE)
     }
 
     @Test
     fun fromWindowSizeClass_withExpandedWidthAndExpandedHeight_returnsDesktop() {
-        assertDeviceScreenType(widthDp = 840, heightDp = 900, expected = DeviceScreenType.DESKTOP)
+        assertDeviceScreenType(widthDp = EXPANDED_WIDTH_DP, heightDp = EXPANDED_HEIGHT_DP, expected = DeviceScreenType.DESKTOP)
     }
 
     @Test
-    fun fromWindowSizeClass_withMediumWidthAndCompactHeight_fallsBackToDesktop() {
-        assertDeviceScreenType(widthDp = 600, heightDp = 0, expected = DeviceScreenType.DESKTOP)
-    }
-
-    @Test
-    fun fromWindowSizeClass_withCompactWidthBelowLandscapeBoundAndCompactHeight_fallsBackToDesktop() {
-        assertDeviceScreenType(widthDp = 0, heightDp = 0, expected = DeviceScreenType.DESKTOP)
+    fun fromWindowSizeClass_withSizeNoCategoryMatches_fallsBackToDesktop() {
+        assertDeviceScreenType(widthDp = MEDIUM_WIDTH_DP, heightDp = ZERO_DP, expected = DeviceScreenType.DESKTOP)
+        assertDeviceScreenType(widthDp = LAST_LANDSCAPE_GAP_WIDTH_DP, heightDp = ZERO_DP, expected = DeviceScreenType.DESKTOP)
+        assertDeviceScreenType(widthDp = EXPANDED_WIDTH_DP, heightDp = LAST_MEDIUM_HEIGHT_DP, expected = DeviceScreenType.DESKTOP)
+        assertDeviceScreenType(widthDp = MEDIUM_WIDTH_DP, heightDp = LAST_COMPACT_HEIGHT_DP, expected = DeviceScreenType.DESKTOP)
     }
 
     private fun assertDeviceScreenType(widthDp: Int, heightDp: Int, expected: DeviceScreenType) {
         val windowSizeClass = WindowSizeClass(minWidthDp = widthDp, minHeightDp = heightDp)
 
-        assertEquals(expected, DeviceScreenType.fromWindowSizeClass(windowSizeClass))
+        assertEquals(expected, DeviceScreenType.fromWindowSizeClass(windowSizeClass), "${widthDp}x$heightDp")
+    }
+
+    private companion object {
+        const val ZERO_DP = 0
+        const val MEDIUM_HEIGHT_DP = 480
+        const val LAST_COMPACT_HEIGHT_DP = MEDIUM_HEIGHT_DP - 1
+        const val EXPANDED_HEIGHT_DP = 900
+        const val LAST_MEDIUM_HEIGHT_DP = EXPANDED_HEIGHT_DP - 1
+        const val MEDIUM_WIDTH_DP = 600
+        const val LAST_COMPACT_WIDTH_DP = MEDIUM_WIDTH_DP - 1
+        const val LAST_LANDSCAPE_GAP_WIDTH_DP = MEDIUM_HEIGHT_DP - 1
+        const val EXPANDED_WIDTH_DP = 840
+        const val LAST_MEDIUM_WIDTH_DP = EXPANDED_WIDTH_DP - 1
     }
 }

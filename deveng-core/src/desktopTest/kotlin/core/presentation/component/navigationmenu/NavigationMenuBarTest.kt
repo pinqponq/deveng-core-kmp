@@ -95,21 +95,61 @@ class NavigationMenuBarTest {
                 mainAxisOffset = FIXED_INDICATOR_PROBE_MAIN_AXIS_OFFSET,
                 crossAxisOffset = NavigationMenuBarRobot.BAR_THICKNESS / 2
             )
+            .assertNoIndicator()
     }
 
     @Test
-    fun barItemContent_rendersCustomContentWithSelectionAndKeepsItClickable() = runComposeUiTest {
-        val robot = NavigationMenuBarRobot(composeUiTest = this)
+    fun barItemContent_withCustomItem_rendersItWithItsSelectionState() = runComposeUiTest {
+        NavigationMenuBarRobot(composeUiTest = this)
             .setContent(
                 placement = NavigationBarPlacement.Bottom,
                 customContentDestination = BarDestination.Calendar
             )
             .assertTextDisplayed(text = NavigationMenuBarRobot.CUSTOM_CONTENT_TEXT)
-            .clickText(text = NavigationMenuBarRobot.CUSTOM_CONTENT_TEXT)
+            .selectDestination(destination = BarDestination.Calendar)
             .assertTextDisplayed(text = NavigationMenuBarRobot.CUSTOM_CONTENT_SELECTED_TEXT)
+    }
+
+    @Test
+    fun clickItem_withCustomItemContent_sendsCustomAndDefaultItems() = runComposeUiTest {
+        val robot = NavigationMenuBarRobot(composeUiTest = this)
+            .setContent(
+                placement = NavigationBarPlacement.Bottom,
+                customContentDestination = BarDestination.Calendar
+            )
+            .clickText(text = NavigationMenuBarRobot.CUSTOM_CONTENT_TEXT)
             .clickItem(destination = BarDestination.Profile)
 
         assertEquals(listOf(BarDestination.Calendar, BarDestination.Profile), robot.clickedDestinationList)
+    }
+
+    @Test
+    fun setContent_withoutIndicator_drawsNoIndicator() = runComposeUiTest {
+        NavigationMenuBarRobot(composeUiTest = this)
+            .setContent(placement = NavigationBarPlacement.Bottom, isIndicatorVisible = false)
+            .assertNoIndicator()
+    }
+
+    @Test
+    fun indicatorInset_leavesTheEdgeOfTheSelectedItemClear() = runComposeUiTest {
+        NavigationMenuBarRobot(composeUiTest = this)
+            .setContent(placement = NavigationBarPlacement.Bottom, initiallySelectedDestination = BarDestination.Profile)
+            .assertIndicatorOn(destination = BarDestination.Profile)
+            .assertInsetLeftClearAround(destination = BarDestination.Profile)
+    }
+
+    @Test
+    fun bottomBar_placesItemsInEqualCellsAlongTheRow() = runComposeUiTest {
+        NavigationMenuBarRobot(composeUiTest = this)
+            .setContent(placement = NavigationBarPlacement.Bottom)
+            .assertItemCellsFollowBarAxis()
+    }
+
+    @Test
+    fun sideBar_placesItemsInEqualCellsAlongTheColumn() = runComposeUiTest {
+        NavigationMenuBarRobot(composeUiTest = this)
+            .setContent(placement = NavigationBarPlacement.End)
+            .assertItemCellsFollowBarAxis()
     }
 
     private companion object {

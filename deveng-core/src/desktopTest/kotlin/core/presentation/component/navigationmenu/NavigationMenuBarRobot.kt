@@ -17,6 +17,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -51,6 +52,7 @@ class NavigationMenuBarRobot(private val composeUiTest: ComposeUiTest) {
         placement: NavigationBarPlacement,
         initiallySelectedDestination: BarDestination? = BarDestination.Search,
         indicatorSize: DpSize? = null,
+        isIndicatorVisible: Boolean = true,
         customContentDestination: BarDestination? = null
     ) = apply {
         selectedDestination = initiallySelectedDestination
@@ -66,12 +68,16 @@ class NavigationMenuBarRobot(private val composeUiTest: ComposeUiTest) {
                             menuAlignment = placement.menuAlignment,
                             backgroundColor = BAR_COLOR,
                             barThickness = BAR_THICKNESS,
-                            barIndicator = NavigationMenuIndicator(
-                                color = INDICATOR_COLOR,
-                                shape = RectangleShape,
-                                inset = INDICATOR_INSET,
-                                size = indicatorSize
-                            ),
+                            barIndicator = if (isIndicatorVisible) {
+                                NavigationMenuIndicator(
+                                    color = INDICATOR_COLOR,
+                                    shape = RectangleShape,
+                                    inset = INDICATOR_INSET,
+                                    size = indicatorSize
+                                )
+                            } else {
+                                null
+                            },
                             barItemContent = if (customContentDestination == null) {
                                 null
                             } else {
@@ -124,6 +130,34 @@ class NavigationMenuBarRobot(private val composeUiTest: ComposeUiTest) {
         composeUiTest.onNodeWithText(text).assertIsDisplayed()
     }
 
+    fun assertItemCellsFollowBarAxis() = apply {
+        BarDestination.entries.forEach { destination ->
+            val cellBounds = composeUiTest.onNodeWithContentDescription(destination.title).getBoundsInRoot()
+            val cellStart = if (isVertical) cellBounds.top else cellBounds.left
+            val cellLength = if (isVertical) cellBounds.bottom - cellBounds.top else cellBounds.right - cellBounds.left
+            assertEquals(CELL_LENGTH * destination.ordinal, cellStart, "cell start of ${destination.title}")
+            assertEquals(CELL_LENGTH, cellLength, "cell length of ${destination.title}")
+        }
+    }
+
+    fun assertNoIndicator() = apply {
+        composeUiTest.waitForIdle()
+        BarDestination.entries.forEach { cellDestination ->
+            val probeColor = probeColor(cellIndex = cellDestination.ordinal, mainAxisOffset = PROBE_OFFSET, crossAxisOffset = PROBE_OFFSET)
+            assertEquals(false, isIndicatorColor(probeColor), "indicator on ${cellDestination.title}: $probeColor")
+        }
+    }
+
+    fun assertInsetLeftClearAround(destination: BarDestination) = apply {
+        composeUiTest.waitForIdle()
+        val insetProbeColor = probeColor(
+            cellIndex = destination.ordinal,
+            mainAxisOffset = INDICATOR_INSET / 2,
+            crossAxisOffset = INDICATOR_INSET / 2
+        )
+        assertEquals(false, isIndicatorColor(insetProbeColor), "inset of ${destination.title}: $insetProbeColor")
+    }
+
     fun assertIndicatorOn(destination: BarDestination, crossAxisOffset: Dp = PROBE_OFFSET, mainAxisOffset: Dp = PROBE_OFFSET) = apply {
         composeUiTest.waitForIdle()
         BarDestination.entries.forEach { cellDestination ->
@@ -151,6 +185,7 @@ class NavigationMenuBarRobot(private val composeUiTest: ComposeUiTest) {
 
     companion object {
         val BAR_LENGTH = 300.dp
+        val CELL_LENGTH = BAR_LENGTH / BarDestination.entries.size
         val BAR_THICKNESS = 72.dp
         val INDICATOR_INSET = 6.dp
         val PROBE_OFFSET = 8.dp

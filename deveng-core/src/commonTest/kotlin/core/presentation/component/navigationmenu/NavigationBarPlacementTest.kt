@@ -43,7 +43,7 @@ class NavigationBarPlacementTest {
     }
 
     @Test
-    fun placement_mapsToBarMenuModeAndAlignment() {
+    fun menuModeAndAlignment_forEachPlacement_matchTheBarSide() {
         assertEquals(MenuMode.BottomBar, NavigationBarPlacement.Bottom.menuMode)
         assertEquals(MenuMode.SideBar, NavigationBarPlacement.Start.menuMode)
         assertEquals(MenuAlignment.Start, NavigationBarPlacement.Start.menuAlignment)
