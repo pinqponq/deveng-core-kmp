@@ -360,9 +360,11 @@ internal fun App() {
         var showQrScannerScreen by remember { mutableStateOf(false) }
         var showScrollToEdgeScreen by remember { mutableStateOf(false) }
         var showMediaViewerScreen by remember { mutableStateOf(false) }
+        var showNavigationBarScreen by remember { mutableStateOf(false) }
         when {
             showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
             showMediaViewerScreen -> MediaViewerDemoScreen(onBack = { showMediaViewerScreen = false })
+            showNavigationBarScreen -> NavigationBarDemoScreen(onBack = { showNavigationBarScreen = false })
             showQrGeneratorScreen -> QrGeneratorDemoScreen(onBack = { showQrGeneratorScreen = false })
             showQrScannerScreen -> QrScannerDemoScreen(onBack = { showQrScannerScreen = false })
             showCameraScreen -> CameraScreen(onBack = { showCameraScreen = false })
@@ -372,6 +374,7 @@ internal fun App() {
                 onOpenQrScanner = { showQrScannerScreen = true },
                 onOpenScrollToEdge = { showScrollToEdgeScreen = true },
                 onOpenMediaViewer = { showMediaViewerScreen = true },
+                onOpenNavigationBar = { showNavigationBarScreen = true },
             )
         }
     }
@@ -634,6 +637,7 @@ private fun ThemingDemo(
     onOpenQrScanner: () -> Unit = {},
     onOpenScrollToEdge: () -> Unit = {},
     onOpenMediaViewer: () -> Unit = {},
+    onOpenNavigationBar: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1024,6 +1028,12 @@ private fun ThemingDemo(
                             text = "Open MediaViewer (Vertical) Demo",
                             containerColor = Color(0xFF7C3AED),
                             onClick = onOpenMediaViewer
+                        )
+
+                        CustomButton(
+                            text = "Open Navigation Bar Demo",
+                            containerColor = Color(0xFF0E0E0E),
+                            onClick = onOpenNavigationBar
                         )
 
                         RatingRow(

@@ -9,7 +9,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -22,6 +24,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import core.presentation.component.Slot
+import core.presentation.component.navigationmenu.bar.NavigationMenuContentBar
 import core.presentation.component.navigationmenu.collapsed.NavigationMenuContentCollapsed
 import core.presentation.component.navigationmenu.expanded.NavigationMenuContentExpanded
 import core.presentation.component.navigationmenu.horizontal.NavigationMenuContentHorizontal
@@ -32,14 +35,17 @@ import org.jetbrains.compose.resources.DrawableResource
  * A customizable navigation menu component with expand/collapse animation support.
  * Displays different content when expanded (with text and icons) vs collapsed (icons only).
  * Includes animated transitions between expanded and collapsed states.
- * Supports both vertical navigation menu and horizontal header modes.
+ * Supports vertical navigation menu and horizontal header modes, and compact bar modes
+ * ([MenuMode.BottomBar], [MenuMode.SideBar]) with an optional sliding selection indicator.
  *
  * @param isExpanded Whether the navigation menu is in expanded state (true) or collapsed (false).
  *                          In horizontal mode, this parameter is ignored and menu is always expanded.
  * @param menuMode Display mode: [MenuMode.Vertical] for navigation menu with expand/collapse,
- *                 [MenuMode.Horizontal] for fixed header (always expanded). Defaults to [MenuMode.Vertical].
+ *                 [MenuMode.Horizontal] for fixed header (always expanded), [MenuMode.BottomBar] for a compact
+ *                 bar at the bottom, [MenuMode.SideBar] for a compact bar at the start or end. Defaults to [MenuMode.Vertical].
+ *                 [NavigationBarPlacement] picks the bar mode for the current window size.
  * @param menuAlignment Alignment: [MenuAlignment.Start] for left/start, [MenuAlignment.End] for right/end.
- *                     Defaults to [MenuAlignment.Start].
+ *                     Defaults to [MenuAlignment.Start]. In [MenuMode.SideBar], it sets the side of the bar.
  * @param modifier Modifier to be applied to the navigation menu container.
  * @param expandedWidth Width of the navigation menu when expanded in vertical mode (MenuMode.Vertical).
  *                              If null, uses theme default. Does not affect horizontal mode.
@@ -49,7 +55,8 @@ import org.jetbrains.compose.resources.DrawableResource
  *                                  Only affects horizontal mode. Vertical mode uses expandedWidth for width.
  * @param backgroundColor Background color of the navigation menu. If null, uses theme default.
  * @param shape Shape of the navigation menu container. If provided, overrides mode-specific shapes.
- *                      If null, uses mode-specific shapes (horizontal/vertical) or theme default.
+ *                      If null, uses mode-specific shapes (horizontal/vertical) or theme default
+ *                      (theme barShape for the bar modes).
  * @param horizontalShape Shape for horizontal header mode. If null, uses default header shape.
  * @param verticalShape Shape for vertical navigation menu mode. If null, uses default navigation menu shape.
  * @param verticalDividerColor Color of the vertical divider. If null, uses theme default.
@@ -62,6 +69,11 @@ import org.jetbrains.compose.resources.DrawableResource
  * @param collapsedTrailingSlot Composable trailing content displayed when menu is collapsed.
  * @param horizontalItemSelectedBackgroundColor Background color of selected menu items in horizontal mode. If null, uses theme default.
  * @param verticalItemSelectedBackgroundColor Background color of selected menu items in vertical mode. If null, uses theme default.
+ * @param barThickness Height of the [MenuMode.BottomBar] or width of the [MenuMode.SideBar]. If null, uses theme default.
+ *                     [NavigationBarPlacement.contentPadding] turns it into padding for the screen content.
+ * @param barIndicator Indicator that slides to the selected item in the bar modes. If null, no indicator is drawn.
+ * @param barItemContent Content of each item in the bar modes, e.g. to draw one item differently. The item stays
+ *                       clickable and selectable. If null, each item shows its icon.
  * @param itemList List of items of type T to display as menu items.
  * @param isItemSelected Function that returns whether an item is currently selected.
  * @param itemText Composable function that returns the text to display for each menu item.
@@ -95,6 +107,9 @@ fun <T> NavigationMenu(
     itemUnselectedBackgroundColor: Color? = null,
     horizontalItemSelectedBackgroundColor: Color? = null,
     verticalItemSelectedBackgroundColor: Color? = null,
+    barThickness: Dp? = null,
+    barIndicator: NavigationMenuIndicator? = null,
+    barItemContent: (@Composable (item: T, isSelected: Boolean) -> Unit)? = null,
     itemList: List<T>,
     isItemSelected: (T) -> Boolean,
     itemText: @Composable (T) -> String,
@@ -115,6 +130,8 @@ fun <T> NavigationMenu(
         horizontalHeight ?: navigationMenuTheme.horizontalHeight
     val finalBackgroundColor =
         backgroundColor ?: navigationMenuTheme.backgroundColor
+    val finalBarThickness =
+        barThickness ?: navigationMenuTheme.barThickness
 
     val finalShape = shape ?: when (menuMode) {
         MenuMode.Horizontal -> {
@@ -134,6 +151,8 @@ fun <T> NavigationMenu(
                 bottomEnd = 30.dp
             )
         }
+
+        MenuMode.BottomBar, MenuMode.SideBar -> navigationMenuTheme.barShape
     }
     val finalVerticalDividerColor = verticalDividerColor ?: navigationMenuTheme.verticalDividerColor
     val finalVerticalDividerThickness =
@@ -166,10 +185,11 @@ fun <T> NavigationMenu(
     Box(
         modifier = modifier
             .then(
-                if (menuMode == MenuMode.Horizontal) {
-                    Modifier.fillMaxWidth()
-                } else {
-                    Modifier.fillMaxHeight()
+                when (menuMode) {
+                    MenuMode.Horizontal -> Modifier.fillMaxWidth()
+                    MenuMode.Vertical -> Modifier.fillMaxHeight()
+                    MenuMode.BottomBar -> Modifier.fillMaxWidth().height(finalBarThickness)
+                    MenuMode.SideBar -> Modifier.fillMaxHeight().width(finalBarThickness)
                 }
             )
             .background(
@@ -216,6 +236,20 @@ fun <T> NavigationMenu(
                 itemIconDescription = itemIconDescription
             )
         }
+        if (menuMode == MenuMode.BottomBar || menuMode == MenuMode.SideBar) {
+            NavigationMenuContentBar(
+                isVertical = menuMode == MenuMode.SideBar,
+                indicator = barIndicator,
+                itemList = itemList,
+                isItemSelected = isItemSelected,
+                itemContent = barItemContent,
+                itemIcon = itemIcon,
+                itemIconTint = itemIconTint,
+                itemIconDescription = itemIconDescription,
+                onItemClick = onItemClick
+            )
+        }
+
         if (menuMode == MenuMode.Vertical) {
             AnimatedVisibility(
                 visible = finalIsExpanded,
