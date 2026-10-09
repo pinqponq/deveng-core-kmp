@@ -30,6 +30,7 @@ datetime = "0.7.1"
 russhwolfsettings = "1.2.0"
 
 kotlinx-coroutines-test = "1.10.2"
+adaptive = "1.2.0"
 kover = "0.9.11"
 roborazzi = "1.76.0"
 
@@ -73,6 +74,7 @@ qrose = { module = "io.github.alexzhirkevich:qrose", version.ref = "qrose" }
 # QR scanner
 mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkit-barcode" }
 
+material3-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
 roborazzi-compose-desktop = { module = "io.github.takahirom.roborazzi:roborazzi-compose-desktop", version.ref = "roborazzi" }
 
