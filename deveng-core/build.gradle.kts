@@ -75,6 +75,7 @@ kotlin {
             implementation(libs.coil3.compose)
             implementation(libs.coil3.ktor)
             implementation(libs.qrose)
+            implementation(libs.material3.adaptive)
         }
 
         androidMain.dependencies {

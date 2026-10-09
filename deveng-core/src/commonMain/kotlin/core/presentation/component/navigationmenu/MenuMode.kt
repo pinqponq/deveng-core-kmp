@@ -12,6 +12,15 @@ enum class MenuMode {
     /**
      * Horizontal header mode, always expanded and fixed.
      */
-    Horizontal
-}
+    Horizontal,
 
+    /**
+     * Compact bar at the bottom of the window with the items in a row.
+     */
+    BottomBar,
+
+    /**
+     * Compact bar as a narrow column at the start or end of the window, positioned by [MenuAlignment].
+     */
+    SideBar
+}

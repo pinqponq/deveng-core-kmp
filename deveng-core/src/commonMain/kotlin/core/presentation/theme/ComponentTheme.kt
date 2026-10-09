@@ -536,7 +536,10 @@ val expandedItemHeight: Dp = 48.dp,
 val expandedItemSpacedBy: Dp = 10.dp,
 val expandedItemCornerRadius: Dp = 20.dp,
 val expandedItemIconSize: Dp = 20.dp,
-val expandedItemStartPadding: Dp = 14.dp
+val expandedItemStartPadding: Dp = 14.dp,
+val barThickness: Dp = 72.dp,
+val barShape: Shape = RectangleShape,
+val barItemIconSize: Dp = 24.dp
 )
 
 /**
