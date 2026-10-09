@@ -195,7 +195,7 @@ CustomButton(text = "Button", textStyle = SemiBoldTextStyle().copy(fontSize = 18
 - **Inputs:** `CustomTextField`, `SearchField`, `PickerField`, `CustomDatePicker`, `CustomDateRangePicker`, `OtpView`
 - **Layout:** `CustomHeader`, `RoundedSurface`, `LabeledSlot`, `Slot`, `ChipItem`
 - **Lists & selection:** `OptionItemList`, `OptionItemLazyListDialog`, `OptionItemMultiSelectLazyListDialog`, `CustomDropDownMenu`
-- **Navigation:** `NavigationMenu` (horizontal, expanded, collapsed)
+- **Navigation:** `NavigationMenu` (horizontal, expanded, collapsed, bottom bar, side bar; see [NavigationMenu bar modes](#navigationmenu-bar-modes))
 - **Feedback:** `RatingRow`, `ProgressIndicatorBars`, `JsonViewer`, `CustomQrCodeView` (see [CustomQrCodeView](#customqrcodeview))
 - **Swipe stack:** `SwipeCards`, `SwipeCardsState`, `rememberSwipeCardsState`, `SwipeCardsScope`; optional left/right/revert icon buttons; use `pendingRevertKey` when the list updates so the revert button stays visible (see [SwipeCards](#swipecards))
 - **Scrolling:** `PaginatedListView`, `ScrollbarWithScrollState`, `ScrollbarWithLazyListState`
@@ -240,6 +240,45 @@ fun MyApp() {
 ### SwipeCards
 
 Tinder-style swipeable card stack: `SwipeCards`, `SwipeCardsState`, `rememberSwipeCardsState`, `SwipeCardsScope` (`items` / `itemsIndexed`). Use `showSwipeButtons` with `negativeButtonIcon`, `positiveButtonIcon`, `revertButtonIcon` for overlay buttons. Revert is normally driven by internal state (`state.canRevert`, `popLastSwipe`, `animateBackSwipe`). When the **list content changes** (e.g. you remove an item after committing a previous swipe), the internal revert state is lost and the built-in revert button would disappear. Pass **`pendingRevertKey`** with the pending item's key (same id you use in `items`/`itemsIndexed`) so the revert button stays visible and a click calls `onRevert(pendingRevertKey)`.
+
+### NavigationMenu bar modes
+
+`MenuMode.BottomBar` renders a compact bar at the bottom; `MenuMode.SideBar` renders the same bar as a narrow column at the start or end (`MenuAlignment`). Both take an optional sliding `NavigationMenuIndicator` (color, shape, inset or fixed size, animation spec) and a `barItemContent` slot to draw an item differently (e.g. a center logo). `isBarItemRippleEnabled = false` turns off the press ripple of the bar items (default: on). `NavigationBarPlacement` picks bottom vs. side from the window size (`currentNavigationBarPlacement()`, built on `currentDeviceScreenType()`), and `contentPadding(barThickness)` keeps screen content clear of the bar.
+
+```kotlin
+val placement = currentNavigationBarPlacement()
+
+Box(modifier = Modifier.fillMaxSize()) {
+    AppContent(modifier = Modifier.padding(placement.contentPadding(barThickness = 54.dp)))
+
+    NavigationMenu(
+        isExpanded = false,
+        menuMode = placement.menuMode,
+        menuAlignment = placement.menuAlignment,
+        modifier = Modifier.align(if (placement == NavigationBarPlacement.Bottom) Alignment.BottomCenter else Alignment.CenterStart),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        barThickness = 54.dp,
+        barIndicator = NavigationMenuIndicator(color = Color(0xFF262626)),
+        barItemContent = { tab, isSelected ->
+            if (tab.isCenter) {
+                Image(painter = painterResource(tab.icon), contentDescription = tab.title)
+            } else {
+                NavigationMenuBarItemIcon(icon = tab.icon, iconTint = if (isSelected) selectedColor else unselectedColor, contentDescription = tab.title)
+            }
+        },
+        itemList = tabs,
+        isItemSelected = { tab -> tab == selectedTab },
+        itemText = { tab -> tab.title },
+        itemTextStyle = { TextStyle() },
+        itemIcon = { tab -> tab.icon },
+        itemIconTint = { unselectedColor },
+        itemIconDescription = { tab -> tab.title },
+        onItemClick = { tab -> selectedTab = tab }
+    )
+}
+```
+
+Theme defaults live in `NavigationMenuTheme` (`barThickness`, `barShape`, `barItemIconSize`). The sample app's "Navigation Bar Demo" shows the bar at the bottom and on both sides.
 
 ### CustomQrCodeView
 
