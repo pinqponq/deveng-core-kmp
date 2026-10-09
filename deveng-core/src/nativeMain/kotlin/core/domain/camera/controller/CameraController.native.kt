@@ -33,6 +33,8 @@ import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.autoreleasepool
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.suspendCancellableCoroutine
+import platform.AVFoundation.AVAuthorizationStatusAuthorized
+import platform.AVFoundation.AVCaptureDevice
 import platform.AVFoundation.AVCaptureDeviceInput
 import platform.AVFoundation.AVCaptureFlashMode
 import platform.AVFoundation.AVCaptureFlashModeAuto
@@ -52,6 +54,7 @@ import platform.AVFoundation.AVCaptureTorchModeOff
 import platform.AVFoundation.AVCaptureTorchModeOn
 import platform.AVFoundation.AVCaptureVideoOrientation
 import platform.AVFoundation.AVMediaTypeAudio
+import platform.AVFoundation.authorizationStatusForMediaType
 import platform.Foundation.NSData
 import platform.Foundation.NSDate
 import platform.Foundation.NSFileManager
@@ -334,8 +337,9 @@ actual class CameraController(
                 platform.Foundation.NSLog("CameraK Error: movie output - ${e.message}")
             }
 
-            // Pre-add audio input so recording starts without session reconfiguration stutter
-            addAudioInputIfNeeded()
+            // Pre-add audio input so recording starts without session reconfiguration stutter. Only once the
+            // microphone is granted: creating the input asks for it, and the app decides when to ask.
+            if (isMicrophoneAuthorized()) addAudioInputIfNeeded()
 
             startSession()
         }
@@ -936,6 +940,10 @@ actual class CameraController(
 
     actual suspend fun resumeRecording() {
         movieFileOutput?.resumeRecording()
+    }
+
+    private fun isMicrophoneAuthorized(): Boolean {
+        return AVCaptureDevice.authorizationStatusForMediaType(AVMediaTypeAudio) == AVAuthorizationStatusAuthorized
     }
 
     @OptIn(ExperimentalForeignApi::class)
