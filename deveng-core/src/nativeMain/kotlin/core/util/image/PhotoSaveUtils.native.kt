@@ -17,6 +17,7 @@ import platform.CoreFoundation.CFRelease
 import platform.CoreFoundation.kCFStringEncodingUTF8
 import platform.CoreFoundation.kCFAllocatorDefault
 import platform.CoreServices.kUTTypeJPEG
+import platform.Foundation.CFBridgingRelease
 import platform.Foundation.NSArray
 import platform.Foundation.NSDictionary
 import platform.Foundation.NSFileManager
@@ -37,6 +38,7 @@ import platform.ImageIO.CGImageSourceCopyMetadataAtIndex
 import platform.ImageIO.CGImageSourceCopyPropertiesAtIndex
 import platform.ImageIO.CGImageSourceCreateImageAtIndex
 import platform.ImageIO.CGImageSourceCreateWithData
+import platform.ImageIO.CGImageSourceRef
 import platform.Photos.PHAsset
 import platform.Photos.PHAssetChangeRequest
 import platform.Photos.PHPhotoLibrary
@@ -261,16 +263,9 @@ actual object PhotoSaveUtils {
             return null
         }
         return try {
-            val props = CGImageSourceCopyPropertiesAtIndex(isrc = source, index = 0u, options = null)
-                ?: return null
-            try {
-                val dict = (props as? NSDictionary) ?: return null
-                val gps = dict.objectForKey(gpsDictionaryKey) as? NSDictionary
-                    ?: return null
-                readGpsLatLon(gps)
-            } finally {
-                CFRelease(props)
-            }
+            val properties = copyImageProperties(source = source) ?: return null
+            val gps = properties.objectForKey(gpsDictionaryKey) as? NSDictionary ?: return null
+            readGpsLatLon(gps)
         } finally {
             CFRelease(source)
         }
@@ -287,20 +282,13 @@ actual object PhotoSaveUtils {
             return null
         }
         return try {
-            val props = CGImageSourceCopyPropertiesAtIndex(isrc = source, index = 0u, options = null)
+            val properties = copyImageProperties(source = source) ?: return null
+            val exif = properties.objectForKey(exifDictionaryKey) as? NSDictionary ?: return null
+            val dateTime = (exif.objectForKey(exifDateTimeOriginalKey) as? NSString)?.description
+                ?: (exif.objectForKey(exifDateTimeDigitizedKey) as? NSString)?.description
                 ?: return null
-            try {
-                val dict = (props as? NSDictionary) ?: return null
-                val exif = dict.objectForKey(exifDictionaryKey) as? NSDictionary
-                    ?: return null
-                val dateTime = (exif.objectForKey(exifDateTimeOriginalKey) as? NSString)?.description
-                    ?: (exif.objectForKey(exifDateTimeDigitizedKey) as? NSString)?.description
-                    ?: return null
-                val offset = (exif.objectForKey(exifOffsetTimeOriginalKey) as? NSString)?.description
-                parseExifDateTime(raw = dateTime, offsetRaw = offset)
-            } finally {
-                CFRelease(props)
-            }
+            val offset = (exif.objectForKey(exifOffsetTimeOriginalKey) as? NSString)?.description
+            parseExifDateTime(raw = dateTime, offsetRaw = offset)
         } finally {
             CFRelease(source)
         }
@@ -349,6 +337,14 @@ actual object PhotoSaveUtils {
 
     private fun nsRefString(s: String): NSString =
         NSString.create(string = s)
+
+    // The copied CFDictionaryRef is a C pointer, so `as? NSDictionary` on it is always null;
+    // CFBridgingRelease hands it to ARC as an NSDictionary and takes over the release.
+    private fun copyImageProperties(source: CGImageSourceRef): NSDictionary? {
+        val properties = CGImageSourceCopyPropertiesAtIndex(isrc = source, index = 0u, options = null)
+            ?: return null
+        return CFBridgingRelease(properties) as? NSDictionary
+    }
 
     private fun readGpsLatLon(gps: NSDictionary): Pair<Double, Double>? {
         val lat = readSignedGpsComponent(

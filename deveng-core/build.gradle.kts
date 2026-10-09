@@ -1,3 +1,4 @@
+import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 import com.vanniktech.maven.publish.SonatypeHost
@@ -10,6 +11,8 @@ plugins {
     alias(libs.plugins.vanniktech.mavenPublish)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.figma.code.connect)
+    alias(libs.plugins.kover)
+    alias(libs.plugins.roborazzi)
 }
 
 group = "global.deveng"
@@ -98,7 +101,27 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.swing)
             }
         }
+
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
+        }
+
+        val desktopTest by getting {
+            dependencies {
+                @OptIn(ExperimentalComposeLibrary::class)
+                implementation(compose.uiTest)
+                implementation(libs.roborazzi.compose.desktop)
+            }
+        }
     }
+}
+
+// Screenshot baselines and resource lookups depend on the JVM locale; pin it so every machine
+// renders the same strings.
+tasks.withType<Test>().configureEach {
+    systemProperty("user.language", "en")
+    systemProperty("user.country", "US")
 }
 
 android {
