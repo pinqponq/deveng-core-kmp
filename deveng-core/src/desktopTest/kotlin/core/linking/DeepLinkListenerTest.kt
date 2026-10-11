@@ -54,24 +54,10 @@ class DeepLinkListenerTest {
     }
 
     @Test
-    fun onNewUri_withDefaultRouter_navigatesToMatchingDestination() = runComposeUiTest {
-        var navController: NavController? = null
-        setContent {
-            Host(router = null, onController = { navController = it })
-        }
-
-        ExternalUriHandler.onNewUri("app://detail")
-        waitForIdle()
-
-        assertEquals("detail", navController?.currentBackStackEntry?.destination?.route)
-        runOnIdle { navController?.popBackStack() }
-    }
-
-    @Test
     fun onNewUri_withSameLinkTwice_needsOnlyOneBackToLeave() = runComposeUiTest {
         var navController: NavController? = null
         setContent {
-            Host(router = null, onController = { navController = it })
+            Host(router = { _, _ -> false }, onController = { navController = it })
         }
 
         ExternalUriHandler.onNewUri("app://detail")
@@ -115,7 +101,7 @@ class DeepLinkListenerTest {
     fun dispose_removesListener() = runComposeUiTest {
         val showHost = mutableStateOf(true)
         setContent {
-            if (showHost.value) Host(router = null, onController = {})
+            if (showHost.value) Host(router = { _, _ -> false }, onController = {})
         }
         waitForIdle()
         assertNotNull(ExternalUriHandler.listener)
@@ -127,13 +113,13 @@ class DeepLinkListenerTest {
     }
 
     @Composable
-    private fun Host(router: DeepLinkRouter?, onController: (NavController) -> Unit) {
+    private fun Host(router: DeepLinkRouter, onController: (NavController) -> Unit) {
         val navController = rememberNavController()
         onController(navController)
         NavHost(navController = navController, startDestination = "start") {
             composable("start") {}
             composable("detail", deepLinks = listOf<NavDeepLink>(navDeepLink { uriPattern = "app://detail" })) {}
         }
-        if (router == null) DeepLinkListener(navController) else DeepLinkListener(navController, router)
+        DeepLinkListener(navController, router)
     }
 }

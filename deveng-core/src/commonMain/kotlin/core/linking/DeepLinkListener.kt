@@ -20,7 +20,7 @@ fun interface DeepLinkRouter {
 @Composable
 fun DeepLinkListener(
     navController: NavController,
-    router: DeepLinkRouter = DeepLinkRouter { _, _ -> false }
+    router: DeepLinkRouter
 ) {
     val currentRouter by rememberUpdatedState(router)
 
