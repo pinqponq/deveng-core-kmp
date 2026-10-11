@@ -2,6 +2,7 @@ package core.billing.fake
 
 import com.revenuecat.purchases.kmp.LogLevel
 import com.revenuecat.purchases.kmp.models.StoreProduct
+import core.billing.data.RevenueCatPurchaseOutcome
 import core.billing.data.RevenueCatPurchasesClient
 
 internal class FakeRevenueCatPurchasesClient(
@@ -41,12 +42,12 @@ internal class FakeRevenueCatPurchasesClient(
         return currentOfferingProducts
     }
 
-    override suspend fun purchasePackage(packageIdentifier: String, entitlementId: String): Boolean? {
+    override suspend fun purchasePackage(packageIdentifier: String, entitlementId: String): RevenueCatPurchaseOutcome {
         storeFailure?.let { failure -> throw failure }
-        if (packageIdentifier !in purchasablePackageIdentifiers) return null
+        if (packageIdentifier !in purchasablePackageIdentifiers) return RevenueCatPurchaseOutcome.PackageNotFound
 
         purchasedPackageIdentifiers += packageIdentifier
-        return entitlementId in activeEntitlementIds
+        return RevenueCatPurchaseOutcome.Purchased(hasEntitlement = entitlementId in activeEntitlementIds)
     }
 
     data class Configuration(val apiKey: String, val appUserId: String?, val logLevel: LogLevel)

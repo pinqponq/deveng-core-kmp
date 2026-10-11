@@ -8,7 +8,7 @@ import kotlin.test.assertIs
 class SubscriptionBillingRepositoryFactoryTest {
 
     @Test
-    fun create_onDesktop_returnsNoOpRepository() {
+    fun create_onDesktop_returnsUnsupportedRepository() {
         val subscriptionBillingRepository = createSubscriptionBillingRepository(
             billingConfig = BillingConfig(
                 entitlementId = ENTITLEMENT_ID,
@@ -18,7 +18,7 @@ class SubscriptionBillingRepositoryFactoryTest {
             ),
         )
 
-        assertIs<NoOpSubscriptionBillingRepository>(subscriptionBillingRepository)
+        assertIs<UnsupportedSubscriptionBillingRepository>(subscriptionBillingRepository)
     }
 
     private companion object {

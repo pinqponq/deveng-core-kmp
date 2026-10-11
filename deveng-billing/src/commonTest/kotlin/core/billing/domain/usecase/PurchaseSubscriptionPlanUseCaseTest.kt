@@ -67,10 +67,12 @@ class PurchaseSubscriptionPlanUseCaseTest {
         val subscriptionBillingRepository = FakeSubscriptionBillingRepository().apply {
             purchaseResult = storePurchaseResult
         }
+
         val returnedPurchaseResult = createUseCase(subscriptionBillingRepository = subscriptionBillingRepository)(
             packageIdentifier = PACKAGE_IDENTIFIER,
             entryPoint = FakePurchaseEntryPoint.PAYWALL,
         )
+
         assertEquals(listOf(PACKAGE_IDENTIFIER), subscriptionBillingRepository.purchasedPackageIdentifiers)
         return returnedPurchaseResult
     }

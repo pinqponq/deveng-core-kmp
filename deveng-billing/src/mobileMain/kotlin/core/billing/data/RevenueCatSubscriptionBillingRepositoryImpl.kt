@@ -86,15 +86,21 @@ internal class RevenueCatSubscriptionBillingRepositoryImpl(
         }
 
         return try {
-            val hasEntitlement = revenueCatPurchasesClient.purchasePackage(
+            val purchaseOutcome = revenueCatPurchasesClient.purchasePackage(
                 packageIdentifier = packageIdentifier,
                 entitlementId = billingConfig.entitlementId,
-            ) ?: return SubscriptionPurchaseResult.Failed(
-                message = "Package not found: $packageIdentifier",
-                storeErrorCode = null,
             )
 
-            SubscriptionPurchaseResult.Success(hasEntitlement = hasEntitlement)
+            when (purchaseOutcome) {
+                is RevenueCatPurchaseOutcome.Purchased -> SubscriptionPurchaseResult.Success(
+                    hasEntitlement = purchaseOutcome.hasEntitlement,
+                )
+
+                RevenueCatPurchaseOutcome.PackageNotFound -> SubscriptionPurchaseResult.Failed(
+                    message = "Package not found: $packageIdentifier",
+                    storeErrorCode = null,
+                )
+            }
         } catch (transactionException: PurchasesTransactionException) {
             if (transactionException.userCancelled) {
                 SubscriptionPurchaseResult.Cancelled

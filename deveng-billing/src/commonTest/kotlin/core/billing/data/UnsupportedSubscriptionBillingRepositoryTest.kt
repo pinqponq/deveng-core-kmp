@@ -6,13 +6,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
-class NoOpSubscriptionBillingRepositoryTest {
+class UnsupportedSubscriptionBillingRepositoryTest {
 
-    private val noOpSubscriptionBillingRepository = NoOpSubscriptionBillingRepository()
+    private val unsupportedSubscriptionBillingRepository = UnsupportedSubscriptionBillingRepository()
 
     @Test
     fun purchasePackage_onPlatformWithoutBilling_failsWithoutStoreErrorCode() = runTest {
-        val purchaseResult = noOpSubscriptionBillingRepository.purchasePackage(packageIdentifier = PACKAGE_IDENTIFIER)
+        val purchaseResult = unsupportedSubscriptionBillingRepository.purchasePackage(packageIdentifier = PACKAGE_IDENTIFIER)
 
         assertEquals(
             SubscriptionPurchaseResult.Failed(message = UNSUPPORTED_MESSAGE, storeErrorCode = null),
@@ -22,22 +22,22 @@ class NoOpSubscriptionBillingRepositoryTest {
 
     @Test
     fun isSupported_onPlatformWithoutBilling_isFalse() {
-        assertFalse(noOpSubscriptionBillingRepository.isSupported)
+        assertFalse(unsupportedSubscriptionBillingRepository.isSupported)
     }
 
     @Test
     fun hasActiveEntitlement_onPlatformWithoutBilling_returnsFalse() = runTest {
-        assertFalse(noOpSubscriptionBillingRepository.hasActiveEntitlement())
+        assertFalse(unsupportedSubscriptionBillingRepository.hasActiveEntitlement())
     }
 
     @Test
     fun restorePurchases_onPlatformWithoutBilling_returnsFalse() = runTest {
-        assertFalse(noOpSubscriptionBillingRepository.restorePurchases())
+        assertFalse(unsupportedSubscriptionBillingRepository.restorePurchases())
     }
 
     @Test
     fun fetchOfferingPrices_onPlatformWithoutBilling_returnsNoPrices() = runTest {
-        assertEquals(emptyMap(), noOpSubscriptionBillingRepository.fetchOfferingPrices())
+        assertEquals(emptyMap(), unsupportedSubscriptionBillingRepository.fetchOfferingPrices())
     }
 
     private companion object {

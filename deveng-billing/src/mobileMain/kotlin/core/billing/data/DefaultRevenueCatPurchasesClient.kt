@@ -48,13 +48,14 @@ internal class DefaultRevenueCatPurchasesClient : RevenueCatPurchasesClient {
             ?.associate { it.identifier to it.storeProduct }
             ?: emptyMap()
 
-    override suspend fun purchasePackage(packageIdentifier: String, entitlementId: String): Boolean? {
+    override suspend fun purchasePackage(packageIdentifier: String, entitlementId: String): RevenueCatPurchaseOutcome {
         val packageToPurchase = Purchases.sharedInstance.awaitOfferings().current
             ?.getPackage(identifier = packageIdentifier)
-            ?: return null
+            ?: return RevenueCatPurchaseOutcome.PackageNotFound
 
         val successfulPurchase = Purchases.sharedInstance.awaitPurchase(packageToPurchase = packageToPurchase)
-        return isEntitlementActive(customerInfo = successfulPurchase.customerInfo, entitlementId = entitlementId)
+        val hasEntitlement = isEntitlementActive(customerInfo = successfulPurchase.customerInfo, entitlementId = entitlementId)
+        return RevenueCatPurchaseOutcome.Purchased(hasEntitlement = hasEntitlement)
     }
 
     private fun isEntitlementActive(customerInfo: CustomerInfo, entitlementId: String): Boolean =

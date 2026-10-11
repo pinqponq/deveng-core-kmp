@@ -20,6 +20,5 @@ internal interface RevenueCatPurchasesClient {
 
     suspend fun fetchCurrentOfferingProducts(): Map<String, StoreProduct>
 
-    /** Returns whether [entitlementId] is active after the purchase, or null when the current offering has no such package. */
-    suspend fun purchasePackage(packageIdentifier: String, entitlementId: String): Boolean?
+    suspend fun purchasePackage(packageIdentifier: String, entitlementId: String): RevenueCatPurchaseOutcome
 }

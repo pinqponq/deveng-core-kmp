@@ -240,6 +240,7 @@ class RevenueCatSubscriptionBillingRepositoryImplTest {
             purchasesError = PurchasesError(code = PurchasesErrorCode.StoreProblemError),
             userCancelled = false,
         )
+
         revenueCatPurchasesClient.storeFailure = transactionException
 
         val purchaseResult = createRepository().purchasePackage(packageIdentifier = ANNUAL_PACKAGE_IDENTIFIER)
@@ -294,6 +295,7 @@ class RevenueCatSubscriptionBillingRepositoryImplTest {
             iosApiKey = IOS_API_KEY,
             logLevel = BillingLogLevel.WARN,
         )
+
         val ANNUAL_PRODUCT = FakeStoreProduct(
             price = Price(formatted = "₺499,99", amountMicros = 499_990_000, currencyCode = "TRY"),
             period = Period(value = 1, unit = PeriodUnit.YEAR),

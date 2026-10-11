@@ -5,7 +5,7 @@ import core.billing.domain.model.UNSUPPORTED_PURCHASE_MESSAGE
 import core.billing.domain.model.SubscriptionPurchaseResult
 import core.billing.domain.repository.SubscriptionBillingRepository
 
-internal class NoOpSubscriptionBillingRepository : SubscriptionBillingRepository {
+internal class UnsupportedSubscriptionBillingRepository : SubscriptionBillingRepository {
     override val isSupported: Boolean = false
 
     override fun configure(appUserId: String?) = Unit
