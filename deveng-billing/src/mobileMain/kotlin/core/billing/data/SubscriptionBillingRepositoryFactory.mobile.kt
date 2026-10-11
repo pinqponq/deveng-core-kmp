@@ -7,5 +7,6 @@ import core.billing.domain.repository.SubscriptionBillingRepository
 actual fun createSubscriptionBillingRepository(billingConfig: BillingConfig): SubscriptionBillingRepository =
     RevenueCatSubscriptionBillingRepositoryImpl(
         billingConfig = billingConfig,
+        revenueCatPurchasesClient = DefaultRevenueCatPurchasesClient(),
         revenueCatOfferPriceMapper = RevenueCatOfferPriceMapper(),
     )

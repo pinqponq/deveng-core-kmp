@@ -11,7 +11,7 @@ class NoOpSubscriptionBillingRepositoryTest {
     private val noOpSubscriptionBillingRepository = NoOpSubscriptionBillingRepository()
 
     @Test
-    fun purchasePackage_failsWithoutStoreErrorCode() = runTest {
+    fun purchasePackage_onPlatformWithoutBilling_failsWithoutStoreErrorCode() = runTest {
         val purchaseResult = noOpSubscriptionBillingRepository.purchasePackage(packageIdentifier = PACKAGE_IDENTIFIER)
 
         assertEquals(
@@ -21,10 +21,22 @@ class NoOpSubscriptionBillingRepositoryTest {
     }
 
     @Test
-    fun queries_reportNoBillingSupportEntitlementOrPrices() = runTest {
+    fun isSupported_onPlatformWithoutBilling_isFalse() {
         assertFalse(noOpSubscriptionBillingRepository.isSupported)
+    }
+
+    @Test
+    fun hasActiveEntitlement_onPlatformWithoutBilling_returnsFalse() = runTest {
         assertFalse(noOpSubscriptionBillingRepository.hasActiveEntitlement())
+    }
+
+    @Test
+    fun restorePurchases_onPlatformWithoutBilling_returnsFalse() = runTest {
         assertFalse(noOpSubscriptionBillingRepository.restorePurchases())
+    }
+
+    @Test
+    fun fetchOfferingPrices_onPlatformWithoutBilling_returnsNoPrices() = runTest {
         assertEquals(emptyMap(), noOpSubscriptionBillingRepository.fetchOfferingPrices())
     }
 

@@ -35,6 +35,7 @@ class PurchaseSubscriptionPlanUseCase(
         if (!subscriptionBillingRepository.isSupported) {
             return SubscriptionPurchaseResult.Failed(message = UNSUPPORTED_PURCHASE_MESSAGE, storeErrorCode = null)
         }
+
         return subscriptionBillingRepository.purchasePackage(packageIdentifier = packageIdentifier)
     }
 }

@@ -11,7 +11,7 @@ class SubscriptionBillingUserUseCasesTest {
     private val billingAppUserIdProvider = BillingAppUserIdProvider { APP_USER_ID }
 
     @Test
-    fun initialize_configuresStoreWithProvidedAppUserId() {
+    fun initialize_whenSignedIn_configuresStoreWithProvidedAppUserId() {
         val subscriptionBillingRepository = FakeSubscriptionBillingRepository()
 
         InitializeSubscriptionBillingUseCase(

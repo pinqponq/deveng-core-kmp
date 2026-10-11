@@ -2,15 +2,6 @@ package core.billing.data
 
 import co.touchlab.kermit.Logger
 import com.revenuecat.purchases.kmp.LogLevel
-import com.revenuecat.purchases.kmp.Purchases
-import com.revenuecat.purchases.kmp.configure
-import com.revenuecat.purchases.kmp.ktx.awaitCustomerInfo
-import com.revenuecat.purchases.kmp.ktx.awaitLogIn
-import com.revenuecat.purchases.kmp.ktx.awaitLogOut
-import com.revenuecat.purchases.kmp.ktx.awaitOfferings
-import com.revenuecat.purchases.kmp.ktx.awaitPurchase
-import com.revenuecat.purchases.kmp.ktx.awaitRestore
-import com.revenuecat.purchases.kmp.models.CustomerInfo
 import com.revenuecat.purchases.kmp.models.PurchasesException
 import com.revenuecat.purchases.kmp.models.PurchasesTransactionException
 import core.billing.data.mapper.RevenueCatOfferPriceMapper
@@ -24,41 +15,37 @@ private const val ANONYMOUS_APP_USER_ID_PREFIX = "\$RCAnonymousID:"
 
 internal class RevenueCatSubscriptionBillingRepositoryImpl(
     private val billingConfig: BillingConfig,
+    private val revenueCatPurchasesClient: RevenueCatPurchasesClient,
     private val revenueCatOfferPriceMapper: RevenueCatOfferPriceMapper,
 ) : SubscriptionBillingRepository {
 
     override val isSupported: Boolean = true
 
-    private val isConfigured: Boolean
-        get() = Purchases.isConfigured
-
     override fun configure(appUserId: String?) {
-        if (isConfigured) return
+        if (revenueCatPurchasesClient.isConfigured) return
 
         val platformApiKey = billingConfig.resolvePlatformApiKey()
         require(platformApiKey.isNotBlank()) { "BillingConfig has no RevenueCat API key for this platform" }
 
-        Purchases.logLevel = mapLogLevel(billingLogLevel = billingConfig.logLevel)
-        Purchases.configure(apiKey = platformApiKey) {
-            if (!appUserId.isNullOrBlank()) {
-                this.appUserId = appUserId
-            }
-        }
+        revenueCatPurchasesClient.configure(
+            apiKey = platformApiKey,
+            appUserId = appUserId,
+            logLevel = mapLogLevel(billingLogLevel = billingConfig.logLevel),
+        )
     }
 
     override suspend fun syncAppUserId(appUserId: String?) {
-        if (!isConfigured) {
+        if (!revenueCatPurchasesClient.isConfigured) {
             configure(appUserId = appUserId)
             return
         }
 
-        val purchases = Purchases.sharedInstance
-        val currentUserId = purchases.appUserID
+        val currentUserId = revenueCatPurchasesClient.currentAppUserId
         val targetUserId = appUserId?.takeIf { it.isNotBlank() }
 
         if (targetUserId == null) {
             if (!currentUserId.startsWith(prefix = ANONYMOUS_APP_USER_ID_PREFIX)) {
-                purchases.awaitLogOut()
+                revenueCatPurchasesClient.logOut()
             }
 
             return
@@ -66,31 +53,27 @@ internal class RevenueCatSubscriptionBillingRepositoryImpl(
 
         if (currentUserId == targetUserId) return
 
-        purchases.awaitLogIn(newAppUserID = targetUserId)
+        revenueCatPurchasesClient.logIn(appUserId = targetUserId)
     }
 
     override suspend fun hasActiveEntitlement(): Boolean {
-        if (!isConfigured) return false
+        if (!revenueCatPurchasesClient.isConfigured) return false
 
-        val customerInfo = Purchases.sharedInstance.awaitCustomerInfo()
-        return isEntitlementActive(customerInfo = customerInfo)
+        return revenueCatPurchasesClient.hasActiveEntitlement(entitlementId = billingConfig.entitlementId)
     }
 
     override suspend fun restorePurchases(): Boolean {
-        if (!isConfigured) return false
+        if (!revenueCatPurchasesClient.isConfigured) return false
 
-        val customerInfo = Purchases.sharedInstance.awaitRestore()
-        return isEntitlementActive(customerInfo = customerInfo)
+        return revenueCatPurchasesClient.restorePurchases(entitlementId = billingConfig.entitlementId)
     }
 
     override suspend fun fetchOfferingPrices(): Map<String, SubscriptionOfferPrice> {
-        if (!isConfigured) return emptyMap()
+        if (!revenueCatPurchasesClient.isConfigured) return emptyMap()
 
         return try {
-            val offerings = Purchases.sharedInstance.awaitOfferings()
-            offerings.current?.availablePackages
-                ?.associate { it.identifier to revenueCatOfferPriceMapper.mapToDomain(storeProduct = it.storeProduct) }
-                ?: emptyMap()
+            revenueCatPurchasesClient.fetchCurrentOfferingProducts()
+                .mapValues { (_, storeProduct) -> revenueCatOfferPriceMapper.mapToDomain(storeProduct = storeProduct) }
         } catch (purchasesException: PurchasesException) {
             Logger.w(purchasesException) { "RevenueCat offerings could not be loaded; showing prices without the store" }
             emptyMap()
@@ -98,20 +81,18 @@ internal class RevenueCatSubscriptionBillingRepositoryImpl(
     }
 
     override suspend fun purchasePackage(packageIdentifier: String): SubscriptionPurchaseResult {
-        if (!isConfigured) {
+        if (!revenueCatPurchasesClient.isConfigured) {
             return SubscriptionPurchaseResult.Failed(message = "RevenueCat is not configured", storeErrorCode = null)
         }
 
         return try {
-            val offerings = Purchases.sharedInstance.awaitOfferings()
-            val packageToPurchase = offerings.current?.getPackage(identifier = packageIdentifier)
-                ?: return SubscriptionPurchaseResult.Failed(
-                    message = "Package not found: $packageIdentifier",
-                    storeErrorCode = null,
-                )
-
-            val successfulPurchase = Purchases.sharedInstance.awaitPurchase(packageToPurchase = packageToPurchase)
-            val hasEntitlement = isEntitlementActive(customerInfo = successfulPurchase.customerInfo)
+            val hasEntitlement = revenueCatPurchasesClient.purchasePackage(
+                packageIdentifier = packageIdentifier,
+                entitlementId = billingConfig.entitlementId,
+            ) ?: return SubscriptionPurchaseResult.Failed(
+                message = "Package not found: $packageIdentifier",
+                storeErrorCode = null,
+            )
 
             SubscriptionPurchaseResult.Success(hasEntitlement = hasEntitlement)
         } catch (transactionException: PurchasesTransactionException) {
@@ -132,9 +113,6 @@ internal class RevenueCatSubscriptionBillingRepositoryImpl(
             )
         }
     }
-
-    private fun isEntitlementActive(customerInfo: CustomerInfo): Boolean =
-        customerInfo.entitlements[billingConfig.entitlementId]?.isActive == true
 
     private fun mapLogLevel(billingLogLevel: BillingLogLevel): LogLevel = when (billingLogLevel) {
         BillingLogLevel.VERBOSE -> LogLevel.VERBOSE
