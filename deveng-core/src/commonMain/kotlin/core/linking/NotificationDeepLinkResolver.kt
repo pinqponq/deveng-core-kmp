@@ -8,7 +8,9 @@ import core.util.percentEncodeUriComponent
  * An address sent by the server ("actionUrl") always wins, because the sender knowing the route is the
  * preferred design. Chat notifications carry only the notification type and the sender id, so their
  * address is built from [chatDeepLinkPrefix]; once the chat SDK sends "actionUrl" that branch stops
- * being reached, since the server value is checked first.
+ * being reached, since the server value is checked first. The payload keys (`actionUrl`, `deep_link`,
+ * `notificationType`, `senderUserId`, `senderDisplayName`), the `new_message` type and the `partnerName`
+ * query parameter are the shared chat notification contract of Deveng apps, not per-app settings.
  */
 class NotificationDeepLinkResolver(
     private val chatDeepLinkPrefix: String
