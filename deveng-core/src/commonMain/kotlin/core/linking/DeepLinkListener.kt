@@ -2,6 +2,7 @@ package core.linking
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.navigation.NavController
@@ -17,6 +18,7 @@ fun interface DeepLinkRouter {
     fun route(navController: NavController, uri: String): Boolean
 }
 
+@NonRestartableComposable
 @Composable
 fun DeepLinkListener(
     navController: NavController,
