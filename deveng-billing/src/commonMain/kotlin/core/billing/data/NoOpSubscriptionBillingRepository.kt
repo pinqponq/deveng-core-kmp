@@ -1,12 +1,11 @@
 package core.billing.data
 
 import core.billing.domain.model.SubscriptionOfferPrice
+import core.billing.domain.model.UNSUPPORTED_PURCHASE_MESSAGE
 import core.billing.domain.model.SubscriptionPurchaseResult
 import core.billing.domain.repository.SubscriptionBillingRepository
 
-private const val UNSUPPORTED_MESSAGE = "unsupported"
-
-class NoOpSubscriptionBillingRepository : SubscriptionBillingRepository {
+internal class NoOpSubscriptionBillingRepository : SubscriptionBillingRepository {
     override val isSupported: Boolean = false
 
     override fun configure(appUserId: String?) = Unit
@@ -17,8 +16,8 @@ class NoOpSubscriptionBillingRepository : SubscriptionBillingRepository {
 
     override suspend fun restorePurchases(): Boolean = false
 
-    override suspend fun getOfferingPrices(): Map<String, SubscriptionOfferPrice> = emptyMap()
+    override suspend fun fetchOfferingPrices(): Map<String, SubscriptionOfferPrice> = emptyMap()
 
     override suspend fun purchasePackage(packageIdentifier: String): SubscriptionPurchaseResult =
-        SubscriptionPurchaseResult.Failed(message = UNSUPPORTED_MESSAGE, storeErrorCode = null)
+        SubscriptionPurchaseResult.Failed(message = UNSUPPORTED_PURCHASE_MESSAGE, storeErrorCode = null)
 }

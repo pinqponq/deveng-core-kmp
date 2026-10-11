@@ -25,7 +25,7 @@ class NoOpSubscriptionBillingRepositoryTest {
         assertFalse(noOpSubscriptionBillingRepository.isSupported)
         assertFalse(noOpSubscriptionBillingRepository.hasActiveEntitlement())
         assertFalse(noOpSubscriptionBillingRepository.restorePurchases())
-        assertEquals(emptyMap(), noOpSubscriptionBillingRepository.getOfferingPrices())
+        assertEquals(emptyMap(), noOpSubscriptionBillingRepository.fetchOfferingPrices())
     }
 
     private companion object {

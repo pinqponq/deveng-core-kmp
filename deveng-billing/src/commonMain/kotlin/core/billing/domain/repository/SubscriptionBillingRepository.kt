@@ -14,7 +14,7 @@ interface SubscriptionBillingRepository {
 
     suspend fun restorePurchases(): Boolean
 
-    suspend fun getOfferingPrices(): Map<String, SubscriptionOfferPrice>
+    suspend fun fetchOfferingPrices(): Map<String, SubscriptionOfferPrice>
 
     suspend fun purchasePackage(packageIdentifier: String): SubscriptionPurchaseResult
 }

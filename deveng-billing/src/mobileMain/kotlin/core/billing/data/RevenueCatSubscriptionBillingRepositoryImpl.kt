@@ -1,5 +1,6 @@
 package core.billing.data
 
+import co.touchlab.kermit.Logger
 import com.revenuecat.purchases.kmp.LogLevel
 import com.revenuecat.purchases.kmp.Purchases
 import com.revenuecat.purchases.kmp.configure
@@ -21,14 +22,15 @@ import core.billing.domain.repository.SubscriptionBillingRepository
 
 private const val ANONYMOUS_APP_USER_ID_PREFIX = "\$RCAnonymousID:"
 
-class RevenueCatSubscriptionBillingRepositoryImpl(
+internal class RevenueCatSubscriptionBillingRepositoryImpl(
     private val billingConfig: BillingConfig,
     private val revenueCatOfferPriceMapper: RevenueCatOfferPriceMapper,
 ) : SubscriptionBillingRepository {
 
     override val isSupported: Boolean = true
 
-    private var isConfigured: Boolean = false
+    private val isConfigured: Boolean
+        get() = Purchases.isConfigured
 
     override fun configure(appUserId: String?) {
         if (isConfigured) return
@@ -42,7 +44,6 @@ class RevenueCatSubscriptionBillingRepositoryImpl(
                 this.appUserId = appUserId
             }
         }
-        isConfigured = true
     }
 
     override suspend fun syncAppUserId(appUserId: String?) {
@@ -59,6 +60,7 @@ class RevenueCatSubscriptionBillingRepositoryImpl(
             if (!currentUserId.startsWith(prefix = ANONYMOUS_APP_USER_ID_PREFIX)) {
                 purchases.awaitLogOut()
             }
+
             return
         }
 
@@ -81,15 +83,16 @@ class RevenueCatSubscriptionBillingRepositoryImpl(
         return isEntitlementActive(customerInfo = customerInfo)
     }
 
-    override suspend fun getOfferingPrices(): Map<String, SubscriptionOfferPrice> {
+    override suspend fun fetchOfferingPrices(): Map<String, SubscriptionOfferPrice> {
         if (!isConfigured) return emptyMap()
 
         return try {
             val offerings = Purchases.sharedInstance.awaitOfferings()
             offerings.current?.availablePackages
-                ?.associate { it.identifier to revenueCatOfferPriceMapper.map(storeProduct = it.storeProduct) }
+                ?.associate { it.identifier to revenueCatOfferPriceMapper.mapToDomain(storeProduct = it.storeProduct) }
                 ?: emptyMap()
-        } catch (_: PurchasesException) {
+        } catch (purchasesException: PurchasesException) {
+            Logger.w(purchasesException) { "RevenueCat offerings could not be loaded; showing prices without the store" }
             emptyMap()
         }
     }
@@ -111,14 +114,22 @@ class RevenueCatSubscriptionBillingRepositoryImpl(
             val hasEntitlement = isEntitlementActive(customerInfo = successfulPurchase.customerInfo)
 
             SubscriptionPurchaseResult.Success(hasEntitlement = hasEntitlement)
-        } catch (e: PurchasesTransactionException) {
-            if (e.userCancelled) {
+        } catch (transactionException: PurchasesTransactionException) {
+            if (transactionException.userCancelled) {
                 SubscriptionPurchaseResult.Cancelled
             } else {
-                SubscriptionPurchaseResult.Failed(message = e.message, storeErrorCode = e.code.name)
+                SubscriptionPurchaseResult.Failed(
+                    message = transactionException.message,
+                    storeErrorCode = transactionException.code.name,
+                    cause = transactionException,
+                )
             }
-        } catch (e: PurchasesException) {
-            SubscriptionPurchaseResult.Failed(message = e.message, storeErrorCode = e.code.name)
+        } catch (purchasesException: PurchasesException) {
+            SubscriptionPurchaseResult.Failed(
+                message = purchasesException.message,
+                storeErrorCode = purchasesException.code.name,
+                cause = purchasesException,
+            )
         }
     }
 

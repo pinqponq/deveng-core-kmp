@@ -8,6 +8,6 @@ class FetchOfferPricesUseCase(
 ) {
     suspend operator fun invoke(): Map<String, SubscriptionOfferPrice> {
         if (!subscriptionBillingRepository.isSupported) return emptyMap()
-        return subscriptionBillingRepository.getOfferingPrices()
+        return subscriptionBillingRepository.fetchOfferingPrices()
     }
 }

@@ -56,6 +56,7 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(libs.purchases.kmp.core)
                 implementation(libs.purchases.kmp.ui)
+                implementation(libs.kermit)
             }
         }
 

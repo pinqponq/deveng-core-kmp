@@ -29,7 +29,7 @@ class FakeSubscriptionBillingRepository(
 
     override suspend fun restorePurchases(): Boolean = isRestoreSuccessful
 
-    override suspend fun getOfferingPrices(): Map<String, SubscriptionOfferPrice> = offeringPrices
+    override suspend fun fetchOfferingPrices(): Map<String, SubscriptionOfferPrice> = offeringPrices
 
     override suspend fun purchasePackage(packageIdentifier: String): SubscriptionPurchaseResult {
         purchasedPackageIdentifiers += packageIdentifier

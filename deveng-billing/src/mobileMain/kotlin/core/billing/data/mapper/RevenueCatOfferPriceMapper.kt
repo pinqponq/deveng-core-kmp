@@ -6,8 +6,8 @@ import com.revenuecat.purchases.kmp.models.StoreProduct
 import core.billing.domain.model.SubscriptionOfferPrice
 import core.billing.domain.model.SubscriptionPeriodUnit
 
-class RevenueCatOfferPriceMapper {
-    fun map(storeProduct: StoreProduct): SubscriptionOfferPrice {
+internal class RevenueCatOfferPriceMapper {
+    fun mapToDomain(storeProduct: StoreProduct): SubscriptionOfferPrice {
         return SubscriptionOfferPrice(
             totalPriceText = storeProduct.price.formatted,
             totalPriceMicros = storeProduct.price.amountMicros,
