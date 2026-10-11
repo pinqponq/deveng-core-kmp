@@ -68,6 +68,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
             implementation(libs.russhwolf.settings)
+            implementation(libs.navigation.compose)
             implementation(libs.atomicfu)
             implementation(libs.kermit)
             implementation(libs.kotlinx.coroutines.core)
@@ -106,6 +107,7 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.russhwolf.settings.test)
         }
 
         val desktopTest by getting {
