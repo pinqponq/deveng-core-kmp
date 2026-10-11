@@ -9,11 +9,14 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
 import core.presentation.baseviewmodel.fake.FakeViewModel
+import global.deveng.deveng_core.generated.resources.Res
+import global.deveng.deveng_core.generated.resources.shared_error
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import org.jetbrains.compose.resources.stringResource
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -53,6 +56,22 @@ class StateLayoutTest {
         onNodeWithText(CONFIRM_TEXT).performClick()
 
         assertEquals(1, closeRequestCount)
+    }
+
+    @Test
+    fun errorState_withoutErrorTitle_showsSharedErrorTitle() = runComposeUiTest {
+        var sharedErrorTitle = ""
+        setContent {
+            sharedErrorTitle = stringResource(Res.string.shared_error)
+            StateLayout(
+                state = State(uiState = EmptyUiState, error = IllegalStateException(), errorDescription = ERROR_DESCRIPTION),
+                onCloseError = {}
+            ) {
+                Text(CONTENT_TEXT)
+            }
+        }
+
+        onNodeWithText(sharedErrorTitle).assertIsDisplayed()
     }
 
     @Test
