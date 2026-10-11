@@ -12,6 +12,9 @@ import kotlinx.coroutines.CoroutineScope
  * data it guards. Re-entering a screen whose ViewModel is still alive skips the initial load, while
  * a screen whose ViewModel was recreated — after process death, or after the system dropped it
  * while the app sat in the background — initializes again instead of coming back empty.
+ *
+ * @param viewModel The screen's ViewModel; its lifetime decides whether the initial load is due.
+ * @param block Runs when the screen enters composition; `isInit` is true only for the first time.
  */
 @Composable
 fun InitEffect(

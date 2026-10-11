@@ -52,7 +52,7 @@ abstract class BaseViewModel<
      * it has to die with that data — a flag kept in saved state outlives the process while the data
      * does not, which is what left restored screens empty.
      */
-    fun markInitialLoadStarted(): Boolean {
+    internal fun markInitialLoadStarted(): Boolean {
         if (hasStartedInitialLoad) return false
 
         hasStartedInitialLoad = true
@@ -76,10 +76,12 @@ abstract class BaseViewModel<
     }
 
     fun setError(exception: Exception) {
-        when (decideError(exception = exception)) {
-            ErrorDecision.SHOW -> showError(exception = exception)
-            ErrorDecision.SILENT -> Logger.e(exception) { exception.message.orEmpty() }
-            ErrorDecision.HANDLED -> Unit
+        val errorDecision = decideError(exception = exception)
+        if (errorDecision == ErrorDecision.HANDLED) return
+
+        Logger.e(exception) { exception.message.orEmpty() }
+        if (errorDecision == ErrorDecision.SHOW) {
+            showError(exception = exception)
         }
     }
 

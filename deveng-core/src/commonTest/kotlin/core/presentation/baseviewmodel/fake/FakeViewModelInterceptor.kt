@@ -5,7 +5,7 @@ import core.presentation.baseviewmodel.ViewEvent
 import core.presentation.baseviewmodel.ViewModelInterceptor
 import core.presentation.baseviewmodel.ViewSideEffect
 
-class RecordingViewModelInterceptor(
+class FakeViewModelInterceptor(
     private val interceptorName: String,
     private val callLog: MutableList<String>,
     private val errorDecision: ErrorDecision = ErrorDecision.SHOW

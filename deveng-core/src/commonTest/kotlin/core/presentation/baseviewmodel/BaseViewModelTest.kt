@@ -7,8 +7,8 @@ import co.touchlab.kermit.platformLogWriter
 import core.presentation.baseviewmodel.fake.FakeEffect
 import core.presentation.baseviewmodel.fake.FakeEvent
 import core.presentation.baseviewmodel.fake.FakeViewModel
-import core.presentation.baseviewmodel.fake.RecordingLogWriter
-import core.presentation.baseviewmodel.fake.RecordingViewModelInterceptor
+import core.presentation.baseviewmodel.fake.FakeLogWriter
+import core.presentation.baseviewmodel.fake.FakeViewModelInterceptor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
@@ -28,7 +28,7 @@ import kotlin.test.assertTrue
 class BaseViewModelTest {
     private val testDispatcher: TestDispatcher = UnconfinedTestDispatcher()
     private val callLog = mutableListOf<String>()
-    private val logWriter = RecordingLogWriter()
+    private val logWriter = FakeLogWriter()
 
     @BeforeTest
     fun setUp() {
@@ -101,7 +101,7 @@ class BaseViewModelTest {
     }
 
     @Test
-    fun setError_withoutInterceptors_showsErrorWithPrintedMessage() {
+    fun setError_withoutInterceptors_showsAndLogsErrorWithPrintedMessage() {
         val viewModel = FakeViewModel(dispatcher = testDispatcher)
         val exception = IllegalStateException(ERROR_MESSAGE)
 
@@ -109,6 +109,7 @@ class BaseViewModelTest {
 
         assertEquals(exception, viewModel.currentState.error)
         assertEquals(ERROR_MESSAGE, viewModel.currentState.errorDescription)
+        assertEquals(listOf(Severity.Error to ERROR_MESSAGE), logWriter.loggedMessageList)
     }
 
     @Test
@@ -247,7 +248,7 @@ class BaseViewModelTest {
     private fun registerInterceptors(vararg interceptorDecisions: Pair<String, ErrorDecision>) {
         interceptorDecisions.forEach { (interceptorName, errorDecision) ->
             ViewModelInterceptors.register(
-                RecordingViewModelInterceptor(
+                FakeViewModelInterceptor(
                     interceptorName = interceptorName,
                     callLog = callLog,
                     errorDecision = errorDecision
