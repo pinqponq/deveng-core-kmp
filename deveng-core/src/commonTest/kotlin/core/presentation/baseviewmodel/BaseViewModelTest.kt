@@ -1,9 +1,13 @@
 package core.presentation.baseviewmodel
 
 import app.cash.turbine.test
+import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Severity
+import co.touchlab.kermit.platformLogWriter
 import core.presentation.baseviewmodel.fake.FakeEffect
 import core.presentation.baseviewmodel.fake.FakeEvent
 import core.presentation.baseviewmodel.fake.FakeViewModel
+import core.presentation.baseviewmodel.fake.RecordingLogWriter
 import core.presentation.baseviewmodel.fake.RecordingViewModelInterceptor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,15 +28,18 @@ import kotlin.test.assertTrue
 class BaseViewModelTest {
     private val testDispatcher: TestDispatcher = UnconfinedTestDispatcher()
     private val callLog = mutableListOf<String>()
+    private val logWriter = RecordingLogWriter()
 
     @BeforeTest
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        Logger.setLogWriters(logWriter)
     }
 
     @AfterTest
     fun tearDown() {
         ViewModelInterceptors.unregisterAll()
+        Logger.setLogWriters(platformLogWriter())
         Dispatchers.resetMain()
     }
 
@@ -133,13 +140,36 @@ class BaseViewModelTest {
     }
 
     @Test
-    fun setError_whenOneInterceptorSilencesIt_hidesError() {
+    fun setError_whenOneInterceptorSilencesIt_hidesErrorAndLogsIt() {
         registerInterceptors(FIRST_INTERCEPTOR to ErrorDecision.SHOW, SECOND_INTERCEPTOR to ErrorDecision.SILENT)
         val viewModel = FakeViewModel(dispatcher = testDispatcher)
 
         viewModel.setError(IllegalStateException(ERROR_MESSAGE))
 
         assertFalse(viewModel.currentState.showError)
+        assertEquals(listOf(Severity.Error to ERROR_MESSAGE), logWriter.loggedMessageList)
+    }
+
+    @Test
+    fun setError_whenOneInterceptorHandlesIt_doesNotLogIt() {
+        registerInterceptors(FIRST_INTERCEPTOR to ErrorDecision.SILENT, SECOND_INTERCEPTOR to ErrorDecision.HANDLED)
+        val viewModel = FakeViewModel(dispatcher = testDispatcher)
+
+        viewModel.setError(IllegalStateException(ERROR_MESSAGE))
+
+        assertTrue(logWriter.loggedMessageList.isEmpty())
+    }
+
+    @Test
+    fun setError_withInterceptorOverridingNothing_showsError() {
+        ViewModelInterceptors.register(object : ViewModelInterceptor {})
+        val viewModel = FakeViewModel(dispatcher = testDispatcher)
+
+        viewModel.setEvent(FakeEvent.AddToCounter(amount = 1))
+        viewModel.setError(IllegalStateException(ERROR_MESSAGE))
+
+        assertEquals(1, viewModel.currentUiState.counterValue)
+        assertTrue(viewModel.currentState.showError)
     }
 
     @Test
@@ -181,6 +211,7 @@ class BaseViewModelTest {
             ),
             callLog
         )
+        assertEquals(listOf(Severity.Error to ERROR_MESSAGE), logWriter.loggedMessageList)
     }
 
     @Test

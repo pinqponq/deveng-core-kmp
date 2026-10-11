@@ -1,16 +1,37 @@
 package core.presentation.baseviewmodel
 
 import androidx.compose.material3.Text
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
+import core.presentation.baseviewmodel.fake.FakeViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 class StateLayoutTest {
+    private val testDispatcher = UnconfinedTestDispatcher()
+
+    @BeforeTest
+    fun setUp() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     @Test
     fun errorState_clickConfirmButton_showsErrorAndRequestsClose() = runComposeUiTest {
@@ -28,6 +49,7 @@ class StateLayoutTest {
 
         onNodeWithText(ERROR_TITLE).assertIsDisplayed()
         onNodeWithText(ERROR_DESCRIPTION).assertIsDisplayed()
+        onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertDoesNotExist()
         onNodeWithText(CONFIRM_TEXT).performClick()
 
         assertEquals(1, closeRequestCount)
@@ -63,6 +85,28 @@ class StateLayoutTest {
         }
 
         onNodeWithText(CONTENT_TEXT).assertIsDisplayed()
+        onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertIsDisplayed()
+    }
+
+    @Test
+    fun viewModelError_clickConfirmButton_hidesErrorDialog() = runComposeUiTest {
+        val viewModel = FakeViewModel(dispatcher = testDispatcher)
+        viewModel.setError(IllegalStateException(ERROR_DESCRIPTION))
+        setContent {
+            StateLayout(
+                state = viewModel.getState(),
+                errorTitle = ERROR_TITLE,
+                errorPositiveButtonText = CONFIRM_TEXT,
+                onCloseError = viewModel::hideError
+            ) {
+                Text(CONTENT_TEXT)
+            }
+        }
+
+        onNodeWithText(ERROR_DESCRIPTION).assertIsDisplayed()
+        onNodeWithText(CONFIRM_TEXT).performClick()
+
+        onNodeWithText(ERROR_DESCRIPTION).assertDoesNotExist()
     }
 
     private data object EmptyUiState : UiState
