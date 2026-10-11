@@ -13,6 +13,7 @@ import androidx.navigation.navDeepLink
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -64,6 +65,24 @@ class DeepLinkListenerTest {
 
         assertEquals("detail", navController?.currentBackStackEntry?.destination?.route)
         runOnIdle { navController?.popBackStack() }
+    }
+
+    @Test
+    fun onNewUri_withSameLinkTwice_needsOnlyOneBackToLeave() = runComposeUiTest {
+        var navController: NavController? = null
+        setContent {
+            Host(router = null, onController = { navController = it })
+        }
+
+        ExternalUriHandler.onNewUri("app://detail")
+        waitForIdle()
+        ExternalUriHandler.onNewUri("app://detail")
+        waitForIdle()
+
+        runOnIdle { navController?.popBackStack() }
+        waitForIdle()
+
+        assertNotEquals("detail", navController?.currentBackStackEntry?.destination?.route)
     }
 
     @Test
