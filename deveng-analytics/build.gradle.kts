@@ -34,9 +34,9 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":deveng-core"))
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.serialization.json)
-            implementation(libs.russhwolf.settings)
-            implementation(libs.ktor.client.core)
+            api(libs.kotlinx.serialization.json)
+            api(libs.russhwolf.settings)
+            api(libs.ktor.client.core)
         }
 
         androidMain.dependencies {

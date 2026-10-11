@@ -2,7 +2,7 @@ package core.analytics.data.client
 
 /**
  * Holds the Swift-provided handler that forwards a conversion event to the Facebook SDK. Swift owns
- * FBSDKCoreKit and registers the handler at launch (via IosMetaEventLoggerBridge); until then, or
+ * FBSDKCoreKit and the app registers the handler from Swift at launch; until then, or
  * when Meta is not configured, [log] is a no-op.
  */
 object IosMetaEventLogger {

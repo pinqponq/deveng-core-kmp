@@ -20,7 +20,9 @@ class FetchAdConfigUseCaseTest {
 
         createUseCase(isTestAdUnitsEnabled = false).invoke()
 
-        assertEquals(BACKEND_AD_CONFIG, adConfigHolder.adConfig.value)
+        val publishedAdConfig = adConfigHolder.adConfig.value
+        assertEquals(BACKEND_ANDROID_AD_UNIT_ID, publishedAdConfig?.rewardedAdUnitIdAndroid)
+        assertEquals(BACKEND_IOS_AD_UNIT_ID, publishedAdConfig?.rewardedAdUnitIdIos)
     }
 
     @Test
@@ -40,7 +42,7 @@ class FetchAdConfigUseCaseTest {
 
     @Test
     fun invoke_whenBackendFails_keepsConfigEmptyAndThrows() = runTest {
-        adConfigRepository.getAdConfigFailure = IllegalStateException(SERVER_ERROR_MESSAGE)
+        adConfigRepository.fetchAdConfigFailure = IllegalStateException(SERVER_ERROR_MESSAGE)
 
         assertFailsWith<IllegalStateException> { createUseCase(isTestAdUnitsEnabled = true).invoke() }
 
@@ -55,9 +57,11 @@ class FetchAdConfigUseCaseTest {
 
     private companion object {
         const val SERVER_ERROR_MESSAGE = "Server error."
+        const val BACKEND_ANDROID_AD_UNIT_ID = "ca-app-pub-1111111111111111/1111111111"
+        const val BACKEND_IOS_AD_UNIT_ID = "ca-app-pub-1111111111111111/2222222222"
         val BACKEND_AD_CONFIG = AdConfig(
-            rewardedAdUnitIdAndroid = "ca-app-pub-1111111111111111/1111111111",
-            rewardedAdUnitIdIos = "ca-app-pub-1111111111111111/2222222222",
+            rewardedAdUnitIdAndroid = BACKEND_ANDROID_AD_UNIT_ID,
+            rewardedAdUnitIdIos = BACKEND_IOS_AD_UNIT_ID,
         )
     }
 }

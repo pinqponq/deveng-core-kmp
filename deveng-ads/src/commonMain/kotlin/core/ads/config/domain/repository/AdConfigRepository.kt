@@ -3,5 +3,5 @@ package core.ads.config.domain.repository
 import core.ads.config.domain.model.AdConfig
 
 interface AdConfigRepository {
-    suspend fun getAdConfig(): AdConfig
+    suspend fun fetchAdConfig(): AdConfig
 }

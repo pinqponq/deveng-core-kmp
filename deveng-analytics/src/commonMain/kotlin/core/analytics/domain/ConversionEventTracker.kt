@@ -9,6 +9,8 @@ import core.util.CustomLogger.log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+private const val KEY_SOURCE = "source"
+private const val KEY_TAG = "tag"
 private const val SOURCE = "ConversionEventTracker"
 private const val CONVERSION_TAG = "CONVERSION"
 
@@ -33,8 +35,8 @@ class ConversionEventTracker(
                 logLevel = AnalyticsLogLevel.INFORMATION,
                 message = event.pinqloqName,
                 metadata = mapOf(
-                    "source" to SOURCE,
-                    "tag" to CONVERSION_TAG
+                    KEY_SOURCE to SOURCE,
+                    KEY_TAG to CONVERSION_TAG
                 ),
                 detail = params
             )

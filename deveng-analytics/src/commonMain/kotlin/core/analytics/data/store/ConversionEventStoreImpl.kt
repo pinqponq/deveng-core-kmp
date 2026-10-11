@@ -24,11 +24,7 @@ class ConversionEventStoreImpl(
     }
 
     private fun readFiredEvents(): Set<String> {
-        val raw = settings.getStringOrNull(KEY_FIRED_EVENTS) ?: return emptySet()
-        if (raw.isEmpty()) return emptySet()
-        return raw.split(SEPARATOR).map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        val storedEvents = settings.getStringOrNull(KEY_FIRED_EVENTS).orEmpty()
+        return storedEvents.split(SEPARATOR).map { it.trim() }.filter { it.isNotEmpty() }.toSet()
     }
-
-    private fun Settings.getStringOrNull(key: String): String? =
-        if (hasKey(key)) getString(key, "") else null
 }

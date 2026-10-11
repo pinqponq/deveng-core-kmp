@@ -10,6 +10,7 @@ import core.attribution.data.datasource.remote.model.mapper.InstallReferrerAttri
 import core.attribution.data.repository.InstallReferrerAttributionRepositoryImpl
 import core.attribution.domain.model.InstallAttribution
 import core.attribution.domain.repository.AttributionRepository
+import core.attribution.fake.FakeAttributionRepository
 import core.attribution.fake.FakeAttributionTokenProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,7 +49,7 @@ class InstallAttributionTrackerTest {
 
     @Test
     fun track_withAppleSearchAdsAttribution_firesInstallAttributedWithAdIds() {
-        val attributionRepository = FixedAttributionRepository(attribution = APPLE_SEARCH_ADS_ATTRIBUTION)
+        val attributionRepository = FakeAttributionRepository(attribution = APPLE_SEARCH_ADS_ATTRIBUTION)
 
         createTracker(installReferrer = ATTRIBUTION_TOKEN, attributionRepository = attributionRepository).track()
 
@@ -86,7 +87,7 @@ class InstallAttributionTrackerTest {
 
     @Test
     fun track_whenTokenCannotBeResolved_firesNothingAndRetriesLater() {
-        val attributionRepository = FixedAttributionRepository(attribution = null)
+        val attributionRepository = FakeAttributionRepository(attribution = null)
 
         createTracker(installReferrer = ATTRIBUTION_TOKEN, attributionRepository = attributionRepository).track()
 
@@ -96,7 +97,7 @@ class InstallAttributionTrackerTest {
 
     @Test
     fun track_whenResolvingFails_firesNothingAndRetriesLater() {
-        val attributionRepository = FixedAttributionRepository(failure = IllegalStateException(NETWORK_ERROR_MESSAGE))
+        val attributionRepository = FakeAttributionRepository(failure = IllegalStateException(NETWORK_ERROR_MESSAGE))
 
         createTracker(installReferrer = ATTRIBUTION_TOKEN, attributionRepository = attributionRepository).track()
 
@@ -134,16 +135,6 @@ class InstallAttributionTrackerTest {
             conversionEventTracker = conversionEventTracker,
             applicationScope = applicationScope,
         )
-    }
-
-    private class FixedAttributionRepository(
-        private val attribution: InstallAttribution? = null,
-        private val failure: Exception? = null,
-    ) : AttributionRepository {
-        override suspend fun resolveAttribution(attributionToken: String): InstallAttribution? {
-            failure?.let { exception -> throw exception }
-            return attribution
-        }
     }
 
     private companion object {

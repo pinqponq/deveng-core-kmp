@@ -16,7 +16,7 @@ class FetchAdConfigUseCase(
     private val isTestAdUnitsEnabled: Boolean,
 ) {
     suspend operator fun invoke() {
-        val adConfig = adConfigRepository.getAdConfig()
+        val adConfig = adConfigRepository.fetchAdConfig()
         adConfigHolder.update(if (isTestAdUnitsEnabled) TEST_AD_CONFIG else adConfig)
     }
 

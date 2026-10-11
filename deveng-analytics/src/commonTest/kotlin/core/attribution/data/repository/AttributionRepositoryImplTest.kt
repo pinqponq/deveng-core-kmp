@@ -7,9 +7,12 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.toByteArray
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
+import io.ktor.http.contentType
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
@@ -34,6 +37,18 @@ class AttributionRepositoryImplTest {
         assertEquals(listOf(ADSERVICES_ENDPOINT), requestUrls)
         assertEquals(listOf(HttpMethod.Post), requestMethods)
         assertEquals(listOf(ATTRIBUTION_TOKEN), requestBodies)
+        assertEquals(listOf<String?>("text/plain"), requestContentTypes.map { it?.substringBefore(";") })
+    }
+
+    @Test
+    fun resolveAttribution_withClientDefaultingToJson_stillSendsPlainTextToken() = runTest {
+        val repository = createRepository(
+            responses = listOf(HttpStatusCode.OK to ATTRIBUTED_RESPONSE),
+            isJsonContentTypeDefault = true,
+        )
+
+        repository.resolveAttribution(attributionToken = ATTRIBUTION_TOKEN)
+
         assertEquals(listOf<String?>("text/plain"), requestContentTypes.map { it?.substringBefore(";") })
     }
 
@@ -93,7 +108,10 @@ class AttributionRepositoryImplTest {
         assertNull(repository.resolveAttribution(attributionToken = ATTRIBUTION_TOKEN))
     }
 
-    private fun createRepository(responses: List<Pair<HttpStatusCode, String>>): AttributionRepositoryImpl {
+    private fun createRepository(
+        responses: List<Pair<HttpStatusCode, String>>,
+        isJsonContentTypeDefault: Boolean = false,
+    ): AttributionRepositoryImpl {
         val pendingResponses = ArrayDeque(responses)
         val mockEngine = MockEngine { request ->
             requestUrls += request.url.toString()
@@ -103,7 +121,11 @@ class AttributionRepositoryImplTest {
             val (status, body) = pendingResponses.removeFirst()
             respond(content = body, status = status)
         }
-        val httpClient = HttpClient(mockEngine)
+        val httpClient = HttpClient(mockEngine) {
+            if (isJsonContentTypeDefault) {
+                defaultRequest { contentType(ContentType.Application.Json) }
+            }
+        }
 
         return AttributionRepositoryImpl(
             appleAdServicesService = AppleAdServicesService(httpClientProvider = { httpClient }, json = JSON),

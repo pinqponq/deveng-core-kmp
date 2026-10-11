@@ -7,6 +7,11 @@ import core.analytics.domain.log.AnalyticsLogLevel
 import core.analytics.domain.log.AnalyticsLogSink
 import core.analytics.domain.model.CommonAnalyticsEvent
 
+private const val KEY_SOURCE = "source"
+private const val KEY_TAG = "tag"
+private const val KEY_SURFACE = "surface"
+private const val KEY_EXCEPTION_TYPE = "exceptionType"
+private const val KEY_ERROR_MESSAGE = "errorMessage"
 private const val SOURCE = "SendRewardedAdOutcomeUseCase"
 private const val REWARDED_AD_TAG = "REWARDED_AD"
 private const val UNKNOWN_EXCEPTION_TYPE = "Unknown"
@@ -19,7 +24,7 @@ class SendRewardedAdOutcomeUseCase(
         when (outcome) {
             RewardedAdOutcome.RewardEarned -> conversionEventTracker.track(
                 event = CommonAnalyticsEvent.REWARDED_AD_COMPLETED,
-                params = mapOf("surface" to surface.name),
+                params = mapOf(KEY_SURFACE to surface.name),
             )
 
             is RewardedAdOutcome.Failure -> sendFailureLog(failure = outcome, surface = surface)
@@ -31,14 +36,14 @@ class SendRewardedAdOutcomeUseCase(
             logLevel = AnalyticsLogLevel.WARNING,
             message = resolveEventName(failure = failure),
             metadata = mapOf(
-                "source" to SOURCE,
-                "tag" to REWARDED_AD_TAG,
+                KEY_SOURCE to SOURCE,
+                KEY_TAG to REWARDED_AD_TAG,
             ),
             detail = buildMap {
-                put("surface", surface.name)
+                put(KEY_SURFACE, surface.name)
                 resolveException(failure = failure)?.let { exception ->
-                    put("exceptionType", exception::class.simpleName ?: UNKNOWN_EXCEPTION_TYPE)
-                    exception.message?.let { message -> put("errorMessage", message) }
+                    put(KEY_EXCEPTION_TYPE, exception::class.simpleName ?: UNKNOWN_EXCEPTION_TYPE)
+                    exception.message?.let { message -> put(KEY_ERROR_MESSAGE, message) }
                 }
             },
         )

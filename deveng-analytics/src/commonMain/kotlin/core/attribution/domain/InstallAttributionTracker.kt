@@ -28,9 +28,8 @@ private const val PARAM_CAMPAIGN_CONTENT = "campaignContent"
 /**
  * Resolves the install-attribution source once per install and fires it as
  * [CommonAnalyticsEvent.INSTALL_ATTRIBUTED] to pinqloq (and the other analytics sinks) through
- * [ConversionEventTracker]. The resulting log carries the campaign / ad-group / keyword ids, keyed
- * by the same device identifier as the signup and pairing events, so acquisition source can be
- * joined to downstream pairing. Runs on [applicationScope] so it survives navigation.
+ * [ConversionEventTracker], with the campaign / ad-group / keyword ids as params. Runs on
+ * [applicationScope] so it survives navigation.
  */
 class InstallAttributionTracker(
     private val attributionTokenProvider: AttributionTokenProvider,

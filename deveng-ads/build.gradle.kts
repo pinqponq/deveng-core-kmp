@@ -33,7 +33,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":deveng-analytics"))
+            api(project(":deveng-analytics"))
             implementation(compose.runtime)
             implementation(libs.kotlinx.coroutines.core)
         }
