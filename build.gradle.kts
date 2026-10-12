@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.compose).apply(false)
     alias(libs.plugins.android.application).apply(false)
     alias(libs.plugins.android.library).apply(false)
+    alias(libs.plugins.vanniktech.mavenPublish).apply(false)
+    alias(libs.plugins.kover).apply(false)
 }
 
 // See figma-sync/README.md Section 3.1 for full pipeline documentation

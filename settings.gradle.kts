@@ -35,6 +35,8 @@ plugins {
 
 include(":sample:composeApp")
 include(":deveng-core")
+include(":deveng-core-testing")
+include(":deveng-testing-gradle-plugin")
 
 include(":figma-sync")
 include(":figma-sync:tools:schema-cli")
