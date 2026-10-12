@@ -34,6 +34,10 @@ adaptive = "1.2.0"
 kover = "0.9.11"
 roborazzi = "1.76.0"
 
+# Home screen widget
+glance = "1.1.1"
+work-manager = "2.10.1"
+
 # QR generator
 qrose = "1.1.2"
 # QR scanner
@@ -77,6 +81,11 @@ mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version
 material3-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
 roborazzi-compose-desktop = { module = "io.github.takahirom.roborazzi:roborazzi-compose-desktop", version.ref = "roborazzi" }
+
+# Home screen widget
+glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glance" }
+work-manager = { module = "androidx.work:work-runtime-ktx", version.ref = "work-manager" }
+russhwolf-settings-test = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "russhwolfsettings" }
 
 [plugins]
 

@@ -35,6 +35,7 @@ plugins {
 
 include(":sample:composeApp")
 include(":deveng-core")
+include(":deveng-widget")
 
 include(":figma-sync")
 include(":figma-sync:tools:schema-cli")
