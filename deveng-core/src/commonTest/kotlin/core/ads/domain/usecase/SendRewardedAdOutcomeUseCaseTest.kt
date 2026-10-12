@@ -2,19 +2,19 @@ package core.ads.domain.usecase
 
 import core.ads.domain.model.RewardedAdOutcome
 import core.ads.domain.model.RewardedAdSurface
-import core.ads.fake.FakeAnalyticsLogSink
-import core.ads.fake.FakeConversionAnalyticsClient
-import core.ads.fake.FakeConversionEventStore
 import core.analytics.domain.ConversionEventTracker
 import core.analytics.domain.log.AnalyticsLogLevel
 import core.analytics.domain.model.AnalyticsEvent
 import core.analytics.domain.model.CommonAnalyticsEvent
+import core.analytics.fake.FakeAnalyticsLogSink
+import core.analytics.fake.FakeConversionAnalyticsClient
+import core.analytics.fake.FakeConversionEventStore
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SendRewardedAdOutcomeUseCaseTest {

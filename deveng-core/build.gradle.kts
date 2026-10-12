@@ -65,9 +65,9 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
-            implementation(libs.kotlinx.serialization.json)
+            api(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
-            implementation(libs.russhwolf.settings)
+            api(libs.russhwolf.settings)
             implementation(libs.atomicfu)
             implementation(libs.kermit)
             implementation(libs.kotlinx.coroutines.core)
@@ -77,6 +77,7 @@ kotlin {
             implementation(libs.qrose)
             implementation(libs.material3.adaptive)
             api(libs.androidx.lifecycle.viewmodel)
+            api(libs.ktor.client.core)
         }
 
         androidMain.dependencies {
@@ -95,6 +96,17 @@ kotlin {
             implementation(libs.androidx.startup.runtime)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.mlkit.barcode.scanning)
+            compileOnly(project.dependencies.platform(libs.firebase.android.bom))
+            compileOnly(libs.gitlive.firebase.analytics)
+            compileOnly(libs.facebook.core)
+            compileOnly(libs.install.referrer)
+            compileOnly(libs.basic.ads)
+            compileOnly(libs.google.play.services.ads)
+        }
+
+        iosMain.dependencies {
+            implementation(libs.gitlive.firebase.analytics)
+            implementation(libs.basic.ads)
         }
 
         val desktopMain by getting {
@@ -108,6 +120,8 @@ kotlin {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.turbine)
+            implementation(libs.russhwolf.settings.test)
+            implementation(libs.ktor.client.mock)
         }
 
         val desktopTest by getting {

@@ -44,6 +44,7 @@ mlkit-barcode = "17.3.0"
 # Analytics, attribution and ads
 ktor = "3.3.3"
 firebase-gitlive-sdk = "2.4.0"
+firebase-bom = "34.2.0"
 facebook-android-sdk = "18.3.0"
 install-referrer = "2.2"
 basic-ads = "1.1.0"
@@ -87,6 +88,7 @@ mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version
 # Analytics, attribution and ads
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+firebase-android-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 gitlive-firebase-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "firebase-gitlive-sdk" }
 facebook-core = { module = "com.facebook.android:facebook-core", version.ref = "facebook-android-sdk" }
 install-referrer = { module = "com.android.installreferrer:installreferrer", version.ref = "install-referrer" }
