@@ -14,9 +14,9 @@ import core.presentation.theme.LocalComponentTheme
 import core.util.EMPTY
 import core.util.debouncedCombinedClickable
 import global.deveng.deveng_core.generated.resources.Res
-import global.deveng.deveng_core.generated.resources.shared_edit
+import global.deveng.deveng_core.generated.resources.shared_email_field_edit
 import global.deveng.deveng_core.generated.resources.shared_email
-import global.deveng.deveng_core.generated.resources.shared_please_enter_a_valid_email_address
+import global.deveng.deveng_core.generated.resources.shared_email_field_invalid_error
 import org.jetbrains.compose.resources.stringResource
 
 private const val EMAIL_MAX_LENGTH = 254
@@ -48,8 +48,8 @@ fun EmailDisplayField(
     email: String,
     hint: String = String.EMPTY,
     title: String = stringResource(Res.string.shared_email),
-    editText: String = stringResource(Res.string.shared_edit),
-    errorMessage: String = stringResource(Res.string.shared_please_enter_a_valid_email_address),
+    editText: String = stringResource(Res.string.shared_email_field_edit),
+    errorMessage: String = stringResource(Res.string.shared_email_field_invalid_error),
     titleColor: Color? = null,
     containerColor: Color? = null,
     disabledContainerColor: Color? = null,

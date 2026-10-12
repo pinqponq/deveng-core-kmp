@@ -51,6 +51,15 @@ import global.deveng.deveng_core.generated.resources.shared_read_and_approve_tex
 import org.jetbrains.compose.resources.stringResource
 
 private val EdgeFadeAlphaStops = listOf(0f, 0.3f, 0.7f, 1f)
+private val HeaderTopPadding = 25.dp
+private val HeaderBottomPadding = 15.dp
+private val BackIconHeight = 14.dp
+private val BackIconWidth = 18.dp
+private val TitleHorizontalPadding = 45.dp
+private val ContentHorizontalPadding = 20.dp
+private val ContentBottomPadding = 13.dp
+private val ApprovalRowTopPadding = 15.dp
+private val ApprovalRowBottomPadding = 41.dp
 
 /**
  * Full-height dialog that shows markdown content under a fixed header, fading the content out at the
@@ -114,11 +123,11 @@ fun ScrollableContentDialog(
                         .onSizeChanged { size ->
                             headerHeightDp = with(density) { size.height.toDp() }
                         }
-                        .padding(top = 25.dp, bottom = 15.dp)
+                        .padding(top = HeaderTopPadding, bottom = HeaderBottomPadding)
                 ) {
                     CustomIconButton(
                         modifier = Modifier.align(Alignment.CenterStart),
-                        iconModifier = Modifier.height(14.dp).width(18.dp),
+                        iconModifier = Modifier.height(BackIconHeight).width(BackIconWidth),
                         backgroundColor = Color.Transparent,
                         icon = Res.drawable.shared_ic_arrow_left,
                         iconDescription = backIconDescription,
@@ -131,7 +140,7 @@ fun ScrollableContentDialog(
                         style = dialogTheme.titleTextStyle,
                         modifier = Modifier
                             .align(Alignment.Center)
-                            .padding(horizontal = 45.dp)
+                            .padding(horizontal = TitleHorizontalPadding)
                     )
                 }
 
@@ -176,9 +185,9 @@ fun ScrollableContentDialog(
                         .verticalScroll(scrollState)
                         .padding(
                             top = headerHeightDp,
-                            start = 20.dp,
-                            end = 20.dp,
-                            bottom = 13.dp
+                            start = ContentHorizontalPadding,
+                            end = ContentHorizontalPadding,
+                            bottom = ContentBottomPadding
                         )
                 ) {
                     MarkdownContentParser(
@@ -190,7 +199,7 @@ fun ScrollableContentDialog(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 15.dp, bottom = 41.dp),
+                                .padding(top = ApprovalRowTopPadding, bottom = ApprovalRowBottomPadding),
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically
                         ) {

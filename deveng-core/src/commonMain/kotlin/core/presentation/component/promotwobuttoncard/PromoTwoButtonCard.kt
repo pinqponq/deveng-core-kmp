@@ -23,6 +23,13 @@ import core.util.debouncedCombinedClickable
 
 private const val PRIMARY_BUTTON_SPOT_SHADOW_ALPHA = 0.35f
 private const val PRIMARY_BUTTON_AMBIENT_SHADOW_ALPHA = 0.2f
+private val CardHorizontalPadding = 25.dp
+private val CardVerticalPadding = 33.dp
+private val ContentSpacing = 8.dp
+private val BodyHorizontalPadding = 16.dp
+private val PrimaryButtonShadowElevation = 8.dp
+private val ButtonVerticalPadding = 16.dp
+private val SecondaryButtonBorderWidth = 1.dp
 
 /**
  * Promotional card with an optional hero, a title, a body text, a filled primary button and an outlined
@@ -57,31 +64,31 @@ fun PromoTwoButtonCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = 25.dp, vertical = 33.dp)
+                .padding(horizontal = CardHorizontalPadding, vertical = CardVerticalPadding)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(ContentSpacing)
         ) {
             heroContent?.invoke()
 
             Text(
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = ContentSpacing),
                 text = title,
                 style = promoTheme.titleTextStyle
             )
 
             Text(
-                modifier = Modifier.padding(horizontal = 16.dp),
+                modifier = Modifier.padding(horizontal = BodyHorizontalPadding),
                 text = body,
                 style = promoTheme.bodyTextStyle
             )
 
             Box(
                 modifier = Modifier
-                    .padding(top = 8.dp)
+                    .padding(top = ContentSpacing)
                     .fillMaxWidth()
                     .shadow(
-                        elevation = 8.dp,
+                        elevation = PrimaryButtonShadowElevation,
                         shape = promoTheme.buttonShape,
                         spotColor = promoTheme.primaryButtonColor.copy(alpha = PRIMARY_BUTTON_SPOT_SHADOW_ALPHA),
                         ambientColor = promoTheme.primaryButtonColor.copy(alpha = PRIMARY_BUTTON_AMBIENT_SHADOW_ALPHA)
@@ -89,7 +96,7 @@ fun PromoTwoButtonCard(
                     .clip(promoTheme.buttonShape)
                     .background(color = promoTheme.primaryButtonColor)
                     .debouncedCombinedClickable(onClick = onPrimaryClick)
-                    .padding(vertical = 16.dp),
+                    .padding(vertical = ButtonVerticalPadding),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -104,12 +111,12 @@ fun PromoTwoButtonCard(
                     .debouncedCombinedClickable(onClick = onSecondaryClick),
                 shape = promoTheme.buttonShape,
                 color = promoTheme.secondaryButtonColor,
-                border = BorderStroke(1.dp, promoTheme.secondaryButtonBorderColor)
+                border = BorderStroke(SecondaryButtonBorderWidth, promoTheme.secondaryButtonBorderColor)
             ) {
                 Text(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 16.dp),
+                        .padding(vertical = ButtonVerticalPadding),
                     text = secondaryButtonLabel,
                     style = promoTheme.secondaryButtonTextStyle
                 )
