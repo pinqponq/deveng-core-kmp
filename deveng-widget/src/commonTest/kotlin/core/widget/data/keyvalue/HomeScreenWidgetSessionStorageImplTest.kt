@@ -13,15 +13,15 @@ class HomeScreenWidgetSessionStorageImplTest {
     fun saveWidgetSession_writesTheKeysTheSwiftExtensionReads() {
         sessionStorage.saveWidgetSession(widgetToken = WIDGET_TOKEN, deviceIdentifier = DEVICE_IDENTIFIER, apiBaseUrl = API_BASE_URL)
 
-        assertEquals(WIDGET_TOKEN, widgetSettings.getStringOrNull("home_screen_widget_token"))
-        assertEquals(DEVICE_IDENTIFIER, widgetSettings.getStringOrNull("home_screen_widget_device_identifier"))
-        assertEquals(API_BASE_URL, widgetSettings.getStringOrNull("home_screen_widget_api_base_url"))
+        assertEquals(WIDGET_TOKEN, widgetSettings.getStringOrNull(KEY_WIDGET_TOKEN))
+        assertEquals(DEVICE_IDENTIFIER, widgetSettings.getStringOrNull(KEY_DEVICE_IDENTIFIER))
+        assertEquals(API_BASE_URL, widgetSettings.getStringOrNull(KEY_API_BASE_URL))
         assertEquals(WIDGET_TOKEN, sessionStorage.getWidgetToken())
     }
 
     @Test
     fun getWidgetToken_withBlankStoredToken_returnsNull() {
-        widgetSettings.putString("home_screen_widget_token", " ")
+        widgetSettings.putString(KEY_WIDGET_TOKEN, " ")
 
         assertNull(sessionStorage.getWidgetToken())
     }
@@ -43,6 +43,9 @@ class HomeScreenWidgetSessionStorageImplTest {
     }
 
     private companion object {
+        const val KEY_WIDGET_TOKEN = "home_screen_widget_token"
+        const val KEY_DEVICE_IDENTIFIER = "home_screen_widget_device_identifier"
+        const val KEY_API_BASE_URL = "home_screen_widget_api_base_url"
         const val WIDGET_TOKEN = "widget-token"
         const val DEVICE_IDENTIFIER = "device-identifier"
         const val API_BASE_URL = "https://api.example.com/"

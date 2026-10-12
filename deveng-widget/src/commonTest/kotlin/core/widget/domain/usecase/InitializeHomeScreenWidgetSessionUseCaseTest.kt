@@ -31,8 +31,8 @@ class InitializeHomeScreenWidgetSessionUseCaseTest {
 
         assertEquals(listOf(DEVICE_IDENTIFIER), tokenRepository.issuedDeviceIdentifiers)
         assertEquals(ISSUED_WIDGET_TOKEN, sessionStorage.getWidgetToken())
-        assertEquals(DEVICE_IDENTIFIER, widgetSettings.getStringOrNull("home_screen_widget_device_identifier"))
-        assertEquals(API_BASE_URL, widgetSettings.getStringOrNull("home_screen_widget_api_base_url"))
+        assertEquals(DEVICE_IDENTIFIER, widgetSettings.getStringOrNull(KEY_DEVICE_IDENTIFIER))
+        assertEquals(API_BASE_URL, widgetSettings.getStringOrNull(KEY_API_BASE_URL))
         assertEquals(1, widgetReloader.reloadCount)
     }
 
@@ -58,6 +58,8 @@ class InitializeHomeScreenWidgetSessionUseCaseTest {
     }
 
     private companion object {
+        const val KEY_DEVICE_IDENTIFIER = "home_screen_widget_device_identifier"
+        const val KEY_API_BASE_URL = "home_screen_widget_api_base_url"
         const val DEVICE_IDENTIFIER = "device-identifier"
         const val API_BASE_URL = "https://api.example.com/"
         const val ISSUED_WIDGET_TOKEN = "issued-widget-token"

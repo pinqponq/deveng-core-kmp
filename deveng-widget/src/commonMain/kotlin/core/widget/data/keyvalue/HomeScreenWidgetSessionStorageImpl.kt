@@ -3,7 +3,7 @@ package core.widget.data.keyvalue
 import com.russhwolf.settings.Settings
 import core.widget.domain.keyvalue.HomeScreenWidgetSessionStorage
 
-/** Read by the iOS widget extension under these exact names (pinq-doq widget template HomeScreenWidgetSession.swift). */
+/** Read by the iOS widget extension under these exact names; never rename them on one side only. */
 private const val KEY_WIDGET_TOKEN = "home_screen_widget_token"
 private const val KEY_DEVICE_IDENTIFIER = "home_screen_widget_device_identifier"
 private const val KEY_API_BASE_URL = "home_screen_widget_api_base_url"

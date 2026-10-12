@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.android.library)
     alias(libs.plugins.vanniktech.mavenPublish)
+    alias(libs.plugins.kover)
 }
 
 group = "global.deveng"
