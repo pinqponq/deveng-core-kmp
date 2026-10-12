@@ -21,6 +21,7 @@ import chaintech.videoplayer.host.MediaPlayerHost
 import chaintech.videoplayer.model.ScreenResize
 import chaintech.videoplayer.model.VideoPlayerConfig
 import chaintech.videoplayer.ui.video.VideoPlayerComposable
+import core.presentation.component.mediaviewer.internal.VideoSeekPosition
 import kotlinx.coroutines.delay
 
 private const val PLAYBACK_START_DELAY_MILLIS = 80L
@@ -113,6 +114,7 @@ internal fun SharedPlayerMediaViewerVideoPage(
             initialVideoFitMode = ScreenResize.FIT,
         )
     }
+
     val playbackControls = remember(playerHost) { MediaPlayerHostPlaybackControls(playerHost = playerHost) }
     VideoPlaybackEffects(
         playbackControls = playbackControls,
@@ -122,6 +124,7 @@ internal fun SharedPlayerMediaViewerVideoPage(
         onPlaybackProgress = onPlaybackProgress,
         onPlaybackEnded = onPlaybackEnded,
     )
+
     val playerConfig = remember(arePlayerControlsVisible) {
         VideoPlayerConfig(
             showControls = arePlayerControlsVisible,
@@ -137,6 +140,7 @@ internal fun SharedPlayerMediaViewerVideoPage(
             isGestureVolumeControlEnabled = false,
         )
     }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -186,17 +190,26 @@ internal fun VideoPlaybackEffects(
     // The player reports elapsed and total time as separate events, so the total is held here: the
     // fraction a caller works in needs both, and a seek has to be turned back into seconds.
     var totalSeconds by remember(playbackControls) { mutableFloatStateOf(0f) }
+    val seekPosition = remember(playbackControls) { VideoSeekPosition() }
     val currentOnPlaybackProgress by rememberUpdatedState(onPlaybackProgress)
     val currentOnPlaybackEnded by rememberUpdatedState(onPlaybackEnded)
     val currentIsPlaybackPaused by rememberUpdatedState(isPlaybackPaused)
+
     DisposableEffect(playbackControls) {
         playbackControls.setOnEvent { event ->
             when (event) {
-                is MediaPlayerEvent.TotalTimeChange -> totalSeconds = event.totalTime
-                is MediaPlayerEvent.CurrentTimeChange -> {
-                    if (totalSeconds > 0f) {
-                        currentOnPlaybackProgress((event.currentTime / totalSeconds).coerceIn(0f, 1f))
+                is MediaPlayerEvent.TotalTimeChange -> {
+                    totalSeconds = event.totalTime
+                    seekPosition.takeSeekTime(durationSeconds = totalSeconds.toDouble())?.let { seekSeconds ->
+                        playbackControls.seekTo(seconds = seekSeconds.toFloat())
                     }
+                }
+
+                is MediaPlayerEvent.CurrentTimeChange -> {
+                    seekPosition.progress(
+                        currentTimeSeconds = event.currentTime.toDouble(),
+                        durationSeconds = totalSeconds.toDouble(),
+                    )?.let { progress -> currentOnPlaybackProgress(progress) }
                 }
 
                 is MediaPlayerEvent.MediaEnd -> {
@@ -212,14 +225,15 @@ internal fun VideoPlaybackEffects(
             playbackControls.pause()
         }
     }
-    val isDurationKnown = totalSeconds > 0f
-    // Keyed on isDurationKnown too, so a seek requested before the player reported its duration is
-    // applied once the duration arrives instead of being dropped.
-    LaunchedEffect(seekRequest, isDurationKnown) {
+
+    LaunchedEffect(seekRequest) {
         val requestedFraction = seekRequest?.fraction ?: return@LaunchedEffect
-        if (!isDurationKnown) return@LaunchedEffect
-        playbackControls.seekTo(seconds = requestedFraction * totalSeconds)
+        seekPosition.requestSeek(fraction = requestedFraction)
+        seekPosition.takeSeekTime(durationSeconds = totalSeconds.toDouble())?.let { seekSeconds ->
+            playbackControls.seekTo(seconds = seekSeconds.toFloat())
+        }
     }
+
     // Keyed on isActive too, so losing focus (e.g. scrolled off in a reels feed) cancels a pending
     // play() from this same effect rather than racing it — restarting the effect on isActive
     // flipping to false takes the pause() branch instead.
@@ -233,6 +247,7 @@ internal fun VideoPlaybackEffects(
             playbackControls.pause()
         }
     }
+
     LaunchedEffect(playbackControls, isPlaybackPaused) {
         if (isPlaybackPaused) {
             playbackControls.pause()
