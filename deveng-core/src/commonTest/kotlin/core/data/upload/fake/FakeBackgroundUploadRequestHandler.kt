@@ -7,6 +7,7 @@ import core.domain.upload.model.BackgroundUploadDescriptor
 class FakeBackgroundUploadRequestHandler : BackgroundUploadRequestHandler<String> {
     var preparation: BackgroundUploadPreparation = BackgroundUploadPreparation.Abandoned(logDetail = "not configured")
     var commitFailure: Exception? = null
+    var preparationFailure: Exception? = null
     var successFollowUpFailure: Exception? = null
     val preparedDescriptors = mutableListOf<BackgroundUploadDescriptor>()
     val committedRemoteIds = mutableListOf<Int>()
@@ -14,6 +15,7 @@ class FakeBackgroundUploadRequestHandler : BackgroundUploadRequestHandler<String
 
     override suspend fun prepareUpload(descriptor: BackgroundUploadDescriptor): BackgroundUploadPreparation {
         preparedDescriptors += descriptor
+        preparationFailure?.let { failure -> throw failure }
         return preparation
     }
 

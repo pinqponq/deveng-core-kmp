@@ -276,6 +276,32 @@ class BackgroundUploadSessionSchedulerTest {
     }
 
     @Test
+    fun transferCompleted_withLastSuccessStatusCode_parsesResponse() = runTest {
+        val scheduler = createScheduler()
+        val completions = collectCompletions(scheduler)
+
+        transport.complete(PHOTO_UPLOAD_ID, BackgroundUploadTransferOutcome.Response(statusCode = HTTP_LAST_SUCCESS, body = "${FakeBackgroundUploadRequestHandler.RESULT_PREFIX}$RESULT"))
+        runCurrent()
+
+        assertEquals<List<BackgroundUploadCompletion<String>>>(listOf(BackgroundUploadCompletion.Success(uploadId = PHOTO_UPLOAD_ID, result = RESULT)), completions)
+    }
+
+    @Test
+    fun transferCompleted_withUnauthorizedResponseAndFailingRetryPreparation_reportsUnauthorized() = runTest {
+        val scheduler = createScheduler()
+        val completions = collectCompletions(scheduler)
+        requestHandler.preparation = multipartPreparation()
+        scheduler.schedule(saveDescriptor(PHOTO_DESCRIPTOR))
+        runCurrent()
+        requestHandler.preparationFailure = IllegalStateException(FAILURE_MESSAGE)
+
+        transport.complete(PHOTO_UPLOAD_ID, BackgroundUploadTransferOutcome.Response(statusCode = HTTP_UNAUTHORIZED, body = null))
+        runCurrent()
+
+        assertEquals(listOf(failure(PHOTO_UPLOAD_ID, BackgroundUploadFailureReason.UNAUTHORIZED)), completions)
+    }
+
+    @Test
     fun transferCompleted_withRedirectStatus_reportsHttpStatus() = runTest {
         val scheduler = createScheduler()
         val completions = collectCompletions(scheduler)
@@ -546,6 +572,7 @@ class BackgroundUploadSessionSchedulerTest {
         const val NETWORK_FAILURE_REASON = "network_NSURLErrorDomain_-1009: offline"
         const val HTTP_OK = 200
         const val HTTP_REDIRECT = 302
+        const val HTTP_LAST_SUCCESS = 299
         const val HTTP_UNAUTHORIZED = 401
         const val HTTP_SERVER_ERROR = 500
         const val STALL_TIMEOUT_MILLIS = 1_000L
