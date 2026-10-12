@@ -15,7 +15,7 @@ actual fun MediaViewerVideoPage(
     seekRequest: MediaSeekRequest?,
     onPlaybackProgress: (progress: Float) -> Unit,
     onPlaybackEnded: () -> Unit,
-) = CmpMediaViewerVideoPage(
+) = SharedPlayerMediaViewerVideoPage(
     mediaId = mediaId,
     videoUrl = videoUrl,
     videoContentDescription = videoContentDescription,

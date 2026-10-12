@@ -51,6 +51,17 @@ private const val PLAYBACK_START_DELAY_MILLIS = 80L
  * controls put its own in their place: how far the video has got, where the viewer dragged it to,
  * and that it is over — the last of which the player itself never shows, since it rewinds to the
  * first frame and stops, leaving a feed that ignored it looking stalled rather than finished.
+ *
+ * @param mediaId Identifier of the media; a new id recreates the player.
+ * @param videoUrl URL of the video to play.
+ * @param videoContentDescription Accessibility description of the video.
+ * @param modifier Modifier to be applied to the page.
+ * @param arePlayerControlsVisible Whether the player's own controls and gestures are enabled.
+ * @param isActive Whether this page is the one on screen; playback follows it both ways.
+ * @param isPlaybackPaused Whether playback must stop for a blocking task on the same media.
+ * @param seekRequest Latest jump requested by the caller's own controls.
+ * @param onPlaybackProgress Callback invoked with the elapsed fraction of the video.
+ * @param onPlaybackEnded Callback invoked when the video reaches its end.
  */
 @Composable
 expect fun MediaViewerVideoPage(
@@ -82,7 +93,7 @@ data class MediaSeekRequest(
  * Shared Compose Multiplatform Media Player implementation used by every non-web platform.
  */
 @Composable
-internal fun CmpMediaViewerVideoPage(
+internal fun SharedPlayerMediaViewerVideoPage(
     mediaId: Int,
     videoUrl: String,
     videoContentDescription: String,
@@ -130,15 +141,17 @@ internal fun CmpMediaViewerVideoPage(
             playerHost.pause()
         }
     }
-    LaunchedEffect(seekRequest) {
+    val isDurationKnown = totalSeconds > 0f
+    // Keyed on isDurationKnown too, so a seek requested before the player reported its duration is
+    // applied once the duration arrives instead of being dropped.
+    LaunchedEffect(seekRequest, isDurationKnown) {
         val requestedFraction = seekRequest?.fraction ?: return@LaunchedEffect
-        if (totalSeconds <= 0f) return@LaunchedEffect
+        if (!isDurationKnown) return@LaunchedEffect
         playerHost.seekTo(seconds = requestedFraction * totalSeconds)
     }
     // Keyed on isActive too, so losing focus (e.g. scrolled off in a reels feed) cancels a pending
     // play() from this same effect rather than racing it — restarting the effect on isActive
-    // flipping to false takes the pause() branch instead. Callers that never touch isActive (it
-    // defaults to true and doesn't change) see the exact same delay-then-play as before.
+    // flipping to false takes the pause() branch instead.
     LaunchedEffect(mediaId, videoUrl, isActive) {
         if (isActive) {
             delay(timeMillis = PLAYBACK_START_DELAY_MILLIS)

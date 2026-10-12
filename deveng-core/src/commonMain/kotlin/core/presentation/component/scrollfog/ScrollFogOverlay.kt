@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 
 private const val FOG_FADE_DURATION_MILLIS = 250
 private val FogAlphaStops = listOf(1f, 0.6f, 0.4f, 0.2f, 0f)
+private val DefaultFogHeight = 72.dp
 
 /**
  * Fog that fades content out under the top edge of a scrolling area.
@@ -33,7 +34,7 @@ private val FogAlphaStops = listOf(1f, 0.6f, 0.4f, 0.2f, 0f)
 fun BoxScope.ScrollFogOverlay(
     isVisible: Boolean,
     modifier: Modifier = Modifier,
-    height: Dp = 72.dp,
+    height: Dp = DefaultFogHeight,
     color: Color = MaterialTheme.colorScheme.background,
 ) {
     val fogAlpha by animateFloatAsState(

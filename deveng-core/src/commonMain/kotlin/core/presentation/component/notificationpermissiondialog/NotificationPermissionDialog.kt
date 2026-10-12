@@ -14,6 +14,8 @@ import global.deveng.deveng_core.generated.resources.Res
 import global.deveng.deveng_core.generated.resources.shared_notification_permission_later
 import org.jetbrains.compose.resources.stringResource
 
+private val DialogHorizontalPadding = 24.dp
+
 /**
  * Asks for notifications in the app's own words before the system dialog appears. iOS shows its
  * alert once per install and Android stops showing it after two refusals, so a refusal here costs
@@ -43,7 +45,7 @@ fun NotificationPermissionDialog(
         CustomDialog(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = DialogHorizontalPadding),
             onDismissRequest = onDismissRequest,
             backgroundColor = Color.Transparent,
             properties = DialogProperties(

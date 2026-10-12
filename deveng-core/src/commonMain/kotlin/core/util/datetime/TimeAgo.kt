@@ -11,6 +11,21 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
+private val slashDateTimeFormat = LocalDateTime.Format {
+    day(padding = Padding.ZERO)
+    char('/')
+    monthNumber(padding = Padding.ZERO)
+    char('/')
+    year()
+    char(' ')
+    hour(padding = Padding.ZERO)
+    char(':')
+    minute(padding = Padding.ZERO)
+}
+
+private const val DAYS_PER_WEEK = 7
+private const val DAYS_PER_YEAR = 365
+
 /**
  * How long ago a moment was, in the largest unit that fits.
  * The label itself is formatted by the caller with a localized string resource.
@@ -49,18 +64,3 @@ fun calculateTimeAgo(
         else -> TimeAgo.Absolute(dateTime.format(slashDateTimeFormat))
     }
 }
-
-private val slashDateTimeFormat = LocalDateTime.Format {
-    day(padding = Padding.ZERO)
-    char('/')
-    monthNumber(padding = Padding.ZERO)
-    char('/')
-    year()
-    char(' ')
-    hour(padding = Padding.ZERO)
-    char(':')
-    minute(padding = Padding.ZERO)
-}
-
-private const val DAYS_PER_WEEK = 7
-private const val DAYS_PER_YEAR = 365

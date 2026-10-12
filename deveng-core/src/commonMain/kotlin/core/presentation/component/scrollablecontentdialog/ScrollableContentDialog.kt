@@ -60,6 +60,7 @@ private val ContentHorizontalPadding = 20.dp
 private val ContentBottomPadding = 13.dp
 private val ApprovalRowTopPadding = 15.dp
 private val ApprovalRowBottomPadding = 41.dp
+private const val HEADER_Z_INDEX = 2f
 
 /**
  * Full-height dialog that shows markdown content under a fixed header, fading the content out at the
@@ -119,7 +120,7 @@ fun ScrollableContentDialog(
                         .fillMaxWidth()
                         .background(dialogTheme.backgroundColor)
                         .align(Alignment.TopCenter)
-                        .zIndex(2f)
+                        .zIndex(HEADER_Z_INDEX)
                         .onSizeChanged { size ->
                             headerHeightDp = with(density) { size.height.toDp() }
                         }

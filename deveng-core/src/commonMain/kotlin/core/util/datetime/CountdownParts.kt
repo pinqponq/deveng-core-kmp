@@ -1,5 +1,9 @@
 package core.util.datetime
 
+private const val MILLIS_PER_SECOND = 1_000L
+private const val SECONDS_PER_MINUTE = 60L
+private const val SECONDS_PER_HOUR = 3_600L
+
 /**
  * A remaining duration split into hours, minutes and seconds for a countdown label.
  * Hours are not wrapped into days, so they can exceed 24.
@@ -24,7 +28,3 @@ fun splitIntoCountdownParts(remainingMillis: Long): CountdownParts {
         seconds = totalSeconds % SECONDS_PER_MINUTE,
     )
 }
-
-private const val MILLIS_PER_SECOND = 1_000L
-private const val SECONDS_PER_MINUTE = 60L
-private const val SECONDS_PER_HOUR = 3_600L
