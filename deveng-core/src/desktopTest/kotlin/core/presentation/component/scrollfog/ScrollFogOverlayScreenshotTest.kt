@@ -22,14 +22,14 @@ import kotlin.test.Test
 class ScrollFogOverlayScreenshotTest {
 
     @Test
-    fun visibleFog_withCustomColor_matchesBaseline() = captureFog(
+    fun render_whenVisibleWithCustomColor_matchesBaseline() = captureFog(
         name = "scroll_fog_visible_custom_color",
         isVisible = true,
         fogColor = FOG_COLOR,
     )
 
     @Test
-    fun hiddenFog_matchesBaseline() = captureFog(
+    fun render_whenHidden_matchesBaseline() = captureFog(
         name = "scroll_fog_hidden",
         isVisible = false,
         fogColor = FOG_COLOR,
