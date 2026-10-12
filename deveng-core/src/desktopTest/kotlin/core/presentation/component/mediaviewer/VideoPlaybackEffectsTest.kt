@@ -7,6 +7,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import chaintech.videoplayer.host.MediaPlayerEvent
+import core.presentation.component.mediaviewer.fake.FakeVideoPlaybackControls
+import core.presentation.component.mediaviewer.fake.FakeVideoPlaybackControls.Companion.PAUSE
+import core.presentation.component.mediaviewer.fake.FakeVideoPlaybackControls.Companion.PLAY
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -17,12 +20,12 @@ import kotlin.test.assertTrue
 class VideoPlaybackEffectsTest {
 
     @Test
-    fun activePage_startsPlaybackAfterStartDelay() = runComposeUiTest {
+    fun composeActivePage_afterStartDelay_startsPlayback() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         mainClock.autoAdvance = false
         setContent { PlaybackEffects(controls = controls) }
 
-        mainClock.advanceTimeBy(milliseconds = 16)
+        mainClock.advanceTimeBy(milliseconds = FRAME_MILLIS)
         assertFalse(PLAY in controls.calls)
 
         mainClock.advanceTimeBy(milliseconds = PLAYBACK_START_WAIT_MILLIS)
@@ -30,7 +33,7 @@ class VideoPlaybackEffectsTest {
     }
 
     @Test
-    fun inactivePage_pausesWithoutPlaying() = runComposeUiTest {
+    fun composeInactivePage_withoutFocus_pausesWithoutPlaying() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         setContent { PlaybackEffects(controls = controls, isActive = false) }
         waitForIdle()
@@ -39,7 +42,7 @@ class VideoPlaybackEffectsTest {
     }
 
     @Test
-    fun pageLosingFocus_pausesAfterPlaying() = runComposeUiTest {
+    fun losePageFocus_whilePlaying_pausesPlayback() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         var isActive by mutableStateOf(true)
         setContent { PlaybackEffects(controls = controls, isActive = isActive) }
@@ -52,7 +55,7 @@ class VideoPlaybackEffectsTest {
     }
 
     @Test
-    fun blockingTaskStarting_pausesPlayback() = runComposeUiTest {
+    fun startBlockingTask_whilePlaying_pausesPlayback() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         var isPlaybackPaused by mutableStateOf(false)
         setContent { PlaybackEffects(controls = controls, isPlaybackPaused = isPlaybackPaused) }
@@ -65,49 +68,49 @@ class VideoPlaybackEffectsTest {
     }
 
     @Test
-    fun currentTimeChange_afterDuration_reportsElapsedFraction() = runComposeUiTest {
+    fun changeCurrentTime_afterDuration_reportsElapsedFraction() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         val progress = mutableListOf<Float>()
         setContent { PlaybackEffects(controls = controls, onPlaybackProgress = { progress += it }) }
         waitForIdle()
 
         runOnIdle {
-            controls.send(MediaPlayerEvent.TotalTimeChange(totalTime = 10f))
-            controls.send(MediaPlayerEvent.CurrentTimeChange(currentTime = 4f))
+            controls.send(MediaPlayerEvent.TotalTimeChange(totalTime = TOTAL_SECONDS))
+            controls.send(MediaPlayerEvent.CurrentTimeChange(currentTime = CURRENT_SECONDS))
         }
 
-        assertEquals(listOf(0.4f), progress)
+        assertEquals(listOf(ELAPSED_FRACTION), progress)
     }
 
     @Test
-    fun currentTimeChange_beforeDuration_reportsNothing() = runComposeUiTest {
+    fun changeCurrentTime_beforeDuration_reportsNothing() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         val progress = mutableListOf<Float>()
         setContent { PlaybackEffects(controls = controls, onPlaybackProgress = { progress += it }) }
         waitForIdle()
 
-        runOnIdle { controls.send(MediaPlayerEvent.CurrentTimeChange(currentTime = 4f)) }
+        runOnIdle { controls.send(MediaPlayerEvent.CurrentTimeChange(currentTime = CURRENT_SECONDS)) }
 
         assertTrue(progress.isEmpty())
     }
 
     @Test
-    fun currentTimeChange_pastDuration_reportsCompleteFraction() = runComposeUiTest {
+    fun changeCurrentTime_pastDuration_reportsCompleteFraction() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         val progress = mutableListOf<Float>()
         setContent { PlaybackEffects(controls = controls, onPlaybackProgress = { progress += it }) }
         waitForIdle()
 
         runOnIdle {
-            controls.send(MediaPlayerEvent.TotalTimeChange(totalTime = 10f))
-            controls.send(MediaPlayerEvent.CurrentTimeChange(currentTime = 12f))
+            controls.send(MediaPlayerEvent.TotalTimeChange(totalTime = TOTAL_SECONDS))
+            controls.send(MediaPlayerEvent.CurrentTimeChange(currentTime = PAST_END_SECONDS))
         }
 
         assertEquals(listOf(1f), progress)
     }
 
     @Test
-    fun mediaEnd_reportsFullProgressAndEnd() = runComposeUiTest {
+    fun endMedia_whilePlaying_reportsFullProgressAndEnd() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         val progress = mutableListOf<Float>()
         var endCount = 0
@@ -127,37 +130,37 @@ class VideoPlaybackEffectsTest {
     }
 
     @Test
-    fun seekRequest_withKnownDuration_seeksToFractionOfDuration() = runComposeUiTest {
+    fun requestSeek_withKnownDuration_seeksToFractionOfDuration() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         var seekRequest by mutableStateOf<MediaSeekRequest?>(null)
         setContent { PlaybackEffects(controls = controls, seekRequest = seekRequest) }
         waitForIdle()
-        runOnIdle { controls.send(MediaPlayerEvent.TotalTimeChange(totalTime = 20f)) }
+        runOnIdle { controls.send(MediaPlayerEvent.TotalTimeChange(totalTime = TOTAL_SECONDS)) }
         waitForIdle()
 
-        seekRequest = MediaSeekRequest(fraction = 0.25f, requestId = 1L)
+        seekRequest = MediaSeekRequest(fraction = QUARTER, requestId = SEEK_REQUEST_ID)
         waitForIdle()
 
-        assertEquals(listOf(5f), controls.seekedSeconds)
+        assertEquals(listOf(TOTAL_SECONDS * QUARTER), controls.seekedSeconds)
     }
 
     @Test
-    fun seekRequest_beforeDuration_seeksOnceDurationArrives() = runComposeUiTest {
+    fun requestSeek_beforeDuration_seeksOnceDurationArrives() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         setContent {
-            PlaybackEffects(controls = controls, seekRequest = MediaSeekRequest(fraction = 0.5f, requestId = 1L))
+            PlaybackEffects(controls = controls, seekRequest = MediaSeekRequest(fraction = HALF, requestId = SEEK_REQUEST_ID))
         }
         waitForIdle()
         assertTrue(controls.seekedSeconds.isEmpty())
 
-        runOnIdle { controls.send(MediaPlayerEvent.TotalTimeChange(totalTime = 8f)) }
+        runOnIdle { controls.send(MediaPlayerEvent.TotalTimeChange(totalTime = TOTAL_SECONDS)) }
         waitForIdle()
 
-        assertEquals(listOf(4f), controls.seekedSeconds)
+        assertEquals(listOf(TOTAL_SECONDS * HALF), controls.seekedSeconds)
     }
 
     @Test
-    fun leavingComposition_detachesListenerAndPauses() = runComposeUiTest {
+    fun leaveComposition_whilePlaying_detachesListenerAndPauses() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         var isShown by mutableStateOf(true)
         setContent { if (isShown) PlaybackEffects(controls = controls) }
@@ -187,35 +190,15 @@ class VideoPlaybackEffectsTest {
         onPlaybackEnded = onPlaybackEnded,
     )
 
-    private class FakeVideoPlaybackControls : VideoPlaybackControls {
-        val calls = mutableListOf<String>()
-        val seekedSeconds = mutableListOf<Float>()
-        var eventListener: ((MediaPlayerEvent) -> Unit)? = null
-
-        override fun play() {
-            calls += PLAY
-        }
-
-        override fun pause() {
-            calls += PAUSE
-        }
-
-        override fun seekTo(seconds: Float) {
-            seekedSeconds += seconds
-        }
-
-        override fun setOnEvent(onEvent: ((MediaPlayerEvent) -> Unit)?) {
-            eventListener = onEvent
-        }
-
-        fun send(event: MediaPlayerEvent) {
-            eventListener?.invoke(event)
-        }
-    }
-
     private companion object {
-        const val PLAY = "play"
-        const val PAUSE = "pause"
         const val PLAYBACK_START_WAIT_MILLIS = 200L
+        const val FRAME_MILLIS = 16L
+        const val TOTAL_SECONDS = 10f
+        const val CURRENT_SECONDS = 4f
+        const val ELAPSED_FRACTION = 0.4f
+        const val PAST_END_SECONDS = 12f
+        const val QUARTER = 0.25f
+        const val HALF = 0.5f
+        const val SEEK_REQUEST_ID = 1L
     }
 }

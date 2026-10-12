@@ -93,10 +93,10 @@ class ScrollableContentDialogEdgeFadeTest {
         val contentBottom = pixels.height - CORNER_MARGIN_PX
         return EdgeBands(
             pixels = pixels,
-            topEdge = headerBottom until headerBottom + fadeHeightPx / 3,
-            topFadeEnd = headerBottom + fadeHeightPx * 3 / 4 until headerBottom + fadeHeightPx,
-            bottomEdge = contentBottom - fadeHeightPx / 3 until contentBottom,
-            bottomFadeStart = pixels.height - fadeHeightPx until pixels.height - fadeHeightPx * 3 / 4,
+            topEdge = headerBottom until headerBottom + fadeHeightPx / EDGE_BAND_DIVISOR,
+            topFadeEnd = headerBottom + fadeHeightPx * FADE_INNER_QUARTERS / QUARTERS until headerBottom + fadeHeightPx,
+            bottomEdge = contentBottom - fadeHeightPx / EDGE_BAND_DIVISOR until contentBottom,
+            bottomFadeStart = pixels.height - fadeHeightPx until pixels.height - fadeHeightPx * FADE_INNER_QUARTERS / QUARTERS,
             body = headerBottom until contentBottom
         )
     }
@@ -131,6 +131,9 @@ class ScrollableContentDialogEdgeFadeTest {
     private companion object {
         const val TITLE = "Terms of Use"
         const val FADE_HEIGHT_DP = 100
+        const val EDGE_BAND_DIVISOR = 3
+        const val FADE_INNER_QUARTERS = 3
+        const val QUARTERS = 4
         const val HEADER_MARGIN_PX = 20
         const val CORNER_MARGIN_PX = 12
         const val MIDDLE_SCROLL_PX = 800f

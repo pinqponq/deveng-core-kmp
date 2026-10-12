@@ -43,7 +43,7 @@ class MediaViewerHeaderTest {
     }
 
     @Test
-    fun header_withActions_showsActionsNextToCloseButton() = runComposeUiTest {
+    fun showHeader_withActions_showsActionsNextToCloseButton() = runComposeUiTest {
         setContent {
             AppTheme {
                 MediaViewerHeader(
@@ -59,14 +59,14 @@ class MediaViewerHeaderTest {
     }
 
     @Test
-    fun header_withPanelBackgroundVisible_drawsPanelColor() = runComposeUiTest {
+    fun showHeader_withPanelBackgroundVisible_drawsPanelColor() = runComposeUiTest {
         showHeaderOnBackdrop(isPanelBackgroundVisible = true)
 
         assertTrue(capturedColors().contains(PANEL_COLOR))
     }
 
     @Test
-    fun header_withPanelBackgroundHidden_drawsNoPanelColor() = runComposeUiTest {
+    fun showHeader_withPanelBackgroundHidden_drawsNoPanelColor() = runComposeUiTest {
         showHeaderOnBackdrop(isPanelBackgroundVisible = false)
 
         assertFalse(capturedColors().contains(PANEL_COLOR))
