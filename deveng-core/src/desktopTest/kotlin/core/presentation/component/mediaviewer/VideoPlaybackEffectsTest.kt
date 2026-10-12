@@ -68,6 +68,29 @@ class VideoPlaybackEffectsTest {
     }
 
     @Test
+    fun composeActivePage_duringBlockingTask_staysPaused() = runComposeUiTest {
+        val controls = FakeVideoPlaybackControls()
+        setContent { PlaybackEffects(controls = controls, isPlaybackPaused = true) }
+        mainClock.advanceTimeBy(milliseconds = PLAYBACK_START_WAIT_MILLIS)
+
+        assertEquals(listOf(PAUSE), controls.calls)
+    }
+
+    @Test
+    fun replacePlayer_duringBlockingTask_pausesNewPlayer() = runComposeUiTest {
+        val firstControls = FakeVideoPlaybackControls()
+        val secondControls = FakeVideoPlaybackControls()
+        var controls by mutableStateOf(firstControls)
+        setContent { PlaybackEffects(controls = controls, isPlaybackPaused = true) }
+        mainClock.advanceTimeBy(milliseconds = PLAYBACK_START_WAIT_MILLIS)
+
+        controls = secondControls
+        mainClock.advanceTimeBy(milliseconds = PLAYBACK_START_WAIT_MILLIS)
+
+        assertEquals(listOf(PAUSE), secondControls.calls)
+    }
+
+    @Test
     fun changeCurrentTime_afterDuration_reportsElapsedFraction() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         val progress = mutableListOf<Float>()

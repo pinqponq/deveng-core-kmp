@@ -188,6 +188,7 @@ internal fun VideoPlaybackEffects(
     var totalSeconds by remember(playbackControls) { mutableFloatStateOf(0f) }
     val currentOnPlaybackProgress by rememberUpdatedState(onPlaybackProgress)
     val currentOnPlaybackEnded by rememberUpdatedState(onPlaybackEnded)
+    val currentIsPlaybackPaused by rememberUpdatedState(isPlaybackPaused)
     DisposableEffect(playbackControls) {
         playbackControls.setOnEvent { event ->
             when (event) {
@@ -225,12 +226,14 @@ internal fun VideoPlaybackEffects(
     LaunchedEffect(playbackControls, isActive) {
         if (isActive) {
             delay(timeMillis = PLAYBACK_START_DELAY_MILLIS)
-            playbackControls.play()
+            if (!currentIsPlaybackPaused) {
+                playbackControls.play()
+            }
         } else {
             playbackControls.pause()
         }
     }
-    LaunchedEffect(isPlaybackPaused) {
+    LaunchedEffect(playbackControls, isPlaybackPaused) {
         if (isPlaybackPaused) {
             playbackControls.pause()
         }

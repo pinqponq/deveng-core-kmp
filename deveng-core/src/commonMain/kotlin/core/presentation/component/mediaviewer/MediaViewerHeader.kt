@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import core.presentation.theme.LocalComponentTheme
 import global.deveng.deveng_core.generated.resources.Res
-import global.deveng.deveng_core.generated.resources.shared_content_desc_close_full_screen
+import global.deveng.deveng_core.generated.resources.shared_content_description_close_full_screen
 import org.jetbrains.compose.resources.stringResource
 
 private val DefaultHeaderOuterHorizontalPadding = 8.dp
@@ -45,7 +45,7 @@ private val DefaultHeaderActionSpacing = 8.dp
 fun MediaViewerHeader(
     onCloseButtonClick: () -> Unit,
     modifier: Modifier = Modifier,
-    closeContentDescription: String = stringResource(Res.string.shared_content_desc_close_full_screen),
+    closeContentDescription: String = stringResource(Res.string.shared_content_description_close_full_screen),
     isPanelBackgroundVisible: Boolean = true,
     outerHorizontalPadding: Dp = DefaultHeaderOuterHorizontalPadding,
     outerVerticalPadding: Dp = DefaultHeaderOuterVerticalPadding,
