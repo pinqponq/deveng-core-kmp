@@ -7,19 +7,15 @@ import core.presentation.baseviewmodel.UiState
 import core.presentation.baseviewmodel.ViewEvent
 import core.presentation.baseviewmodel.ViewSideEffect
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
+// The effect channel is a rendezvous channel: the effect waits in send until this collector reads it.
 suspend fun <Event : ViewEvent, Effect : ViewSideEffect> BaseViewModel<*, Event, Effect>.awaitEffectAfterEvent(
     event: Event
 ): Effect {
-    lateinit var receivedEffect: Effect
-    effect.test {
-        setEvent(event)
-        receivedEffect = awaitItem()
-        cancelAndIgnoreRemainingEvents()
-    }
-
-    return receivedEffect
+    setEvent(event)
+    return effect.first()
 }
 
 suspend fun <S : UiState> BaseViewModel<S, *, *>.testUiStates(
