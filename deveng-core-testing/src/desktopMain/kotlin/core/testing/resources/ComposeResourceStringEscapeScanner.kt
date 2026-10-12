@@ -16,35 +16,52 @@ class ComposeResourceStringEscapeScanner {
 
     fun findLiteralEscapes(stringFile: File): List<String> {
         val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(stringFile)
-        val stringElements = document.getElementsByTagName(STRING_TAG).toElementList()
-        val pluralItemElements = document.getElementsByTagName(PLURAL_ITEM_TAG).toElementList()
+        val stringFindings = findElements(document.getElementsByTagName(STRING_TAG)).flatMap { stringElement ->
+            findLiteralEscapes(
+                stringFile = stringFile,
+                resourceKey = stringElement.getAttribute(NAME_ATTRIBUTE).orEmpty(),
+                text = stringElement.textContent.orEmpty()
+            )
+        }
+        val pluralFindings = findElements(document.getElementsByTagName(PLURALS_TAG)).flatMap { pluralsElement ->
+            findPluralLiteralEscapes(stringFile = stringFile, pluralsElement = pluralsElement)
+        }
 
-        return (stringElements + pluralItemElements).flatMap { element ->
-            val resourceKey = createResourceKey(element)
-            LITERAL_ESCAPE_CANDIDATE_REGEX.findAll(element.textContent)
-                .map { matchResult -> matchResult.value }
-                .filterNot(::isEscapeResolvedByCompose)
-                .map { literalEscape -> "${stringFile.path}: $resourceKey contains $literalEscape" }
-                .toList()
+        return stringFindings + pluralFindings
+    }
+
+    private fun findPluralLiteralEscapes(stringFile: File, pluralsElement: Element): List<String> {
+        val pluralsKey = pluralsElement.getAttribute(NAME_ATTRIBUTE).orEmpty()
+
+        return findElements(pluralsElement.getElementsByTagName(PLURAL_ITEM_TAG)).flatMap { itemElement ->
+            findLiteralEscapes(
+                stringFile = stringFile,
+                resourceKey = "$pluralsKey[${itemElement.getAttribute(QUANTITY_ATTRIBUTE).orEmpty()}]",
+                text = itemElement.textContent.orEmpty()
+            )
         }
     }
 
-    private fun createResourceKey(element: Element): String {
-        if (element.tagName == STRING_TAG) return element.getAttribute(NAME_ATTRIBUTE)
-
-        val pluralsElement = element.parentNode as Element
-        return "${pluralsElement.getAttribute(NAME_ATTRIBUTE)}[${element.getAttribute(QUANTITY_ATTRIBUTE)}]"
-    }
+    private fun findLiteralEscapes(stringFile: File, resourceKey: String, text: String): List<String> =
+        LITERAL_ESCAPE_CANDIDATE_REGEX.findAll(text)
+            .map { matchResult -> matchResult.value }
+            .filterNot(::isEscapeResolvedByCompose)
+            .map { literalEscape -> "${stringFile.path}: $resourceKey contains $literalEscape" }
+            .toList()
 
     private fun isEscapeResolvedByCompose(escape: String): Boolean =
         COMPOSE_RESOLVED_ESCAPE_REGEX.matches(escape)
 
-    private fun NodeList.toElementList(): List<Element> =
-        (0 until length).map { index -> item(index) as Element }
+    private fun findElements(nodeList: NodeList?): List<Element> {
+        if (nodeList == null) return emptyList()
+
+        return (0 until nodeList.length).mapNotNull { index -> nodeList.item(index) as? Element }
+    }
 
     private companion object {
         const val STRINGS_FILE_NAME = "strings.xml"
         const val STRING_TAG = "string"
+        const val PLURALS_TAG = "plurals"
         const val PLURAL_ITEM_TAG = "item"
         const val NAME_ATTRIBUTE = "name"
         const val QUANTITY_ATTRIBUTE = "quantity"
