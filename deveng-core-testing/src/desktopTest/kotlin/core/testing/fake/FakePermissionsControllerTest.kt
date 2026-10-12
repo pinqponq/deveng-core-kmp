@@ -24,6 +24,7 @@ class FakePermissionsControllerTest {
         permissionsController.providePermission(Permission.CAMERA)
 
         assertTrue(permissionsController.isPermissionGranted(Permission.CAMERA))
+        assertEquals(mapOf(Permission.CAMERA to PermissionState.Granted), permissionsController.permissionStates)
     }
 
     @Test
