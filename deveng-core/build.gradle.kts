@@ -126,6 +126,13 @@ tasks.withType<Test>().configureEach {
     systemProperty("user.country", "US")
 }
 
+dependencies {
+    constraints {
+        add("desktopMainImplementation", libs.jogamp.gluegen.rt)
+        add("desktopMainImplementation", libs.jogamp.jogl.all)
+    }
+}
+
 android {
     namespace = "global.deveng"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
