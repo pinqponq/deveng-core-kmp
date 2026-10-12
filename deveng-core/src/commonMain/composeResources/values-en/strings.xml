@@ -47,5 +47,5 @@
     <string name="shared_email_field_edit">edit</string>
     <string name="shared_email_field_invalid_error">Please enter a valid email address.</string>
     <string name="shared_notification_permission_later">Not now</string>
-    <string name="shared_content_desc_close_full_screen">Close full screen</string>
+    <string name="shared_content_description_close_full_screen">Close full screen</string>
 </resources>

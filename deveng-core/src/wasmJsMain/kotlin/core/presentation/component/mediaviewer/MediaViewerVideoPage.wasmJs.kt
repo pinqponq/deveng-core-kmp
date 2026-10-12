@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import core.presentation.component.mediaviewer.internal.VideoSeekPosition
+import core.util.CustomLogger
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlinx.browser.document
 import kotlinx.coroutines.delay
@@ -72,7 +73,7 @@ actual fun MediaViewerVideoPage(
             mediaId = mediaId,
             videoUrl = videoUrl,
             areControlsVisible = arePlayerControlsVisible,
-            startPlaying = isActive,
+            startPlaying = isActive && !isPlaybackPaused,
         )
         onDispose {
             videoSurface.detach()
@@ -83,7 +84,9 @@ actual fun MediaViewerVideoPage(
     // with startPlaying = false, then flip to true once they become the settled page.
     LaunchedEffect(isActive) {
         if (isActive) {
-            videoSurface.resumePlayback()
+            if (!isPlaybackPaused) {
+                videoSurface.resumePlayback()
+            }
         } else {
             videoSurface.pausePlayback()
         }
@@ -257,18 +260,12 @@ private fun applyBounds(
 """
 )
 
-private fun startPlayback(mediaId: Int, video: HTMLVideoElement): Unit = js(
-    """
-{
-    var attempt = video.play();
-    if (attempt && attempt.catch) {
-        attempt.catch(function (error) {
-            console.log('[NativeVideo] mediaId=' + mediaId + ' play() rejected: ' + error);
-        });
+private fun startPlayback(mediaId: Int, video: HTMLVideoElement) {
+    video.play().catch { error ->
+        CustomLogger.log(message = "[NativeVideo] mediaId=$mediaId play() rejected: $error")
+        null
     }
 }
-"""
-)
 
 private fun releaseElement(video: HTMLVideoElement): Unit = js(
     """
