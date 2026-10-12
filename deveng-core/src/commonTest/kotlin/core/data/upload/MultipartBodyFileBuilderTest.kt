@@ -6,7 +6,7 @@ import kotlin.test.assertNotEquals
 
 class MultipartBodyFileBuilderTest {
 
-    private val builder = MultipartBodyFileBuilder(boundary = BOUNDARY)
+    private val builder = MultipartBodyFileBuilder(boundary = BOUNDARY, mediaFieldName = MEDIA_FIELD_NAME)
 
     @Test
     fun build_writesFormFieldsBeforeMediaPartAndClosesBoundary() {
@@ -34,6 +34,7 @@ class MultipartBodyFileBuilderTest {
 
     private companion object {
         const val BOUNDARY = "TestBoundary"
+        const val MEDIA_FIELD_NAME = "File"
         const val OTHER_BOUNDARY = "OtherBoundary"
         const val MEDIA_FILE_NAME = "widget.jpg"
         const val MEDIA_CONTENT_TYPE = "image/jpeg"

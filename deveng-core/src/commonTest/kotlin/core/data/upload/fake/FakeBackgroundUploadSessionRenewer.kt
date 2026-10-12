@@ -3,7 +3,7 @@ package core.data.upload.fake
 import core.domain.upload.BackgroundUploadSessionRenewer
 
 class FakeBackgroundUploadSessionRenewer(
-    var accessToken: String = "",
+    var accessToken: String? = null,
 ) : BackgroundUploadSessionRenewer {
     var isRenewable = true
     var renewedAccessToken: String? = null
@@ -17,5 +17,5 @@ class FakeBackgroundUploadSessionRenewer(
         return isRenewable
     }
 
-    override fun fetchAccessToken(): String = accessToken
+    override fun fetchAccessToken(): String? = accessToken
 }

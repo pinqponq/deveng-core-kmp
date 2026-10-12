@@ -11,6 +11,15 @@ class UploadProgressTest {
     }
 
     @Test
+    fun progress_keepsReportedCounts() {
+        val progress = progress(bytesSent = 25, bytesTotal = 100)
+
+        assertEquals(UPLOAD_ID, progress.uploadId)
+        assertEquals(25, progress.bytesSent)
+        assertEquals(100, progress.bytesTotal)
+    }
+
+    @Test
     fun fraction_withUnknownTotal_isZero() {
         assertEquals(0f, progress(bytesSent = 25, bytesTotal = 0).fraction)
     }

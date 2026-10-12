@@ -13,6 +13,6 @@ interface BackgroundUploadSessionRenewer {
      */
     suspend fun renewSession(isForced: Boolean): Boolean
 
-    /** The current access token, empty when there is none. */
-    fun fetchAccessToken(): String
+    /** The current access token, null when there is none. */
+    fun fetchAccessToken(): String?
 }

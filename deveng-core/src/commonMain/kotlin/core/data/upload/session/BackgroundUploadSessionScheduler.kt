@@ -140,8 +140,11 @@ class BackgroundUploadSessionScheduler<T>(
         }
 
         sessionRenewer.renewSession(isForced = false)
+        // Without a token the request goes out unauthenticated; the server's 401 then takes the
+        // same renew-once path as an expired token.
+        val accessToken = sessionRenewer.fetchAccessToken()
         val requestHeaders = buildMap {
-            put(HEADER_AUTHORIZATION, "Bearer ${sessionRenewer.fetchAccessToken()}")
+            accessToken?.let { token -> put(HEADER_AUTHORIZATION, "Bearer $token") }
             put(HEADER_CONTENT_TYPE, preparation.body.contentType)
             put(HEADER_CONTENT_LENGTH, preparation.body.contentLength.toString())
             putAll(preparation.headers)
@@ -208,12 +211,13 @@ class BackgroundUploadSessionScheduler<T>(
         uploadId: String,
         deferred: CompletableDeferred<Unit>,
     ) {
-        var lastObservedBytesSent = -1L
+        var lastObservedBytesSent: Long? = null
         while (true) {
             val completed = withTimeoutOrNull(stallTimeoutMillis) { deferred.await() }
             if (completed != null) return
-            val bytesSentNow = lastBytesSentByUploadId[uploadId] ?: -1L
-            if (bytesSentNow > lastObservedBytesSent) {
+            val bytesSentNow = lastBytesSentByUploadId[uploadId]
+            val hasTransferMoved = bytesSentNow != null && (lastObservedBytesSent == null || bytesSentNow > lastObservedBytesSent)
+            if (hasTransferMoved) {
                 lastObservedBytesSent = bytesSentNow
                 continue
             }

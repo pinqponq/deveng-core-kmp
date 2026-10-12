@@ -10,7 +10,7 @@ object BackgroundUploadSessionRegistry {
 
     private val schedulersBySessionIdentifier = mutableMapOf<String, BackgroundUploadSessionScheduler<*>>()
 
-    fun register(sessionIdentifier: String, scheduler: BackgroundUploadSessionScheduler<*>) {
+    internal fun register(sessionIdentifier: String, scheduler: BackgroundUploadSessionScheduler<*>) {
         schedulersBySessionIdentifier[sessionIdentifier] = scheduler
     }
 
