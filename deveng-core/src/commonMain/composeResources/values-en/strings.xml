@@ -43,4 +43,7 @@
     <string name="shared_copied">Copied</string>
     <string name="shared_content_dest_icon_bell">Bell icon</string>
     <string name="shared_content_dest_icon_star">Star icon</string>
+    <string name="shared_edit">edit</string>
+    <string name="shared_please_enter_a_valid_email_address">Please enter a valid email address.</string>
+    <string name="shared_notification_permission_later">Not now</string>
 </resources>
