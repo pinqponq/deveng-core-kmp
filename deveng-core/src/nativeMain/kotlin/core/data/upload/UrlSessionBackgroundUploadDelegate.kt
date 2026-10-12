@@ -48,7 +48,7 @@ internal class UrlSessionBackgroundUploadDelegate(
         totalBytesExpectedToSend: Long,
     ) {
         val uploadId = task.taskDescription ?: return
-        val percent = (totalBytesSent * PERCENT_MULTIPLIER / totalBytesExpectedToSend).takeIf { totalBytesExpectedToSend > 0 }
+        val percent = if (totalBytesExpectedToSend > 0) totalBytesSent * PERCENT_MULTIPLIER / totalBytesExpectedToSend else null
         Logger.i { "[$logTag] progress uploadId=$uploadId sent=${totalBytesSent / BYTES_PER_KILOBYTE}KB total=${totalBytesExpectedToSend / BYTES_PER_KILOBYTE}KB pct=${percent ?: "unknown"}%" }
         listener?.onTransferProgress(uploadId = uploadId, bytesSent = totalBytesSent, bytesTotal = totalBytesExpectedToSend)
     }
