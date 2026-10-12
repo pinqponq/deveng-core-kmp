@@ -626,6 +626,14 @@ textAlign = TextAlign.Center
 )
 
 /**
+ * Theme for MediaViewerHeader component
+*/
+data class MediaViewerHeaderTheme(
+val panelBackgroundColor: Color = Color(0x80262626),
+val closeIconTint: Color = Color.White
+)
+
+/**
  * Theme for Chip item component
 */
 data class ChipItemTheme(
@@ -861,6 +869,7 @@ val navigationMenu: NavigationMenuTheme = NavigationMenuTheme(),
 val scrollableContentDialog: ScrollableContentDialogTheme = ScrollableContentDialogTheme(),
 val emailDisplayField: EmailDisplayFieldTheme = EmailDisplayFieldTheme(),
 val promoTwoButtonCard: PromoTwoButtonCardTheme = PromoTwoButtonCardTheme(),
+val mediaViewerHeader: MediaViewerHeaderTheme = MediaViewerHeaderTheme(),
 val chipItem: ChipItemTheme = ChipItemTheme(),
 val chipsMenu: ChipsMenuTheme = ChipsMenuTheme(),
 val ratingRow: RatingRowTheme = RatingRowTheme(),
