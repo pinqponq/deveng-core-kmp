@@ -19,7 +19,7 @@ sealed interface FakeCounterEffect : ViewSideEffect {
 }
 
 class FakeCounterViewModel(
-    private val dispatcher: CoroutineDispatcher,
+    private val workDispatcher: CoroutineDispatcher,
     errorPrinter: FakeErrorPrinter
 ) : BaseViewModel<FakeCounterUiState, FakeCounterEvent, FakeCounterEffect>(
     initialState = FakeCounterUiState(),
@@ -36,7 +36,7 @@ class FakeCounterViewModel(
     }
 
     fun runFailingWork(exception: Exception, notifyError: Boolean) {
-        launch(dispatcher = dispatcher, notifyError = notifyError) {
+        launch(dispatcher = workDispatcher, notifyError = notifyError) {
             throw exception
         }
     }

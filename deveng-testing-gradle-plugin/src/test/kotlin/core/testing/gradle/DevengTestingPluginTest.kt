@@ -19,9 +19,9 @@ class DevengTestingPluginTest {
 
         assertTrue(project.pluginManager.hasPlugin(KOVER_PLUGIN_ID))
         assertTrue(project.pluginManager.hasPlugin(ROBORAZZI_PLUGIN_ID))
-        assertTrue(CORE_TESTING_DEPENDENCY in declaredDependencies(project, "commonTestImplementation"))
-        assertTrue(KOTLIN_TEST_DEPENDENCY in declaredDependencies(project, "commonTestImplementation"))
-        assertTrue(ROBORAZZI_DEPENDENCY in declaredDependencies(project, "desktopTestImplementation"))
+        assertTrue(CORE_TESTING_DEPENDENCY in declaredDependencies(project, COMMON_TEST_IMPLEMENTATION))
+        assertTrue(KOTLIN_TEST_DEPENDENCY in declaredDependencies(project, COMMON_TEST_IMPLEMENTATION))
+        assertTrue(ROBORAZZI_DEPENDENCY in declaredDependencies(project, DESKTOP_TEST_IMPLEMENTATION))
     }
 
     @kotlin.test.Test
@@ -32,7 +32,7 @@ class DevengTestingPluginTest {
         project.pluginManager.apply(KOTLIN_MULTIPLATFORM_PLUGIN_ID)
 
         assertTrue(project.pluginManager.hasPlugin(KOVER_PLUGIN_ID))
-        assertTrue(CORE_TESTING_DEPENDENCY in declaredDependencies(project, "commonTestImplementation"))
+        assertTrue(CORE_TESTING_DEPENDENCY in declaredDependencies(project, COMMON_TEST_IMPLEMENTATION))
     }
 
     @kotlin.test.Test
@@ -68,6 +68,8 @@ class DevengTestingPluginTest {
         const val JAVA_PLUGIN_ID = "java"
         const val JAVA_TEST_TASK = "test"
         const val DESKTOP_TARGET = "desktop"
+        const val COMMON_TEST_IMPLEMENTATION = "commonTestImplementation"
+        const val DESKTOP_TEST_IMPLEMENTATION = "desktopTestImplementation"
         // Gradle moves these two system properties into the test JVM arguments.
         const val USER_LANGUAGE_PROPERTY = "user.language"
         const val USER_COUNTRY_PROPERTY = "user.country"

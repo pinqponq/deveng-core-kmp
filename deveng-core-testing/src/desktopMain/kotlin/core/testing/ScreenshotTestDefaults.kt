@@ -7,4 +7,4 @@ const val LARGE_FONT_SCALE = 1.5f
 
 const val SCREENSHOT_DIRECTORY = "src/desktopTest/screenshots"
 
-fun screenshotPath(name: String): String = "$SCREENSHOT_DIRECTORY/$name.png"
+fun createScreenshotPath(name: String): String = "$SCREENSHOT_DIRECTORY/$name.png"

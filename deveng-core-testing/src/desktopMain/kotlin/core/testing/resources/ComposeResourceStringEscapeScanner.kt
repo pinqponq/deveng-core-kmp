@@ -23,6 +23,7 @@ class ComposeResourceStringEscapeScanner {
                 text = stringElement.textContent.orEmpty()
             )
         }
+
         val pluralFindings = findElements(document.getElementsByTagName(PLURALS_TAG)).flatMap { pluralsElement ->
             findPluralLiteralEscapes(stringFile = stringFile, pluralsElement = pluralsElement)
         }

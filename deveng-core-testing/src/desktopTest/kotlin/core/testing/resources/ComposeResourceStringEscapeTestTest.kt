@@ -48,6 +48,7 @@ class ComposeResourceStringEscapeTestTest {
             writeText("""<resources><string name="$STRING_KEY">$stringValue</string></resources>""")
             deleteOnExit()
         }
+
         return composeResourcesDirectory
     }
 

@@ -106,7 +106,7 @@ class ViewModelTestEnvironmentTest {
     }
 
     private fun createViewModel() = FakeCounterViewModel(
-        dispatcher = environment.testDispatcher,
+        workDispatcher = environment.testDispatcher,
         errorPrinter = environment.errorPrinter
     )
 
