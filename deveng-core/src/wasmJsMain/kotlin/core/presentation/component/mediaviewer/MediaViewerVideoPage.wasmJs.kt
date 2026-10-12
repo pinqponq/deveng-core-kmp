@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,6 +63,8 @@ actual fun MediaViewerVideoPage(
     val density = LocalDensity.current.density
     val videoElementObserver = LocalWebVideoElementObserver.current
     val videoSurface = remember { NativeVideoSurface(videoElementObserver) }
+    val currentOnPlaybackProgress by rememberUpdatedState(onPlaybackProgress)
+    val currentOnPlaybackEnded by rememberUpdatedState(onPlaybackEnded)
 
     DisposableEffect(mediaId, videoUrl, arePlayerControlsVisible) {
         videoSurface.attach(
@@ -108,12 +112,12 @@ actual fun MediaViewerVideoPage(
             if (videoSurface.hasEnded()) {
                 if (!hasReportedEnd) {
                     hasReportedEnd = true
-                    onPlaybackProgress(1f)
-                    onPlaybackEnded()
+                    currentOnPlaybackProgress(1f)
+                    currentOnPlaybackEnded()
                 }
             } else {
                 hasReportedEnd = false
-                onPlaybackProgress(progress)
+                currentOnPlaybackProgress(progress)
             }
         }
     }
@@ -147,6 +151,7 @@ private class NativeVideoSurface(
     private var top = 0.0
     private var width = 0.0
     private var height = 0.0
+    private var pendingSeekFraction: Float? = null
 
     fun attach(mediaId: Int, videoUrl: String, areControlsVisible: Boolean, startPlaying: Boolean) {
         this.mediaId = mediaId
@@ -181,6 +186,7 @@ private class NativeVideoSurface(
 
     /** Elapsed fraction of the video, or null while its duration is still unknown. */
     fun readProgress(): Float? {
+        applyPendingSeek()
         val video = element ?: return null
         val duration = video.duration
         if (duration.isNaN() || duration <= 0.0) return null
@@ -188,10 +194,8 @@ private class NativeVideoSurface(
     }
 
     fun seekToFraction(fraction: Float) {
-        val video = element ?: return
-        val duration = video.duration
-        if (duration.isNaN() || duration <= 0.0) return
-        video.currentTime = fraction.coerceIn(0f, 1f).toDouble() * duration
+        pendingSeekFraction = fraction
+        applyPendingSeek()
     }
 
     /** Bidirectional counterpart to [pausePlayback], used when a reels page regains focus. */
@@ -202,6 +206,15 @@ private class NativeVideoSurface(
     fun detach() {
         element?.let { releaseElement(it) }
         element = null
+    }
+
+    private fun applyPendingSeek() {
+        val fraction = pendingSeekFraction ?: return
+        val video = element ?: return
+        val duration = video.duration
+        if (duration.isNaN() || duration <= 0.0) return
+        video.currentTime = fraction.coerceIn(0f, 1f).toDouble() * duration
+        pendingSeekFraction = null
     }
 }
 
@@ -224,7 +237,7 @@ private fun createNativeVideoElement(
         style.zIndex = "1"
         // The element sits in front of the Compose canvas (see the class doc), so with native
         // controls hidden it would otherwise still catch every pointer event over its bounds and
-        // the canvas underneath — the pager in a reels feed, or a tap-catcher like Moments' — would
+        // the canvas underneath — the pager in a reels feed, or a full-surface tap handler — would
         // never see them. Visible controls need real hit-testing to be clickable, so this only
         // applies when they're off.
         style.setProperty("pointer-events", if (areControlsVisible) "auto" else "none")
