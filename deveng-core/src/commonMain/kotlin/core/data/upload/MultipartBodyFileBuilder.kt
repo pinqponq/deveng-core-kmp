@@ -1,7 +1,6 @@
 package core.data.upload
 
 private const val CRLF = "\r\n"
-private const val MEDIA_FORM_FIELD_NAME = "File"
 
 data class MultipartBody(
     val bytes: ByteArray,
@@ -25,6 +24,7 @@ data class MultipartBody(
  */
 class MultipartBodyFileBuilder(
     private val boundary: String,
+    private val mediaFieldName: String,
 ) {
 
     fun build(
@@ -44,7 +44,7 @@ class MultipartBodyFileBuilder(
         }
 
         chunks += "--$boundary$CRLF".encodeToByteArray()
-        chunks += "Content-Disposition: form-data; name=\"$MEDIA_FORM_FIELD_NAME\"; filename=\"$mediaFileName\"$CRLF".encodeToByteArray()
+        chunks += "Content-Disposition: form-data; name=\"$mediaFieldName\"; filename=\"$mediaFileName\"$CRLF".encodeToByteArray()
         chunks += "Content-Type: $mediaContentType$CRLF".encodeToByteArray()
         chunks += CRLF.encodeToByteArray()
         chunks += mediaBytes

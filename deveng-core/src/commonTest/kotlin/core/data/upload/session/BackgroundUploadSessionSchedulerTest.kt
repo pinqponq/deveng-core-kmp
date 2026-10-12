@@ -23,6 +23,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -59,6 +60,32 @@ class BackgroundUploadSessionSchedulerTest {
     }
 
     @Test
+    fun schedule_withoutAccessToken_sendsRequestWithoutAuthorization() = runTest {
+        val scheduler = createScheduler()
+        requestHandler.preparation = multipartPreparation()
+        sessionRenewer.accessToken = null
+
+        scheduler.schedule(saveDescriptor(PHOTO_DESCRIPTOR))
+        runCurrent()
+
+        assertFalse(transport.createdRequests.single().second.headers.containsKey("Authorization"))
+    }
+
+    @Test
+    fun transfer_withProgressStuckAtSameByteCount_isCancelled() = runTest {
+        val scheduler = createScheduler()
+        requestHandler.preparation = multipartPreparation()
+        scheduler.schedule(saveDescriptor(PHOTO_DESCRIPTOR))
+        runCurrent()
+
+        transport.reportProgress(PHOTO_UPLOAD_ID, bytesSent = FIRST_BYTES_SENT, bytesTotal = TOTAL_BYTES)
+        advanceTimeBy(2 * STALL_TIMEOUT_MILLIS + 1)
+        runCurrent()
+
+        assertTrue(transport.tasks.single().isCancelled)
+    }
+
+    @Test
     fun transferCompleted_withParsableResponse_reportsSuccessAndCleansUp() = runTest {
         val scheduler = createScheduler()
         val completions = collectCompletions(scheduler)
@@ -69,7 +96,9 @@ class BackgroundUploadSessionSchedulerTest {
         transport.complete(PHOTO_UPLOAD_ID, okResponse(body = "${FakeBackgroundUploadRequestHandler.RESULT_PREFIX}$RESULT"))
         runCurrent()
 
-        assertEquals(listOf(BackgroundUploadCompletion.Success(uploadId = PHOTO_UPLOAD_ID, result = RESULT)), completions)
+        val success = assertIs<BackgroundUploadCompletion.Success<String>>(completions.single())
+        assertEquals(PHOTO_UPLOAD_ID, success.uploadId)
+        assertEquals(RESULT, success.result)
         assertEquals(listOf(PHOTO_UPLOAD_ID to RESULT), requestHandler.succeededUploads)
         assertNull(descriptorStorage.load(PHOTO_UPLOAD_ID))
         assertTrue(fileStore.filesByUploadId.isEmpty())
@@ -239,7 +268,9 @@ class BackgroundUploadSessionSchedulerTest {
         transport.complete(PHOTO_UPLOAD_ID, BackgroundUploadTransferOutcome.Response(statusCode = HTTP_SERVER_ERROR, body = FAILURE_MESSAGE))
         runCurrent()
 
-        assertEquals(listOf(failure(PHOTO_UPLOAD_ID, "http_$HTTP_SERVER_ERROR")), completions)
+        val failure = assertIs<BackgroundUploadCompletion.PermanentFailure>(completions.single())
+        assertEquals(PHOTO_UPLOAD_ID, failure.uploadId)
+        assertEquals("http_$HTTP_SERVER_ERROR", failure.reason)
         assertNull(descriptorStorage.load(PHOTO_UPLOAD_ID))
         assertTrue(fileStore.filesByUploadId.isEmpty())
     }

@@ -4,7 +4,10 @@ import com.russhwolf.settings.MapSettings
 import core.domain.upload.model.BackgroundUploadDescriptor
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class BackgroundUploadDescriptorStorageTest {
 
@@ -19,10 +22,26 @@ class BackgroundUploadDescriptorStorageTest {
     }
 
     @Test
-    fun load_withDescriptorStoredByEarlierRelease_readsMediaIdAsRemoteId() {
+    fun load_withDescriptorStoredByEarlierRelease_readsEveryFieldAndMediaIdAsRemoteId() {
         settings.putString("bg_upload_descriptor_$VIDEO_UPLOAD_ID", EARLIER_RELEASE_DESCRIPTOR_JSON)
 
-        assertEquals(VIDEO_DESCRIPTOR, storage.load(VIDEO_UPLOAD_ID))
+        val descriptor = assertNotNull(storage.load(VIDEO_UPLOAD_ID))
+
+        assertEquals(VIDEO_UPLOAD_ID, descriptor.uploadId)
+        assertEquals("widget.mp4", descriptor.mediaFileName)
+        assertTrue(descriptor.isVideo)
+        assertEquals("video/mp4", descriptor.contentType)
+        assertEquals(42, descriptor.remoteId)
+    }
+
+    @Test
+    fun load_forPhotoDescriptor_isNotVideoAndHasNoRemoteId() {
+        storage.save(PHOTO_DESCRIPTOR)
+
+        val descriptor = assertNotNull(storage.load(PHOTO_UPLOAD_ID))
+
+        assertFalse(descriptor.isVideo)
+        assertNull(descriptor.remoteId)
     }
 
     @Test

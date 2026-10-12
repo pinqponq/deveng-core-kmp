@@ -16,6 +16,8 @@ import platform.Foundation.NSURLSessionTaskDelegateProtocol
 import platform.darwin.NSObject
 
 private const val PERCENT_MULTIPLIER = 100
+private const val BYTES_PER_KILOBYTE = 1024
+private const val NO_HTTP_RESPONSE_FAILURE_REASON = "network_no_http_response"
 
 /** Collects one background session's callbacks per task (task description = upload id) and hands them to the listener. */
 internal class UrlSessionBackgroundUploadDelegate(
@@ -46,12 +48,8 @@ internal class UrlSessionBackgroundUploadDelegate(
         totalBytesExpectedToSend: Long,
     ) {
         val uploadId = task.taskDescription ?: return
-        val percent = if (totalBytesExpectedToSend > 0) {
-            (totalBytesSent * PERCENT_MULTIPLIER / totalBytesExpectedToSend).toInt()
-        } else {
-            -1
-        }
-        Logger.i { "[$logTag] progress uploadId=$uploadId sent=${totalBytesSent / 1024}KB total=${totalBytesExpectedToSend / 1024}KB pct=$percent%" }
+        val percent = (totalBytesSent * PERCENT_MULTIPLIER / totalBytesExpectedToSend).takeIf { totalBytesExpectedToSend > 0 }
+        Logger.i { "[$logTag] progress uploadId=$uploadId sent=${totalBytesSent / BYTES_PER_KILOBYTE}KB total=${totalBytesExpectedToSend / BYTES_PER_KILOBYTE}KB pct=${percent ?: "unknown"}%" }
         listener?.onTransferProgress(uploadId = uploadId, bytesSent = totalBytesSent, bytesTotal = totalBytesExpectedToSend)
     }
 
@@ -62,15 +60,18 @@ internal class UrlSessionBackgroundUploadDelegate(
     ) {
         val uploadId = task.taskDescription ?: return
         val chunks = accumulatedChunks.remove(uploadId)
-        val statusCode = (task.response as? NSHTTPURLResponse)?.statusCode?.toInt() ?: 0
-        Logger.i { "[$logTag] didComplete uploadId=$uploadId taskId=${task.taskIdentifier} statusCode=$statusCode error=${didCompleteWithError?.localizedDescription}" }
+        val httpResponse = task.response as? NSHTTPURLResponse
+        Logger.i { "[$logTag] didComplete uploadId=$uploadId taskId=${task.taskIdentifier} statusCode=${httpResponse?.statusCode} error=${didCompleteWithError?.localizedDescription}" }
 
-        val outcome = if (didCompleteWithError != null) {
-            val failureReason = "network_${didCompleteWithError.domain}_${didCompleteWithError.code}: ${didCompleteWithError.localizedDescription}"
-            BackgroundUploadTransferOutcome.NetworkError(failureReason = failureReason)
-        } else {
-            BackgroundUploadTransferOutcome.Response(
-                statusCode = statusCode,
+        val outcome = when {
+            didCompleteWithError != null -> BackgroundUploadTransferOutcome.NetworkError(
+                failureReason = "network_${didCompleteWithError.domain}_${didCompleteWithError.code}: ${didCompleteWithError.localizedDescription}",
+            )
+
+            httpResponse == null -> BackgroundUploadTransferOutcome.NetworkError(failureReason = NO_HTTP_RESPONSE_FAILURE_REASON)
+
+            else -> BackgroundUploadTransferOutcome.Response(
+                statusCode = httpResponse.statusCode.toInt(),
                 body = chunks?.let(::concatenate)?.decodeToString(),
             )
         }

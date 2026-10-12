@@ -1,5 +1,6 @@
 package core.data.upload
 
+import co.touchlab.kermit.Logger
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.set
 import core.domain.upload.model.BackgroundUploadDescriptor
@@ -23,7 +24,8 @@ class BackgroundUploadDescriptorStorage(
         val encodedDescriptor = descriptorSettings.getStringOrNull(descriptorKey(uploadId)) ?: return null
         return try {
             Json.decodeFromString<BackgroundUploadDescriptor>(encodedDescriptor)
-        } catch (_: Exception) {
+        } catch (exception: Exception) {
+            Logger.e(exception) { "[BackgroundUpload] Unreadable descriptor dropped uploadId=$uploadId" }
             null
         }
     }

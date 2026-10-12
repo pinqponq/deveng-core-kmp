@@ -1,5 +1,6 @@
 package core.data.upload
 
+import co.touchlab.kermit.Logger
 import core.data.temp.TempStorageDirProvider
 import core.data.upload.session.BackgroundUploadFileNaming
 import core.data.upload.session.BackgroundUploadFileStore
@@ -10,7 +11,7 @@ import platform.Foundation.writeToFile
 
 /** Keeps request bodies as `<prefix><uploadId><suffix>` files under [directoryProvider]'s folder. */
 @OptIn(ExperimentalForeignApi::class)
-class FileManagerBackgroundUploadFileStore(
+internal class FileManagerBackgroundUploadFileStore(
     private val directoryProvider: TempStorageDirProvider,
     private val fileNaming: BackgroundUploadFileNaming,
 ) : BackgroundUploadFileStore {
@@ -21,7 +22,11 @@ class FileManagerBackgroundUploadFileStore(
         if (bytes.isEmpty()) return null
         val path = filePath(uploadId)
         val isWritten = bytes.toNSData().writeToFile(path, atomically = true)
-        return path.takeIf { isWritten }
+        if (!isWritten) {
+            Logger.e { "[BackgroundUpload] Could not write request body path=$path" }
+            return null
+        }
+        return path
     }
 
     override fun delete(uploadId: String) {

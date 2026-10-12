@@ -17,7 +17,7 @@ import platform.Foundation.setValue
  * A background `NSURLSession` with its own [sessionIdentifier]: iOS keeps its transfers running
  * after the app is suspended or killed and relaunches the app to deliver their results.
  */
-class UrlSessionBackgroundUploadTransport(
+internal class UrlSessionBackgroundUploadTransport(
     private val sessionIdentifier: String,
     delegateLogTag: String,
 ) : BackgroundUploadTransport {
