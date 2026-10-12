@@ -552,6 +552,36 @@ val barItemIconSize: Dp = 24.dp
 )
 
 /**
+ * Theme for ScrollableContentDialog component
+*/
+data class ScrollableContentDialogTheme(
+val backgroundColor: Color = CoreSurfaceColor,
+val verticalPadding: Dp = 52.dp,
+val cornerRadius: Dp = 18.dp,
+val shadowElevation: Dp = 12.dp,
+val edgeFadeHeight: Dp = 40.dp,
+val backIconTint: Color = CorePrimaryColor,
+val titleTextStyle: TextStyle = TextStyle(
+fontSize = 22.sp,
+fontWeight = CORE_SEMI_BOLD_FONT_WEIGHT,
+color = CoreOnSurfaceColor
+),
+val contentTextColor: Color = CoreOnSurfaceColor,
+val checkboxBackgroundColor: Color = Color.White.copy(alpha = 0.08f),
+val checkboxIconTint: Color = CoreSecondaryColor,
+val approvalTitleTextStyle: TextStyle = TextStyle(
+fontSize = 12.sp,
+fontWeight = CORE_BOLD_FONT_WEIGHT,
+color = CoreOnSurfaceColor
+),
+val approvalTextStyle: TextStyle = TextStyle(
+fontSize = 12.sp,
+fontWeight = CORE_REGULAR_FONT_WEIGHT,
+color = CoreCustomGrayHintColor
+)
+)
+
+/**
  * Theme for Chip item component
 */
 data class ChipItemTheme(
@@ -808,6 +838,7 @@ val scrollToEdgeButton: ScrollToEdgeButtonTheme = ScrollToEdgeButtonTheme(),
 val jsonViewer: JsonViewerTheme = JsonViewerTheme(),
 val labeledSlot: LabeledSlotTheme = LabeledSlotTheme(),
 val navigationMenu: NavigationMenuTheme = NavigationMenuTheme(),
+val scrollableContentDialog: ScrollableContentDialogTheme = ScrollableContentDialogTheme(),
 val chipItem: ChipItemTheme = ChipItemTheme(),
 val chipsMenu: ChipsMenuTheme = ChipsMenuTheme(),
 val ratingRow: RatingRowTheme = RatingRowTheme(),
