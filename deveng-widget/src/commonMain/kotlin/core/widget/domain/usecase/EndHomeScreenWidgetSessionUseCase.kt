@@ -14,24 +14,20 @@ class EndHomeScreenWidgetSessionUseCase(
 ) {
     suspend operator fun invoke() {
         val widgetToken = homeScreenWidgetSessionStorage.getWidgetToken()
-        if (widgetToken != null) revokeWidgetToken(widgetToken)
+        if (widgetToken != null) {
+            // The local copy is dropped even when the server call fails, so the widget empties either way; the
+            // server also revokes the token itself on unpair, and a leftover one can only read the latest widget
+            // of a couple the user may still belong to.
+            try {
+                homeScreenWidgetTokenRepository.revokeWidgetToken(widgetToken = widgetToken)
+            } catch (cancellationException: CancellationException) {
+                throw cancellationException
+            } catch (revokeException: Exception) {
+                Logger.w(revokeException) { "[HomeScreenWidget] Widget token revoke failed" }
+            }
+        }
 
         homeScreenWidgetSessionStorage.clearWidgetSession()
         homeScreenWidgetReloader.reloadHomeScreenWidgets()
-    }
-
-    /**
-     * The local copy is dropped even when the server call fails, so the widget empties either way; the server
-     * also revokes the token itself on unpair, and a leftover one can only read the latest widget of a couple
-     * the user may still belong to.
-     */
-    private suspend fun revokeWidgetToken(widgetToken: String) {
-        try {
-            homeScreenWidgetTokenRepository.revokeWidgetToken(widgetToken = widgetToken)
-        } catch (cancellationException: CancellationException) {
-            throw cancellationException
-        } catch (revokeException: Exception) {
-            Logger.w(revokeException) { "[HomeScreenWidget] Widget token revoke failed" }
-        }
     }
 }
