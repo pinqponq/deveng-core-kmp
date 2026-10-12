@@ -212,6 +212,7 @@ fun ScrollableContentDialog(
                                 iconTint = dialogTheme.checkboxIconTint,
                                 onClick = { onCheckIconClick() }
                             )
+
                             Text(
                                 modifier = Modifier.weight(1f),
                                 text = buildAnnotatedString {

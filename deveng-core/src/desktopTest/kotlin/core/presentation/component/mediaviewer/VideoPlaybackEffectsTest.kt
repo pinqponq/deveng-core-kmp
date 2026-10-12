@@ -183,6 +183,27 @@ class VideoPlaybackEffectsTest {
     }
 
     @Test
+    fun replacePlayer_afterAppliedSeek_doesNotSeekNewPlayer() = runComposeUiTest {
+        val firstControls = FakeVideoPlaybackControls()
+        val secondControls = FakeVideoPlaybackControls()
+        var controls by mutableStateOf(firstControls)
+        setContent {
+            PlaybackEffects(controls = controls, seekRequest = MediaSeekRequest(fraction = HALF, requestId = SEEK_REQUEST_ID))
+        }
+        waitForIdle()
+        runOnIdle { firstControls.send(MediaPlayerEvent.TotalTimeChange(totalTime = TOTAL_SECONDS)) }
+        waitForIdle()
+
+        controls = secondControls
+        waitForIdle()
+        runOnIdle { secondControls.send(MediaPlayerEvent.TotalTimeChange(totalTime = TOTAL_SECONDS)) }
+        waitForIdle()
+
+        assertEquals(listOf(TOTAL_SECONDS * HALF), firstControls.seekedSeconds)
+        assertTrue(secondControls.seekedSeconds.isEmpty())
+    }
+
+    @Test
     fun leaveComposition_whilePlaying_detachesListenerAndPauses() = runComposeUiTest {
         val controls = FakeVideoPlaybackControls()
         var isShown by mutableStateOf(true)

@@ -73,7 +73,7 @@ actual fun MediaViewerVideoPage(
             mediaId = mediaId,
             videoUrl = videoUrl,
             areControlsVisible = arePlayerControlsVisible,
-            startPlaying = isActive && !isPlaybackPaused,
+            shouldStartPlaying = isActive && !isPlaybackPaused,
         )
         onDispose {
             videoSurface.detach()
@@ -81,7 +81,7 @@ actual fun MediaViewerVideoPage(
     }
 
     // Bidirectional, unlike isPlaybackPaused below: a reels feed's off-screen neighbors attach
-    // with startPlaying = false, then flip to true once they become the settled page.
+    // with shouldStartPlaying = false, then flip to true once they become the settled page.
     LaunchedEffect(isActive) {
         if (isActive) {
             if (!isPlaybackPaused) {
@@ -103,10 +103,9 @@ actual fun MediaViewerVideoPage(
         videoSurface.seekToFraction(fraction = requestedFraction)
     }
 
-    // Progress is polled rather than driven by `timeupdate`/`ended` listeners: the element is built
-    // and torn down inside js() blocks (see below), and registering a Kotlin callback on it from
-    // there would mean threading a function across the wasm boundary for values the page can just
-    // read off the element. Only the page in focus polls, and only while it is on screen.
+    // Progress is polled rather than driven by `timeupdate`/`ended` listeners, so nothing has to be
+    // unregistered from the element: only the page in focus polls, and the loop ends with this effect
+    // when the page loses focus or leaves the screen.
     LaunchedEffect(mediaId, videoUrl, isActive) {
         if (!isActive) return@LaunchedEffect
         var hasReportedEnd = false
@@ -157,19 +156,19 @@ private class NativeVideoSurface(
     private var height = 0.0
     private val seekPosition = VideoSeekPosition()
 
-    fun attach(mediaId: Int, videoUrl: String, areControlsVisible: Boolean, startPlaying: Boolean) {
+    fun attach(mediaId: Int, videoUrl: String, areControlsVisible: Boolean, shouldStartPlaying: Boolean) {
         this.mediaId = mediaId
         val video = createNativeVideoElement(
             mediaId = mediaId,
             url = videoUrl,
             areControlsVisible = areControlsVisible,
-            autoPlay = startPlaying,
+            shouldAutoPlay = shouldStartPlaying,
         )
         element = video
         videoElementObserver?.onVideoElementCreated(mediaId, video)
         document.body?.appendChild(video)
         applyBounds(video, left, top, width, height)
-        if (startPlaying) {
+        if (shouldStartPlaying) {
             startPlayback(mediaId, video)
         }
     }
@@ -221,12 +220,12 @@ private fun createNativeVideoElement(
     mediaId: Int,
     url: String,
     areControlsVisible: Boolean,
-    autoPlay: Boolean,
+    shouldAutoPlay: Boolean,
 ): HTMLVideoElement =
     (document.createElement("video") as HTMLVideoElement).apply {
         src = url
         controls = areControlsVisible
-        autoplay = autoPlay
+        autoplay = shouldAutoPlay
         setAttribute("playsinline", "")
         setAttribute("preload", "metadata")
         style.position = "fixed"

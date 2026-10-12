@@ -84,6 +84,7 @@ fun MediaViewerHeader(
             closeContentDescription = closeContentDescription,
             onCloseClick = onCloseButtonClick,
         )
+
         Row(
             modifier = Modifier
                 .weight(weight = 1f)
