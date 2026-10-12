@@ -96,7 +96,7 @@ class ScrollableContentDialogEdgeFadeTest {
             topEdge = headerBottom until headerBottom + fadeHeightPx / 3,
             topFadeEnd = headerBottom + fadeHeightPx * 3 / 4 until headerBottom + fadeHeightPx,
             bottomEdge = contentBottom - fadeHeightPx / 3 until contentBottom,
-            bottomFadeStart = contentBottom - fadeHeightPx until contentBottom - fadeHeightPx * 3 / 4,
+            bottomFadeStart = pixels.height - fadeHeightPx until pixels.height - fadeHeightPx * 3 / 4,
             body = headerBottom until contentBottom
         )
     }
