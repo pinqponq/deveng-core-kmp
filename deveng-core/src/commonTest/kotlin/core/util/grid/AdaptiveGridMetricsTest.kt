@@ -10,14 +10,14 @@ class AdaptiveGridMetricsTest {
     fun calculateAdaptiveGridMetrics_withRoomForSeveralCells_fillsTheRowExactly() {
         val metrics = calculateAdaptiveGridMetrics(availableWidthPx = 1_000, gapPx = GAP_PX, minCellSizePx = MIN_CELL_SIZE_PX)
 
-        assertEquals(AdaptiveGridMetrics(columnCount = 4, cellSizePx = 242), metrics)
+        assertGridMetrics(metrics, columnCount = 4, cellSizePx = 242)
     }
 
     @Test
     fun calculateAdaptiveGridMetrics_withWidthBelowOneCell_returnsOneColumnOfFullWidth() {
         val metrics = calculateAdaptiveGridMetrics(availableWidthPx = 150, gapPx = GAP_PX, minCellSizePx = MIN_CELL_SIZE_PX)
 
-        assertEquals(AdaptiveGridMetrics(columnCount = 1, cellSizePx = 150), metrics)
+        assertGridMetrics(metrics, columnCount = 1, cellSizePx = 150)
     }
 
     @Test
@@ -29,7 +29,7 @@ class AdaptiveGridMetricsTest {
             maxColumns = 2,
         )
 
-        assertEquals(AdaptiveGridMetrics(columnCount = 2, cellSizePx = 495), metrics)
+        assertGridMetrics(metrics, columnCount = 2, cellSizePx = 495)
     }
 
     @Test
@@ -38,8 +38,13 @@ class AdaptiveGridMetricsTest {
         val metrics = calculateAdaptiveGridMetrics(availableWidthPx = availableWidthPx, gapPx = GAP_PX, minCellSizePx = MIN_CELL_SIZE_PX)
 
         val usedWidthPx = metrics.columnCount * metrics.cellSizePx + (metrics.columnCount - 1) * GAP_PX
-        assertEquals(4, metrics.columnCount)
+        assertGridMetrics(metrics, columnCount = 4, cellSizePx = 242)
         assertTrue(usedWidthPx <= availableWidthPx)
+    }
+
+    private fun assertGridMetrics(metrics: AdaptiveGridMetrics, columnCount: Int, cellSizePx: Int) {
+        assertEquals(columnCount, metrics.columnCount)
+        assertEquals(cellSizePx, metrics.cellSizePx)
     }
 
     private companion object {
