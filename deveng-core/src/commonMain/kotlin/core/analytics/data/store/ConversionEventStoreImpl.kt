@@ -15,8 +15,8 @@ class ConversionEventStoreImpl(
     }
 
     override fun markFired(eventKey: String) {
-        val next = readFiredEvents() + eventKey
-        settings.putString(KEY_FIRED_EVENTS, next.joinToString(SEPARATOR))
+        val updatedFiredEvents = readFiredEvents() + eventKey
+        settings.putString(KEY_FIRED_EVENTS, updatedFiredEvents.joinToString(SEPARATOR))
     }
 
     override fun clear() {

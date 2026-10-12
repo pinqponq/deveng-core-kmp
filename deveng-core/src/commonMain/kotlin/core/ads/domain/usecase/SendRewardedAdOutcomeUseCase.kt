@@ -15,6 +15,9 @@ private const val KEY_ERROR_MESSAGE = "errorMessage"
 private const val SOURCE = "SendRewardedAdOutcomeUseCase"
 private const val REWARDED_AD_TAG = "REWARDED_AD"
 private const val UNKNOWN_EXCEPTION_TYPE = "Unknown"
+private const val LOAD_FAILED_EVENT = "RewardedAdLoadFailed"
+private const val SHOW_FAILED_EVENT = "RewardedAdShowFailed"
+private const val CLOSED_BEFORE_REWARD_EVENT = "RewardedAdClosedBeforeReward"
 
 class SendRewardedAdOutcomeUseCase(
     private val conversionEventTracker: ConversionEventTracker,
@@ -50,9 +53,9 @@ class SendRewardedAdOutcomeUseCase(
     }
 
     private fun resolveEventName(failure: RewardedAdOutcome.Failure): String = when (failure) {
-        is RewardedAdOutcome.LoadFailed -> "RewardedAdLoadFailed"
-        is RewardedAdOutcome.ShowFailed -> "RewardedAdShowFailed"
-        RewardedAdOutcome.ClosedBeforeReward -> "RewardedAdClosedBeforeReward"
+        is RewardedAdOutcome.LoadFailed -> LOAD_FAILED_EVENT
+        is RewardedAdOutcome.ShowFailed -> SHOW_FAILED_EVENT
+        RewardedAdOutcome.ClosedBeforeReward -> CLOSED_BEFORE_REWARD_EVENT
     }
 
     private fun resolveException(failure: RewardedAdOutcome.Failure): Throwable? = when (failure) {

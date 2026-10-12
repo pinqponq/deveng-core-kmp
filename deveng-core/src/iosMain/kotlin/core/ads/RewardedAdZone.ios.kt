@@ -80,6 +80,7 @@ private fun presentRewardedAd(
                 if (!isRewardEarned) onAdOutcome(RewardedAdOutcome.ClosedBeforeReward)
             }
         )
+
         handler.show {
             activeRewardedAdHandler = null
             isRewardEarned = true

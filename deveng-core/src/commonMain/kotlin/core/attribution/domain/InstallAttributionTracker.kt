@@ -68,7 +68,7 @@ class InstallAttributionTracker(
         campaignId?.let { put(PARAM_CAMPAIGN_ID, it.toString()) }
         adGroupId?.let { put(PARAM_AD_GROUP_ID, it.toString()) }
         keywordId?.let { put(PARAM_KEYWORD_ID, it.toString()) }
-        orgId?.let { put(PARAM_ORG_ID, it.toString()) }
+        organizationId?.let { put(PARAM_ORG_ID, it.toString()) }
         adId?.let { put(PARAM_AD_ID, it.toString()) }
         conversionType?.let { put(PARAM_CONVERSION_TYPE, it) }
         countryOrRegion?.let { put(PARAM_COUNTRY_OR_REGION, it) }

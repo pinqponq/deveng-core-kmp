@@ -5,9 +5,9 @@ import com.facebook.FacebookSdk
 import com.facebook.appevents.AppEventsLogger
 
 /**
- * Initializes the Facebook SDK for Meta App Events. The app disables auto-init in its manifest so
- * nothing runs until a real Facebook App ID is configured; with a blank App ID this is a no-op and
- * the SDK never touches the app. Call once from [Application.onCreate].
+ * Initializes the Facebook SDK for Meta App Events. The consuming app must disable the SDK's
+ * auto-init in its manifest so nothing runs until a real Facebook App ID is configured; with a blank
+ * App ID this is a no-op and the SDK never touches the app. Call once from [Application.onCreate].
  */
 object MetaAnalyticsInitializer {
     fun initialize(application: Application, facebookAppId: String, facebookClientToken: String) {

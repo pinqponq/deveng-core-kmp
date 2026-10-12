@@ -7,7 +7,7 @@ class AdServicesAttributionMapper {
     fun mapToDomain(response: AdServicesAttributionResponse): InstallAttribution {
         return InstallAttribution(
             attributed = response.attribution,
-            orgId = response.orgId,
+            organizationId = response.orgId,
             campaignId = response.campaignId,
             adGroupId = response.adGroupId,
             keywordId = response.keywordId,

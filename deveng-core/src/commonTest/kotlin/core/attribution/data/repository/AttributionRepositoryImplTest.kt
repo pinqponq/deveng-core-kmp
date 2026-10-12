@@ -144,7 +144,7 @@ class AttributionRepositoryImplTest {
         val JSON = Json { ignoreUnknownKeys = true }
         val EXPECTED_ATTRIBUTION = InstallAttribution(
             attributed = true,
-            orgId = 14,
+            organizationId = 14,
             campaignId = 11,
             adGroupId = 12,
             keywordId = 13,

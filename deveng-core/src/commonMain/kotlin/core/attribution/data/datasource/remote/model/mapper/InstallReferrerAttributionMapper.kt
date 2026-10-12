@@ -25,7 +25,7 @@ class InstallReferrerAttributionMapper {
 
         return InstallAttribution(
             attributed = googleClickId != null || hasPaidCampaignMedium,
-            orgId = null,
+            organizationId = null,
             campaignId = null,
             adGroupId = null,
             keywordId = null,

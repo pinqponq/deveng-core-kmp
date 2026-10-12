@@ -148,7 +148,7 @@ class InstallAttributionTrackerTest {
         const val NETWORK_ERROR_MESSAGE = "Network unreachable."
         val APPLE_SEARCH_ADS_ATTRIBUTION = InstallAttribution(
             attributed = true,
-            orgId = 14,
+            organizationId = 14,
             campaignId = 11,
             adGroupId = 12,
             keywordId = 13,
