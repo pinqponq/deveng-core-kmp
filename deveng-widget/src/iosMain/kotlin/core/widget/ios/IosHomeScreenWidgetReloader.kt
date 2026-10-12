@@ -2,6 +2,7 @@ package core.widget.ios
 
 import co.touchlab.kermit.Logger
 import core.widget.domain.HomeScreenWidgetReloader
+import core.widget.domain.WIDGET_LOG_TAG
 
 /**
  * WidgetCenter is a Swift-only API, so the reload itself is registered from Swift at launch through
@@ -13,7 +14,7 @@ class IosHomeScreenWidgetReloader : HomeScreenWidgetReloader {
     override fun reloadHomeScreenWidgets() {
         val reloadHandler = reloadHomeScreenWidgetsHandler
         if (reloadHandler == null) {
-            Logger.w { "[HomeScreenWidget] Reload requested before the Swift handler was registered" }
+            Logger.w { "$WIDGET_LOG_TAG Reload requested before the Swift handler was registered" }
             return
         }
         reloadHandler()

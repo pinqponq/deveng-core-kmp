@@ -6,6 +6,9 @@ import java.io.File
 
 private const val TEMPORARY_FILE_SUFFIX = ".tmp"
 
+/** File.createTempFile rejects shorter prefixes. */
+private const val MINIMUM_IMAGE_FILE_NAME_LENGTH = 3
+
 /**
  * The single image a widget renders from. Glance may redraw at any time and must not wait on a download, so the
  * widget only ever decodes this local copy.
@@ -16,13 +19,19 @@ class HomeScreenWidgetImageStore(
 ) {
     val widgetImageFile: File = File(imageDirectory, imageFileName)
 
+    init {
+        require(imageFileName.length >= MINIMUM_IMAGE_FILE_NAME_LENGTH) {
+            "The widget image file name is also the temporary file prefix and needs at least $MINIMUM_IMAGE_FILE_NAME_LENGTH characters."
+        }
+    }
+
     /** Downloads, shrinks and stores the image off the main thread. */
-    suspend fun downloadAndReplaceImage(imageUrl: String, connectTimeoutMillis: Int, readTimeoutMillis: Int) {
+    suspend fun downloadAndReplaceImage(imageUrl: String, connectTimeoutMilliseconds: Int, readTimeoutMilliseconds: Int) {
         withContext(Dispatchers.IO) {
             val imageBytes = HomeScreenWidgetImageDownloader.downloadImage(
                 imageUrl = imageUrl,
-                connectTimeoutMillis = connectTimeoutMillis,
-                readTimeoutMillis = readTimeoutMillis,
+                connectTimeoutMilliseconds = connectTimeoutMilliseconds,
+                readTimeoutMilliseconds = readTimeoutMilliseconds,
             )
             replaceImageAtomically(HomeScreenWidgetBitmaps.shrinkImageForStorage(imageBytes))
         }

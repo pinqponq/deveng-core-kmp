@@ -19,7 +19,8 @@ private const val DEFAULT_PERIODIC_REFRESH_INTERVAL_MINUTES = 30L
 /**
  * Runs the app's widget refresh worker right away and every [periodicRefreshIntervalMinutes]. The work names are
  * WorkManager's unique work names: keep them unchanged across releases, or installed apps keep the old periodic
- * work next to the new one.
+ * work next to the new one. The immediate refresh is expedited, so on Android 11 and older the worker must
+ * override getForegroundInfo, or the run fails.
  */
 class AndroidHomeScreenWidgetRefreshScheduler(
     private val context: Context,
