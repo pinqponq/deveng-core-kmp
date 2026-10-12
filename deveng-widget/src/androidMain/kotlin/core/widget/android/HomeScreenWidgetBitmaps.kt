@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import co.touchlab.kermit.Logger
+import core.widget.domain.WIDGET_LOG_TAG
 import core.widget.domain.image.HomeScreenWidgetImageSampling
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -12,7 +13,7 @@ import java.io.File
  * Longest side the stored widget image is shrunk to, enough for a widget resized to full screen width.
  * decodeImageForWidget still samples it down to the RemoteViews budget when it is drawn.
  */
-private const val STORED_IMAGE_MAX_SIDE_PX = 1440
+private const val STORED_IMAGE_MAX_SIDE_PIXELS = 1440
 private const val STORED_IMAGE_JPEG_QUALITY = 85
 
 /**
@@ -26,18 +27,18 @@ private const val ARGB_BYTES_PER_PIXEL = 4
 object HomeScreenWidgetBitmaps {
 
     /** Shrinks a downloaded image before storing it, so even large or portrait photos stay small on disk. */
-    fun shrinkImageForStorage(imageBytes: ByteArray): ByteArray {
+    internal fun shrinkImageForStorage(imageBytes: ByteArray): ByteArray {
         val imageBounds = readBounds { options -> BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, options) }
         val sampleSize = HomeScreenWidgetImageSampling.calculateSampleSizeForMaxSide(
             width = imageBounds.outWidth,
             height = imageBounds.outHeight,
-            maxSidePx = STORED_IMAGE_MAX_SIDE_PX,
+            maxSidePixels = STORED_IMAGE_MAX_SIDE_PIXELS,
         )
         val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
         val sampledBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, decodeOptions)
             ?: throw IllegalArgumentException("The widget image could not be decoded.")
 
-        val storedBitmap = scaleToMaxSide(sampledBitmap, STORED_IMAGE_MAX_SIDE_PX)
+        val storedBitmap = scaleToMaxSide(sampledBitmap, STORED_IMAGE_MAX_SIDE_PIXELS)
         val jpegOutputStream = ByteArrayOutputStream()
         storedBitmap.compress(Bitmap.CompressFormat.JPEG, STORED_IMAGE_JPEG_QUALITY, jpegOutputStream)
         if (storedBitmap !== sampledBitmap) sampledBitmap.recycle()
@@ -63,7 +64,7 @@ object HomeScreenWidgetBitmaps {
         val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
         val widgetBitmap = BitmapFactory.decodeFile(imageFile.path, decodeOptions)
         if (widgetBitmap == null) {
-            Logger.w { "[HomeScreenWidget] Stored widget image could not be decoded path=${imageFile.path}" }
+            Logger.w { "$WIDGET_LOG_TAG Stored widget image could not be decoded path=${imageFile.path}" }
         }
 
         return widgetBitmap
@@ -75,11 +76,11 @@ object HomeScreenWidgetBitmaps {
         return boundsOptions
     }
 
-    private fun scaleToMaxSide(bitmap: Bitmap, maxSidePx: Int): Bitmap {
+    private fun scaleToMaxSide(bitmap: Bitmap, maxSidePixels: Int): Bitmap {
         val longestSide = maxOf(bitmap.width, bitmap.height)
-        if (longestSide <= maxSidePx) return bitmap
+        if (longestSide <= maxSidePixels) return bitmap
 
-        val scale = maxSidePx.toFloat() / longestSide
+        val scale = maxSidePixels.toFloat() / longestSide
         val scaledWidth = (bitmap.width * scale).toInt().coerceAtLeast(1)
         val scaledHeight = (bitmap.height * scale).toInt().coerceAtLeast(1)
         return Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)

@@ -7,6 +7,8 @@ import core.widget.fake.FakeHomeScreenWidgetTokenRepository
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 class InitializeHomeScreenWidgetSessionUseCaseTest {
     private val tokenRepository = FakeHomeScreenWidgetTokenRepository()
@@ -45,10 +47,21 @@ class InitializeHomeScreenWidgetSessionUseCaseTest {
         assertEquals(1, widgetReloader.reloadCount)
     }
 
+    @Test
+    fun invoke_whenIssueFails_rethrowsWithoutSavingOrReloading() = runTest {
+        tokenRepository.issueFailure = IllegalStateException(ISSUE_FAILURE_MESSAGE)
+
+        assertFailsWith<IllegalStateException> { initializeHomeScreenWidgetSessionUseCase() }
+
+        assertNull(sessionStorage.getWidgetToken())
+        assertEquals(0, widgetReloader.reloadCount)
+    }
+
     private companion object {
         const val DEVICE_IDENTIFIER = "device-identifier"
         const val API_BASE_URL = "https://api.example.com/"
         const val ISSUED_WIDGET_TOKEN = "issued-widget-token"
+        const val ISSUE_FAILURE_MESSAGE = "issue failed"
         const val STORED_WIDGET_TOKEN = "stored-widget-token"
     }
 }

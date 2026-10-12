@@ -3,12 +3,12 @@ package core.widget.domain.image
 private const val ARGB_BYTES_PER_PIXEL = 4
 
 /** Power-of-two decode sample sizes (BitmapFactory.Options.inSampleSize) for the widget image. */
-object HomeScreenWidgetImageSampling {
+internal object HomeScreenWidgetImageSampling {
 
-    /** The largest sample size that still keeps the longest side at or above [maxSidePx]; the rest is scaled. */
-    fun calculateSampleSizeForMaxSide(width: Int, height: Int, maxSidePx: Int): Int {
+    /** The largest sample size that still keeps the longest side at or above [maxSidePixels]; the rest is scaled. */
+    fun calculateSampleSizeForMaxSide(width: Int, height: Int, maxSidePixels: Int): Int {
         var sampleSize = 1
-        while (maxOf(width, height) / (sampleSize * 2) >= maxSidePx) {
+        while (maxOf(width, height) / (sampleSize * 2) >= maxSidePixels) {
             sampleSize *= 2
         }
         return sampleSize

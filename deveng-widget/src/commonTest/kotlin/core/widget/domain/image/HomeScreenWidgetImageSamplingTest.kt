@@ -7,17 +7,17 @@ class HomeScreenWidgetImageSamplingTest {
 
     @Test
     fun calculateSampleSizeForMaxSide_withImageSmallerThanTwiceTheLimit_keepsFullSize() {
-        assertEquals(1, HomeScreenWidgetImageSampling.calculateSampleSizeForMaxSide(width = 2879, height = 1000, maxSidePx = MAX_SIDE_PX))
+        assertEquals(1, HomeScreenWidgetImageSampling.calculateSampleSizeForMaxSide(width = 2879, height = 1000, maxSidePixels = MAX_SIDE_PIXELS))
     }
 
     @Test
     fun calculateSampleSizeForMaxSide_withExactlyTwiceTheLimit_halves() {
-        assertEquals(2, HomeScreenWidgetImageSampling.calculateSampleSizeForMaxSide(width = 1000, height = 2880, maxSidePx = MAX_SIDE_PX))
+        assertEquals(2, HomeScreenWidgetImageSampling.calculateSampleSizeForMaxSide(width = 1000, height = 2880, maxSidePixels = MAX_SIDE_PIXELS))
     }
 
     @Test
     fun calculateSampleSizeForMaxSide_withLargePortraitImage_keepsLongestSideAboveTheLimit() {
-        assertEquals(4, HomeScreenWidgetImageSampling.calculateSampleSizeForMaxSide(width = 3000, height = 6000, maxSidePx = MAX_SIDE_PX))
+        assertEquals(4, HomeScreenWidgetImageSampling.calculateSampleSizeForMaxSide(width = 3000, height = 6000, maxSidePixels = MAX_SIDE_PIXELS))
     }
 
     @Test
@@ -35,7 +35,7 @@ class HomeScreenWidgetImageSamplingTest {
     }
 
     private companion object {
-        const val MAX_SIDE_PX = 1440
+        const val MAX_SIDE_PIXELS = 1440
         const val ARGB_BYTES_PER_PIXEL = 4
     }
 }
