@@ -79,6 +79,7 @@ kotlin {
             implementation(libs.material3.adaptive)
             api(libs.ktor.client.core)
             api(libs.androidx.lifecycle.viewmodel)
+            implementation(libs.compose.media.player)
         }
 
         androidMain.dependencies {

@@ -50,6 +50,7 @@ work-manager = "2.10.1"
 qrose = "1.1.2"
 # QR scanner
 mlkit-barcode = "17.3.0"
+compose-media-player = "1.0.53"
 
 # Analytics, attribution and ads
 ktor = "3.3.3"
@@ -92,6 +93,7 @@ androidx-startup-runtime = { module = "androidx.startup:startup-runtime", versio
 coil3 = { module = "io.coil-kt.coil3:coil", version.ref = "coil-mp" }
 coil3-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil-mp" }
 coil3-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil-mp" }
+compose-media-player = { module = "network.chaintech:compose-multiplatform-media-player", version.ref = "compose-media-player" }
 javacv-platform = { module = "org.bytedeco:javacv-platform", version.ref = "javacvPlatform" }
 
 # RevenueCat
