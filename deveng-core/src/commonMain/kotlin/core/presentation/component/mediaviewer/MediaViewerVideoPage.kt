@@ -113,58 +113,15 @@ internal fun SharedPlayerMediaViewerVideoPage(
             initialVideoFitMode = ScreenResize.FIT,
         )
     }
-    // The player reports elapsed and total time as separate events, so the total is held here: the
-    // fraction a caller works in needs both, and a seek has to be turned back into seconds.
-    var totalSeconds by remember(mediaId, videoUrl) { mutableFloatStateOf(0f) }
-    val currentOnPlaybackProgress by rememberUpdatedState(onPlaybackProgress)
-    val currentOnPlaybackEnded by rememberUpdatedState(onPlaybackEnded)
-    DisposableEffect(playerHost) {
-        playerHost.onEvent = { event ->
-            when (event) {
-                is MediaPlayerEvent.TotalTimeChange -> totalSeconds = event.totalTime
-                is MediaPlayerEvent.CurrentTimeChange -> {
-                    if (totalSeconds > 0f) {
-                        currentOnPlaybackProgress((event.currentTime / totalSeconds).coerceIn(0f, 1f))
-                    }
-                }
-
-                is MediaPlayerEvent.MediaEnd -> {
-                    currentOnPlaybackProgress(1f)
-                    currentOnPlaybackEnded()
-                }
-
-                else -> Unit
-            }
-        }
-        onDispose {
-            playerHost.onEvent = null
-            playerHost.pause()
-        }
-    }
-    val isDurationKnown = totalSeconds > 0f
-    // Keyed on isDurationKnown too, so a seek requested before the player reported its duration is
-    // applied once the duration arrives instead of being dropped.
-    LaunchedEffect(seekRequest, isDurationKnown) {
-        val requestedFraction = seekRequest?.fraction ?: return@LaunchedEffect
-        if (!isDurationKnown) return@LaunchedEffect
-        playerHost.seekTo(seconds = requestedFraction * totalSeconds)
-    }
-    // Keyed on isActive too, so losing focus (e.g. scrolled off in a reels feed) cancels a pending
-    // play() from this same effect rather than racing it — restarting the effect on isActive
-    // flipping to false takes the pause() branch instead.
-    LaunchedEffect(mediaId, videoUrl, isActive) {
-        if (isActive) {
-            delay(timeMillis = PLAYBACK_START_DELAY_MILLIS)
-            playerHost.play()
-        } else {
-            playerHost.pause()
-        }
-    }
-    LaunchedEffect(isPlaybackPaused) {
-        if (isPlaybackPaused) {
-            playerHost.pause()
-        }
-    }
+    val playbackControls = remember(playerHost) { MediaPlayerHostPlaybackControls(playerHost = playerHost) }
+    VideoPlaybackEffects(
+        playbackControls = playbackControls,
+        isActive = isActive,
+        isPlaybackPaused = isPlaybackPaused,
+        seekRequest = seekRequest,
+        onPlaybackProgress = onPlaybackProgress,
+        onPlaybackEnded = onPlaybackEnded,
+    )
     val playerConfig = remember(arePlayerControlsVisible) {
         VideoPlayerConfig(
             showControls = arePlayerControlsVisible,
@@ -192,5 +149,90 @@ internal fun SharedPlayerMediaViewerVideoPage(
             playerHost = playerHost,
             playerConfig = playerConfig,
         )
+    }
+}
+
+/**
+ * The player calls [SharedPlayerMediaViewerVideoPage] drives, kept behind an interface because
+ * [MediaPlayerHost] keeps its playback state internal to the library.
+ */
+internal interface VideoPlaybackControls {
+    fun play()
+    fun pause()
+    fun seekTo(seconds: Float)
+    fun setOnEvent(onEvent: ((MediaPlayerEvent) -> Unit)?)
+}
+
+private class MediaPlayerHostPlaybackControls(
+    private val playerHost: MediaPlayerHost,
+) : VideoPlaybackControls {
+    override fun play() = playerHost.play()
+    override fun pause() = playerHost.pause()
+    override fun seekTo(seconds: Float) = playerHost.seekTo(seconds = seconds)
+    override fun setOnEvent(onEvent: ((MediaPlayerEvent) -> Unit)?) {
+        playerHost.onEvent = onEvent
+    }
+}
+
+@Composable
+internal fun VideoPlaybackEffects(
+    playbackControls: VideoPlaybackControls,
+    isActive: Boolean,
+    isPlaybackPaused: Boolean,
+    seekRequest: MediaSeekRequest?,
+    onPlaybackProgress: (progress: Float) -> Unit,
+    onPlaybackEnded: () -> Unit,
+) {
+    // The player reports elapsed and total time as separate events, so the total is held here: the
+    // fraction a caller works in needs both, and a seek has to be turned back into seconds.
+    var totalSeconds by remember(playbackControls) { mutableFloatStateOf(0f) }
+    val currentOnPlaybackProgress by rememberUpdatedState(onPlaybackProgress)
+    val currentOnPlaybackEnded by rememberUpdatedState(onPlaybackEnded)
+    DisposableEffect(playbackControls) {
+        playbackControls.setOnEvent { event ->
+            when (event) {
+                is MediaPlayerEvent.TotalTimeChange -> totalSeconds = event.totalTime
+                is MediaPlayerEvent.CurrentTimeChange -> {
+                    if (totalSeconds > 0f) {
+                        currentOnPlaybackProgress((event.currentTime / totalSeconds).coerceIn(0f, 1f))
+                    }
+                }
+
+                is MediaPlayerEvent.MediaEnd -> {
+                    currentOnPlaybackProgress(1f)
+                    currentOnPlaybackEnded()
+                }
+
+                else -> Unit
+            }
+        }
+        onDispose {
+            playbackControls.setOnEvent(null)
+            playbackControls.pause()
+        }
+    }
+    val isDurationKnown = totalSeconds > 0f
+    // Keyed on isDurationKnown too, so a seek requested before the player reported its duration is
+    // applied once the duration arrives instead of being dropped.
+    LaunchedEffect(seekRequest, isDurationKnown) {
+        val requestedFraction = seekRequest?.fraction ?: return@LaunchedEffect
+        if (!isDurationKnown) return@LaunchedEffect
+        playbackControls.seekTo(seconds = requestedFraction * totalSeconds)
+    }
+    // Keyed on isActive too, so losing focus (e.g. scrolled off in a reels feed) cancels a pending
+    // play() from this same effect rather than racing it — restarting the effect on isActive
+    // flipping to false takes the pause() branch instead.
+    LaunchedEffect(playbackControls, isActive) {
+        if (isActive) {
+            delay(timeMillis = PLAYBACK_START_DELAY_MILLIS)
+            playbackControls.play()
+        } else {
+            playbackControls.pause()
+        }
+    }
+    LaunchedEffect(isPlaybackPaused) {
+        if (isPlaybackPaused) {
+            playbackControls.pause()
+        }
     }
 }

@@ -62,7 +62,7 @@ class ScrollableContentDialogTest {
             }
         }
 
-        onNodeWithText(text = APPROVAL_TEXT, substring = true).assertExists()
+        onNodeWithText(text = "$TITLE $APPROVAL_TEXT").assertExists()
         onNodeWithContentDescription(CHECKBOX_DESCRIPTION).performClick()
 
         assertEquals(1, checkClickCount)
@@ -84,6 +84,7 @@ class ScrollableContentDialogTest {
             }
         }
 
+        onNodeWithText(TITLE).assertExists()
         onNodeWithText(CONTENT).assertExists()
         onAllNodesWithContentDescription(CHECKBOX_DESCRIPTION).assertCountEquals(0)
     }
