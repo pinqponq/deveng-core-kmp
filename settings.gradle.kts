@@ -26,6 +26,15 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        // JOGL for the desktop WebView (KCEF) that compose-multiplatform-media-player depends on.
+        exclusiveContent {
+            forRepository {
+                maven("https://jogamp.org/deployment/maven")
+            }
+            filter {
+                includeGroupAndSubgroups("org.jogamp")
+            }
+        }
     }
 }
 plugins {

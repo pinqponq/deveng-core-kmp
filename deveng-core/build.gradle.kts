@@ -76,6 +76,7 @@ kotlin {
             implementation(libs.coil3.ktor)
             implementation(libs.qrose)
             implementation(libs.material3.adaptive)
+            implementation(libs.compose.media.player)
         }
 
         androidMain.dependencies {
@@ -123,6 +124,13 @@ kotlin {
 tasks.withType<Test>().configureEach {
     systemProperty("user.language", "en")
     systemProperty("user.country", "US")
+}
+
+dependencies {
+    constraints {
+        add("desktopMainImplementation", libs.jogamp.gluegen.rt)
+        add("desktopMainImplementation", libs.jogamp.jogl.all)
+    }
 }
 
 android {

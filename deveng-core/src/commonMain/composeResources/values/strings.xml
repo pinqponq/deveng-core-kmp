@@ -43,4 +43,8 @@
     <string name="shared_copied">Kopyalandı</string>
     <string name="shared_content_dest_icon_bell">Zil ikonu</string>
     <string name="shared_content_dest_icon_star">Yıldız ikonu</string>
+    <string name="shared_email_field_edit">düzenle</string>
+    <string name="shared_email_field_invalid_error">Lütfen geçerli bir e-posta adresi girin.</string>
+    <string name="shared_notification_permission_later">Şimdi değil</string>
+    <string name="shared_content_description_close_full_screen">Tam ekranı kapat</string>
 </resources>

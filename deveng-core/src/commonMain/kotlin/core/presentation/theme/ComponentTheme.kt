@@ -543,6 +543,97 @@ val barItemIconSize: Dp = 24.dp
 )
 
 /**
+ * Theme for ScrollableContentDialog component
+*/
+data class ScrollableContentDialogTheme(
+val backgroundColor: Color = CoreSurfaceColor,
+val verticalPadding: Dp = 52.dp,
+val cornerRadius: Dp = 18.dp,
+val shadowElevation: Dp = 12.dp,
+val edgeFadeHeight: Dp = 40.dp,
+val backIconTint: Color = CorePrimaryColor,
+val titleTextStyle: TextStyle = TextStyle(
+fontSize = 22.sp,
+fontWeight = CORE_SEMI_BOLD_FONT_WEIGHT,
+color = CoreOnSurfaceColor
+),
+val contentTextColor: Color = CoreOnSurfaceColor,
+val checkboxBackgroundColor: Color = Color.White.copy(alpha = 0.08f),
+val checkboxIconTint: Color = CoreSecondaryColor,
+val approvalTitleTextStyle: TextStyle = TextStyle(
+fontSize = 12.sp,
+fontWeight = CORE_BOLD_FONT_WEIGHT,
+color = CoreOnSurfaceColor
+),
+val approvalTextStyle: TextStyle = TextStyle(
+fontSize = 12.sp,
+fontWeight = CORE_REGULAR_FONT_WEIGHT,
+color = CoreCustomGrayHintColor
+)
+)
+
+/**
+ * Theme for EmailDisplayField component
+*/
+data class EmailDisplayFieldTheme(
+val textColor: Color? = null,
+val editTextStyle: TextStyle = TextStyle(
+fontSize = 14.sp,
+fontWeight = CORE_MEDIUM_FONT_WEIGHT,
+color = CoreSecondaryColor,
+textDecoration = TextDecoration.Underline
+)
+)
+
+/**
+ * Theme for PromoTwoButtonCard component
+*/
+data class PromoTwoButtonCardTheme(
+val containerColor: Color = CoreSurfaceColor,
+val elevation: Dp = 20.dp,
+val titleTextStyle: TextStyle = TextStyle(
+fontSize = 30.sp,
+lineHeight = 36.sp,
+fontWeight = CORE_BOLD_FONT_WEIGHT,
+color = CoreOnSurfaceColor,
+textAlign = TextAlign.Center
+),
+val bodyTextStyle: TextStyle = TextStyle(
+fontSize = 14.sp,
+lineHeight = 20.sp,
+fontWeight = CORE_REGULAR_FONT_WEIGHT,
+color = Color.White.copy(alpha = 0.45f),
+textAlign = TextAlign.Center
+),
+val buttonShape: Shape = RoundedCornerShape(16.dp),
+val primaryButtonColor: Color = CorePrimaryColor,
+val primaryButtonTextStyle: TextStyle = TextStyle(
+fontSize = 16.sp,
+lineHeight = 24.sp,
+fontWeight = CORE_BOLD_FONT_WEIGHT,
+color = CoreOnPrimaryColor,
+textAlign = TextAlign.Center
+),
+val secondaryButtonColor: Color = CoreSurfaceColor,
+val secondaryButtonBorderColor: Color = CorePrimaryColor,
+val secondaryButtonTextStyle: TextStyle = TextStyle(
+fontSize = 16.sp,
+lineHeight = 24.sp,
+fontWeight = CORE_BOLD_FONT_WEIGHT,
+color = CoreOnSurfaceColor,
+textAlign = TextAlign.Center
+)
+)
+
+/**
+ * Theme for MediaViewerHeader component
+*/
+data class MediaViewerHeaderTheme(
+val panelBackgroundColor: Color = Color(0x80262626),
+val closeIconTint: Color = Color.White
+)
+
+/**
  * Theme for Chip item component
 */
 data class ChipItemTheme(
@@ -775,6 +866,10 @@ val scrollToEdgeButton: ScrollToEdgeButtonTheme = ScrollToEdgeButtonTheme(),
 val jsonViewer: JsonViewerTheme = JsonViewerTheme(),
 val labeledSlot: LabeledSlotTheme = LabeledSlotTheme(),
 val navigationMenu: NavigationMenuTheme = NavigationMenuTheme(),
+val scrollableContentDialog: ScrollableContentDialogTheme = ScrollableContentDialogTheme(),
+val emailDisplayField: EmailDisplayFieldTheme = EmailDisplayFieldTheme(),
+val promoTwoButtonCard: PromoTwoButtonCardTheme = PromoTwoButtonCardTheme(),
+val mediaViewerHeader: MediaViewerHeaderTheme = MediaViewerHeaderTheme(),
 val chipItem: ChipItemTheme = ChipItemTheme(),
 val chipsMenu: ChipsMenuTheme = ChipsMenuTheme(),
 val ratingRow: RatingRowTheme = RatingRowTheme(),
