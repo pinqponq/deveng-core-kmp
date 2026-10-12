@@ -95,6 +95,7 @@ kotlin {
             implementation(libs.androidx.startup.runtime)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.mlkit.barcode.scanning)
+            api(libs.work.manager)
         }
 
         val desktopMain by getting {
@@ -108,6 +109,7 @@ kotlin {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.turbine)
+            implementation(libs.russhwolf.settings.test)
         }
 
         val desktopTest by getting {
