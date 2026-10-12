@@ -19,6 +19,7 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import core.presentation.component.mediaviewer.internal.VideoSeekPosition
 import kotlin.js.ExperimentalWasmJsInterop
 import kotlinx.browser.document
 import kotlinx.coroutines.delay
@@ -151,7 +152,7 @@ private class NativeVideoSurface(
     private var top = 0.0
     private var width = 0.0
     private var height = 0.0
-    private var pendingSeekFraction: Float? = null
+    private val seekPosition = VideoSeekPosition()
 
     fun attach(mediaId: Int, videoUrl: String, areControlsVisible: Boolean, startPlaying: Boolean) {
         this.mediaId = mediaId
@@ -188,13 +189,11 @@ private class NativeVideoSurface(
     fun readProgress(): Float? {
         applyPendingSeek()
         val video = element ?: return null
-        val duration = video.duration
-        if (duration.isNaN() || duration <= 0.0) return null
-        return (video.currentTime / duration).toFloat().coerceIn(0f, 1f)
+        return seekPosition.progress(currentTimeSeconds = video.currentTime, durationSeconds = video.duration)
     }
 
     fun seekToFraction(fraction: Float) {
-        pendingSeekFraction = fraction
+        seekPosition.requestSeek(fraction = fraction)
         applyPendingSeek()
     }
 
@@ -209,12 +208,9 @@ private class NativeVideoSurface(
     }
 
     private fun applyPendingSeek() {
-        val fraction = pendingSeekFraction ?: return
         val video = element ?: return
-        val duration = video.duration
-        if (duration.isNaN() || duration <= 0.0) return
-        video.currentTime = fraction.coerceIn(0f, 1f).toDouble() * duration
-        pendingSeekFraction = null
+        val seekTime = seekPosition.takeSeekTime(durationSeconds = video.duration) ?: return
+        video.currentTime = seekTime
     }
 }
 
@@ -266,8 +262,8 @@ private fun startPlayback(mediaId: Int, video: HTMLVideoElement): Unit = js(
 {
     var attempt = video.play();
     if (attempt && attempt.catch) {
-        attempt.catch(function (err) {
-            console.log('[NativeVideo] mediaId=' + mediaId + ' play() rejected: ' + err);
+        attempt.catch(function (error) {
+            console.log('[NativeVideo] mediaId=' + mediaId + ' play() rejected: ' + error);
         });
     }
 }
