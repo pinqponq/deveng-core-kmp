@@ -48,8 +48,8 @@ class DevengTestingPluginTest {
 
         assertFalse(project.pluginManager.hasPlugin(KOVER_PLUGIN_ID))
         val testJvmArguments = project.tasks.withType(Test::class.java).getByName(JAVA_TEST_TASK).allJvmArgs
-        assertTrue("-D$USER_LANGUAGE_PROPERTY=en" in testJvmArguments)
-        assertTrue("-D$USER_COUNTRY_PROPERTY=US" in testJvmArguments)
+        assertTrue("-D$USER_LANGUAGE_PROPERTY=$EXPECTED_LANGUAGE" in testJvmArguments)
+        assertTrue("-D$USER_COUNTRY_PROPERTY=$EXPECTED_COUNTRY" in testJvmArguments)
         assertFalse("-D$USER_LANGUAGE_PROPERTY=$OTHER_LANGUAGE" in testJvmArguments)
     }
 
@@ -71,6 +71,8 @@ class DevengTestingPluginTest {
         // Gradle moves these two system properties into the test JVM arguments.
         const val USER_LANGUAGE_PROPERTY = "user.language"
         const val USER_COUNTRY_PROPERTY = "user.country"
+        const val EXPECTED_LANGUAGE = "en"
+        const val EXPECTED_COUNTRY = "US"
         const val OTHER_LANGUAGE = "tr"
         const val OTHER_COUNTRY = "TR"
         const val CORE_TESTING_DEPENDENCY = "global.deveng:core-testing-kmp:${DevengTestingVersions.LIBRARY_VERSION}"

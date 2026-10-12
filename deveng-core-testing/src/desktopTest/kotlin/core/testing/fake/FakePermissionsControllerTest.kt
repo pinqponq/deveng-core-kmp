@@ -39,7 +39,7 @@ class FakePermissionsControllerTest {
     }
 
     @Test
-    fun openSettings_eachCalledOnce_countsEachSeparately() {
+    fun openSettings_calledDifferentTimes_countsEachSeparately() {
         permissionsController.openAppSettings()
         permissionsController.openNotificationSettings()
         permissionsController.openNotificationSettings()

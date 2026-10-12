@@ -21,6 +21,7 @@ class FakePermissionsController : PermissionsController {
             permissionStatesAfterFailure[permission]?.let { state -> permissionStates[permission] = state }
             throw failure
         }
+
         permissionStates[permission] = PermissionState.Granted
     }
 
