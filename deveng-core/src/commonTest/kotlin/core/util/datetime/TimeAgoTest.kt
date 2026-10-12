@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class TimeAgoTest {
 
@@ -68,6 +69,31 @@ class TimeAgoTest {
         val dateTime = LocalDateTime(2025, 10, 12, 12, 0, 1)
 
         assertEquals(TimeAgo.WeeksAgo(52), calculateTimeAgo(dateTime, CURRENT_DATE_TIME, TIME_ZONE))
+    }
+
+    @Test
+    fun calculateTimeAgo_withExactlyOneYear_returnsAbsoluteDateTime() {
+        val dateTime = LocalDateTime(2025, 10, 12, 12, 0, 0)
+
+        assertEquals(
+            TimeAgo.Absolute("12/10/2025 12:00"),
+            calculateTimeAgo(dateTime, CURRENT_DATE_TIME, TIME_ZONE),
+        )
+    }
+
+    @Test
+    fun calculateTimeAgo_withEachRelativeUnit_exposesTheElapsedAmount() {
+        val minutesAgo = calculateTimeAgo(LocalDateTime(2026, 10, 12, 11, 55, 0), CURRENT_DATE_TIME, TIME_ZONE)
+        val hoursAgo = calculateTimeAgo(LocalDateTime(2026, 10, 12, 9, 0, 0), CURRENT_DATE_TIME, TIME_ZONE)
+        val daysAgo = calculateTimeAgo(LocalDateTime(2026, 10, 9, 12, 0, 0), CURRENT_DATE_TIME, TIME_ZONE)
+        val weeksAgo = calculateTimeAgo(LocalDateTime(2026, 9, 21, 12, 0, 0), CURRENT_DATE_TIME, TIME_ZONE)
+        val absolute = calculateTimeAgo(LocalDateTime(2024, 1, 2, 3, 4, 0), CURRENT_DATE_TIME, TIME_ZONE)
+
+        assertEquals(5, assertIs<TimeAgo.MinutesAgo>(minutesAgo).minutes)
+        assertEquals(3, assertIs<TimeAgo.HoursAgo>(hoursAgo).hours)
+        assertEquals(3, assertIs<TimeAgo.DaysAgo>(daysAgo).days)
+        assertEquals(3, assertIs<TimeAgo.WeeksAgo>(weeksAgo).weeks)
+        assertEquals("02/01/2024 03:04", assertIs<TimeAgo.Absolute>(absolute).formattedDateTime)
     }
 
     @Test
