@@ -9,7 +9,7 @@ package core.analytics.domain.model
  * "Subscribe") when one fits, or a snake_case custom event otherwise. The same raw string is valid
  * for both the Android and iOS Facebook SDKs.
  *
- * [fireOnce] marks milestones whose value is the FIRST occurrence; they are de-duplicated per install
+ * [shouldFireOnce] marks milestones whose value is the FIRST occurrence; they are de-duplicated per install
  * under [pinqloqName]. Events every product shares are in [CommonAnalyticsEvent]; an app declares its
  * own events by implementing this interface.
  */
@@ -17,5 +17,5 @@ interface AnalyticsEvent {
     val pinqloqName: String
     val firebaseName: String
     val metaEventName: String
-    val fireOnce: Boolean
+    val shouldFireOnce: Boolean
 }

@@ -18,7 +18,7 @@ private const val CONVERSION_TAG = "CONVERSION"
  * Fires a conversion event to pinqloq (via [AnalyticsLogSink]) and to every platform analytics sink
  * (via [ConversionAnalyticsClient], which fans out to Firebase and Meta on mobile). Runs on
  * [applicationScope] so an event fired right before navigation is not cancelled with the caller's
- * scope. [AnalyticsEvent.fireOnce] milestones are de-duplicated per install through
+ * scope. [AnalyticsEvent.shouldFireOnce] milestones are de-duplicated per install through
  * [ConversionEventStore].
  */
 class ConversionEventTracker(
@@ -29,7 +29,7 @@ class ConversionEventTracker(
 ) {
     fun track(event: AnalyticsEvent, params: Map<String, String> = emptyMap()) {
         applicationScope.launch {
-            if (event.fireOnce && conversionEventStore.hasFired(event.pinqloqName)) return@launch
+            if (event.shouldFireOnce && conversionEventStore.hasFired(event.pinqloqName)) return@launch
 
             analyticsLogSink.log(
                 logLevel = AnalyticsLogLevel.INFORMATION,
@@ -47,7 +47,7 @@ class ConversionEventTracker(
                 log("ConversionEventTracker analytics error: $e")
             }
 
-            if (event.fireOnce) conversionEventStore.markFired(event.pinqloqName)
+            if (event.shouldFireOnce) conversionEventStore.markFired(event.pinqloqName)
         }
     }
 }

@@ -6,7 +6,7 @@ import core.attribution.domain.model.InstallAttribution
 class AdServicesAttributionMapper {
     fun mapToDomain(response: AdServicesAttributionResponse): InstallAttribution {
         return InstallAttribution(
-            attributed = response.attribution,
+            isAttributed = response.attribution,
             organizationId = response.orgId,
             campaignId = response.campaignId,
             adGroupId = response.adGroupId,

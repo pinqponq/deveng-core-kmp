@@ -7,7 +7,8 @@ import dev.gitlive.firebase.analytics.analytics
 
 /**
  * Sends conversion events to Firebase Analytics via the GitLive Firebase SDK, backed by the native
- * Firebase Analytics SDK already linked into the app (google-services on Android).
+ * Firebase Analytics SDK that deveng-core brings in; the app still applies google-services so Firebase
+ * is configured at startup.
  */
 class FirebaseConversionAnalyticsClient : ConversionAnalyticsClient {
     override fun logEvent(event: AnalyticsEvent, params: Map<String, String>) {

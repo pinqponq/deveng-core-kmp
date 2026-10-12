@@ -8,7 +8,7 @@ class CommonAnalyticsEventTest {
     @Test
     fun entries_keepTheNamesAlreadySentToPinqloqFirebaseAndMeta() {
         val sentNames = CommonAnalyticsEvent.entries.map { event ->
-            listOf(event.pinqloqName, event.firebaseName, event.metaEventName, event.fireOnce.toString())
+            listOf(event.pinqloqName, event.firebaseName, event.metaEventName, event.shouldFireOnce.toString())
         }
 
         assertEquals(

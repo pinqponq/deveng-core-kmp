@@ -58,7 +58,7 @@ class AttributionRepositoryImplTest {
 
         val attribution = repository.resolveAttribution(attributionToken = ATTRIBUTION_TOKEN)
 
-        assertEquals(false, attribution?.attributed)
+        assertEquals(false, attribution?.isAttributed)
         assertNull(attribution?.campaignId)
     }
 
@@ -143,7 +143,7 @@ class AttributionRepositoryImplTest {
             """"adGroupId":12,"countryOrRegion":"US","keywordId":13,"adId":15,"clickDate":"$CLICK_DATE","extra":1}"""
         val JSON = Json { ignoreUnknownKeys = true }
         val EXPECTED_ATTRIBUTION = InstallAttribution(
-            attributed = true,
+            isAttributed = true,
             organizationId = 14,
             campaignId = 11,
             adGroupId = 12,

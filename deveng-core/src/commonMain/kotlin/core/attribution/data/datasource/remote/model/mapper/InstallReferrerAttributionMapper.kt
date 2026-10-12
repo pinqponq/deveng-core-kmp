@@ -24,7 +24,7 @@ class InstallReferrerAttributionMapper {
         val hasPaidCampaignMedium = campaignMedium != null && campaignMedium !in UNATTRIBUTED_CAMPAIGN_MEDIUMS
 
         return InstallAttribution(
-            attributed = googleClickId != null || hasPaidCampaignMedium,
+            isAttributed = googleClickId != null || hasPaidCampaignMedium,
             organizationId = null,
             campaignId = null,
             adGroupId = null,

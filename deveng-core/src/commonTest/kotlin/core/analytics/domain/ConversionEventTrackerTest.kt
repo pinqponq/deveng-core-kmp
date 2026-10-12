@@ -93,7 +93,7 @@ class ConversionEventTrackerTest {
         override val pinqloqName = "FIRST_POST_CREATED"
         override val firebaseName = "first_post_created"
         override val metaEventName = "first_post_created"
-        override val fireOnce = true
+        override val shouldFireOnce = true
     }
 
     private companion object {

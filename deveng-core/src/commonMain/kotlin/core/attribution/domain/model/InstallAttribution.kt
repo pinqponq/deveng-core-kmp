@@ -1,7 +1,7 @@
 package core.attribution.domain.model
 
 data class InstallAttribution(
-    val attributed: Boolean,
+    val isAttributed: Boolean,
     val organizationId: Long?,
     val campaignId: Long?,
     val adGroupId: Long?,

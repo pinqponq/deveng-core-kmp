@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 private const val PARAM_CAMPAIGN_ID = "campaignId"
 private const val PARAM_AD_GROUP_ID = "adGroupId"
 private const val PARAM_KEYWORD_ID = "keywordId"
-private const val PARAM_ORG_ID = "orgId"
+private const val PARAM_ORGANIZATION_ID = "orgId"
 private const val PARAM_AD_ID = "adId"
 private const val PARAM_CONVERSION_TYPE = "conversionType"
 private const val PARAM_COUNTRY_OR_REGION = "countryOrRegion"
@@ -46,7 +46,7 @@ class InstallAttributionTracker(
                 val attributionToken = attributionTokenProvider.fetchAttributionToken() ?: return@launch
                 val attribution = attributionRepository.resolveAttribution(attributionToken) ?: return@launch
 
-                if (!attribution.attributed) {
+                if (!attribution.isAttributed) {
                     conversionEventStore.markFired(CommonAnalyticsEvent.INSTALL_ATTRIBUTED.pinqloqName)
                     return@launch
                 }
@@ -68,7 +68,7 @@ class InstallAttributionTracker(
         campaignId?.let { put(PARAM_CAMPAIGN_ID, it.toString()) }
         adGroupId?.let { put(PARAM_AD_GROUP_ID, it.toString()) }
         keywordId?.let { put(PARAM_KEYWORD_ID, it.toString()) }
-        organizationId?.let { put(PARAM_ORG_ID, it.toString()) }
+        organizationId?.let { put(PARAM_ORGANIZATION_ID, it.toString()) }
         adId?.let { put(PARAM_AD_ID, it.toString()) }
         conversionType?.let { put(PARAM_CONVERSION_TYPE, it) }
         countryOrRegion?.let { put(PARAM_COUNTRY_OR_REGION, it) }

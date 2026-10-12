@@ -14,7 +14,7 @@ class InstallReferrerAttributionMapperTest {
     fun mapToDomain_withGoogleAdsClickReferrer_isAttributedWithDecodedCampaignFields() {
         val attribution = installReferrerAttributionMapper.mapToDomain(installReferrer = GOOGLE_ADS_REFERRER)
 
-        assertTrue(attribution.attributed)
+        assertTrue(attribution.isAttributed)
         assertEquals(GOOGLE_CLICK_ID, attribution.googleClickId)
         assertEquals("google", attribution.campaignSource)
         assertEquals("cpc", attribution.campaignMedium)
@@ -27,7 +27,7 @@ class InstallReferrerAttributionMapperTest {
     fun mapToDomain_withGoogleClickIdOnly_isAttributed() {
         val attribution = installReferrerAttributionMapper.mapToDomain(installReferrer = "gclid=$GOOGLE_CLICK_ID")
 
-        assertTrue(attribution.attributed)
+        assertTrue(attribution.isAttributed)
         assertEquals(GOOGLE_CLICK_ID, attribution.googleClickId)
         assertNull(attribution.campaignMedium)
     }
@@ -38,7 +38,7 @@ class InstallReferrerAttributionMapperTest {
             installReferrer = "utm_source=instagram&utm_medium=social&utm_campaign=ukus3",
         )
 
-        assertTrue(attribution.attributed)
+        assertTrue(attribution.isAttributed)
         assertNull(attribution.googleClickId)
         assertEquals("ukus3", attribution.campaignName)
     }
@@ -49,7 +49,7 @@ class InstallReferrerAttributionMapperTest {
             installReferrer = "utm_source=google-play&utm_medium=organic",
         )
 
-        assertFalse(attribution.attributed)
+        assertFalse(attribution.isAttributed)
         assertEquals("google-play", attribution.campaignSource)
     }
 
@@ -59,14 +59,14 @@ class InstallReferrerAttributionMapperTest {
             installReferrer = "utm_source=(not%20set)&utm_medium=(not%20set)",
         )
 
-        assertFalse(attribution.attributed)
+        assertFalse(attribution.isAttributed)
     }
 
     @Test
     fun mapToDomain_withEmptyReferrer_isNotAttributed() {
         val attribution = installReferrerAttributionMapper.mapToDomain(installReferrer = "")
 
-        assertFalse(attribution.attributed)
+        assertFalse(attribution.isAttributed)
         assertNull(attribution.googleClickId)
         assertNull(attribution.campaignSource)
     }
@@ -75,7 +75,7 @@ class InstallReferrerAttributionMapperTest {
     fun mapToDomain_withBlankClickIdAndMedium_isNotAttributed() {
         val attribution = installReferrerAttributionMapper.mapToDomain(installReferrer = "gclid=&utm_medium=")
 
-        assertFalse(attribution.attributed)
+        assertFalse(attribution.isAttributed)
         assertNull(attribution.googleClickId)
         assertNull(attribution.campaignMedium)
     }

@@ -11,7 +11,6 @@ import io.ktor.http.contentType
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 
-private const val ADSERVICES_ENDPOINT = "https://api-adservices.apple.com/api/v1/"
 private const val MAX_ATTEMPTS = 3
 private const val RETRY_DELAY_MILLIS = 5_000L
 
@@ -34,7 +33,7 @@ class AppleAdServicesService(
         val httpClient = httpClientProvider() ?: return null
 
         repeat(MAX_ATTEMPTS) { attempt ->
-            val response = httpClient.post(ADSERVICES_ENDPOINT) {
+            val response = httpClient.post("https://api-adservices.apple.com/api/v1/") {
                 contentType(ContentType.Text.Plain)
                 setBody(attributionToken)
             }
