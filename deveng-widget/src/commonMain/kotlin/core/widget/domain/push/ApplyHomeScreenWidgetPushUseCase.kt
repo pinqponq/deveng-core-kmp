@@ -10,9 +10,10 @@ import kotlin.time.TimeSource
  */
 class ApplyHomeScreenWidgetPushUseCase(
     private val pushUpdateTimeoutMillis: Long,
+    private val elapsedTimeSource: TimeSource = TimeSource.Monotonic,
 ) {
     suspend operator fun invoke(updateWidget: suspend () -> Unit): HomeScreenWidgetPushUpdateOutcome {
-        val updateStartMark = TimeSource.Monotonic.markNow()
+        val updateStartMark = elapsedTimeSource.markNow()
         return try {
             withTimeout(pushUpdateTimeoutMillis) { updateWidget() }
             HomeScreenWidgetPushUpdateOutcome.Applied(elapsedMillis = updateStartMark.elapsedNow().inWholeMilliseconds)
