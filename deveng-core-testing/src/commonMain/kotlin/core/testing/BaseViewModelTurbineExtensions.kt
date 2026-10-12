@@ -18,6 +18,7 @@ suspend fun <Event : ViewEvent, Effect : ViewSideEffect> BaseViewModel<*, Event,
         receivedEffect = awaitItem()
         cancelAndIgnoreRemainingEvents()
     }
+
     return receivedEffect
 }
 

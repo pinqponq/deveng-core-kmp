@@ -63,9 +63,14 @@ kotlin {
     }
 }
 
+// Same locale the global.deveng.testing plugin pins; that plugin is built in this build, so this
+// module cannot apply it.
+val testLanguage = "en"
+val testCountry = "US"
+
 tasks.withType<Test>().configureEach {
-    systemProperty("user.language", "en")
-    systemProperty("user.country", "US")
+    systemProperty("user.language", testLanguage)
+    systemProperty("user.country", testCountry)
 }
 
 android {

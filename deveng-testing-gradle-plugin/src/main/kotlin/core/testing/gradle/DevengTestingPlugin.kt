@@ -13,6 +13,7 @@ class DevengTestingPlugin : Plugin<Project> {
             project.pluginManager.apply(ROBORAZZI_PLUGIN_ID)
             addTestDependencies(project)
         }
+
         pinTestLocale(project)
     }
 
@@ -24,6 +25,7 @@ class DevengTestingPlugin : Plugin<Project> {
                 implementation("$CORE_TESTING_MODULE:${DevengTestingVersions.LIBRARY_VERSION}")
             }
         }
+
         kotlinExtension.sourceSets.matching { sourceSet -> sourceSet.name == DESKTOP_TEST_SOURCE_SET }.configureEach { desktopTestSourceSet ->
             desktopTestSourceSet.dependencies {
                 implementation("$ROBORAZZI_COMPOSE_DESKTOP_MODULE:${DevengTestingVersions.ROBORAZZI_VERSION}")
