@@ -31,6 +31,8 @@ class NotificationPermissionDialogTest {
             }
         }
 
+        onNodeWithText(TITLE).assertExists()
+        onNodeWithText(BODY).assertExists()
         onNodeWithText(ENABLE_LABEL).performClick()
 
         assertEquals(1, enableClickCount)
