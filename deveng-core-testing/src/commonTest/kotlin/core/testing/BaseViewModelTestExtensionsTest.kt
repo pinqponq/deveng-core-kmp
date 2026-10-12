@@ -10,7 +10,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class BaseViewModelTurbineExtensionsTest {
+class BaseViewModelTestExtensionsTest {
 
     private val environment = ViewModelTestEnvironment()
 

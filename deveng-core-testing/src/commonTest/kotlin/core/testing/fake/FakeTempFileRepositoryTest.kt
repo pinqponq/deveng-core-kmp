@@ -27,6 +27,11 @@ class FakeTempFileRepositoryTest {
     }
 
     @Test
+    fun saveBytesFailure_byDefault_isNotSet() {
+        assertNull(tempFileRepository.saveBytesFailure)
+    }
+
+    @Test
     fun saveBytes_withFailure_throwsAndStoresNothing() = runTest {
         tempFileRepository.saveBytesFailure = IllegalStateException("disk full")
 
