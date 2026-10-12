@@ -34,6 +34,7 @@ object HomeScreenWidgetBitmaps {
             height = imageBounds.outHeight,
             maxSidePixels = STORED_IMAGE_MAX_SIDE_PIXELS,
         )
+
         val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
         val sampledBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, decodeOptions)
             ?: throw IllegalArgumentException("The widget image could not be decoded.")

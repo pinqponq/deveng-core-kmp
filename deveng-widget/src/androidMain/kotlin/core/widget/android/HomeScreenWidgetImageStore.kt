@@ -33,6 +33,7 @@ class HomeScreenWidgetImageStore(
                 connectTimeoutMilliseconds = connectTimeoutMilliseconds,
                 readTimeoutMilliseconds = readTimeoutMilliseconds,
             )
+
             replaceImageAtomically(HomeScreenWidgetBitmaps.shrinkImageForStorage(imageBytes))
         }
     }
@@ -43,7 +44,7 @@ class HomeScreenWidgetImageStore(
      * periodic refresh can run together, and with one shared name the first rename took the file away from the
      * second, which then failed and dropped the image it had just stored.
      */
-    fun replaceImageAtomically(imageBytes: ByteArray) {
+    internal fun replaceImageAtomically(imageBytes: ByteArray) {
         imageDirectory.mkdirs()
         val temporaryImageFile = File.createTempFile(imageFileName, TEMPORARY_FILE_SUFFIX, imageDirectory)
         try {

@@ -38,6 +38,7 @@ object HomeScreenWidgetSessionlessDrawer {
                 options = appWidgetManager.getAppWidgetOptions(appWidgetId),
                 state = widgetState,
             )
+
             appWidgetManager.updateAppWidget(appWidgetId, widgetRemoteViews)
             glanceAppWidget.update(context, glanceId)
         }
