@@ -11,6 +11,12 @@ private const val KEY_CAMPAIGN_TERM = "utm_term"
 private const val KEY_CAMPAIGN_CONTENT = "utm_content"
 
 /**
+ * Set by an app's own invite page on the store link (`referrer=invite_code%3D<CODE>`), so an invited
+ * user who installs from it arrives with the code. It is not an ad attribution and never reaches analytics.
+ */
+private const val KEY_INVITE_CODE = "invite_code"
+
+/**
  * Google Play reports installs without a campaign as `utm_medium=organic` (store search / browse)
  * or `(not set)` (sideloaded or unknown source); neither is an ad attribution.
  */
@@ -39,6 +45,7 @@ class InstallReferrerAttributionMapper {
             campaignName = referrerParameters[KEY_CAMPAIGN_NAME],
             campaignTerm = referrerParameters[KEY_CAMPAIGN_TERM],
             campaignContent = referrerParameters[KEY_CAMPAIGN_CONTENT],
+            inviteCode = referrerParameters[KEY_INVITE_CODE]?.takeIf { it.isNotBlank() },
         )
     }
 }
