@@ -37,14 +37,24 @@ internal object IosShareSheetPresenter {
      * Presents the share sheet. Main thread only.
      *
      * @param activityItems items handed to `UIActivityViewController` (text, file URLs, images).
+     * @param onClose called once the sheet closes, with the picked activity type (null when the
+     * sheet was dismissed without one) and whether that activity reported success.
      * @return false when there is no window to present from, so callers can report the failure.
      */
-    fun present(activityItems: List<Any?>): Boolean {
+    fun present(
+        activityItems: List<Any?>,
+        onClose: ((activityType: String?, isCompleted: Boolean) -> Unit)? = null,
+    ): Boolean {
         val presentingViewController = findTopViewController() ?: return false
         val activityViewController = UIActivityViewController(
             activityItems = activityItems,
             applicationActivities = null,
         )
+        if (onClose != null) {
+            activityViewController.completionWithItemsHandler = { activityType, isCompleted, _, _ ->
+                onClose(activityType, isCompleted)
+            }
+        }
         anchorPopoverForIpad(
             activityViewController = activityViewController,
             anchorView = presentingViewController.view,
