@@ -16,7 +16,6 @@ import core.serverdriven.presentation.model.ComponentEvent
 import core.testing.SCREENSHOT_DENSITY
 import core.testing.screenshotPath
 import io.github.takahirom.roborazzi.captureRoboImage
-import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 
 @OptIn(ExperimentalTestApi::class)
@@ -27,9 +26,7 @@ class ServerDrivenScreenScreenshotTest {
         runDesktopComposeUiTest(width = CANVAS_WIDTH_PX, height = CANVAS_HEIGHT_PX) {
             val engine = ServerDrivenEngine()
             engine.setLayout(json = ServerDrivenScreenTestLayout.JSON)
-            runBlocking {
-                engine.handleEvent(ComponentEvent.ClickShutter(componentId = ServerDrivenScreenTestLayout.SHUTTER_ID))
-            }
+            engine.handleEvent(ComponentEvent.ClickShutter(componentId = ServerDrivenScreenTestLayout.SHUTTER_ID))
 
             setContent {
                 CompositionLocalProvider(LocalDensity provides Density(density = SCREENSHOT_DENSITY)) {

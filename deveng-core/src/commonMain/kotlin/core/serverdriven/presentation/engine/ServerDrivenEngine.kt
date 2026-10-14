@@ -37,6 +37,7 @@ class ServerDrivenEngine(
     private val _components = MutableStateFlow<List<ComponentUiModel>>(emptyList())
     private val _componentValues = MutableStateFlow<Map<String, Any>>(emptyMap())
     private val _componentProperties = MutableStateFlow<Map<String, ComponentProperty>>(emptyMap())
+    private val _visibleComponents = MutableStateFlow<List<ComponentUiModel>>(emptyList())
     private val dependencies = MutableStateFlow<List<DependencyUiModel>>(emptyList())
     private val loadedShutterIds = MutableStateFlow<Set<String>>(emptySet())
 
@@ -44,6 +45,7 @@ class ServerDrivenEngine(
     val componentValues: StateFlow<Map<String, Any>> = _componentValues.asStateFlow()
     val componentProperties: StateFlow<Map<String, ComponentProperty>> =
         _componentProperties.asStateFlow()
+    val visibleComponents: StateFlow<List<ComponentUiModel>> = _visibleComponents.asStateFlow()
 
     fun setLayout(json: String) {
         setLayout(layout = layoutJson.decodeFromString<LayoutResponse>(json))
@@ -67,6 +69,7 @@ class ServerDrivenEngine(
             componentValues = componentValues,
             componentProperties = componentProperties
         )
+        publishVisibleComponents()
     }
 
     suspend fun handleEvent(event: ComponentEvent) {
@@ -165,6 +168,33 @@ class ServerDrivenEngine(
                 componentProperties = componentProperties
             )
         }
+        publishVisibleComponents()
+    }
+
+    private fun publishVisibleComponents() {
+        _visibleComponents.value = withoutHiddenComponents(_components.value)
+    }
+
+    private fun withoutHiddenComponents(components: List<ComponentUiModel>): List<ComponentUiModel> {
+        return components
+            .filter { component -> _componentProperties.value[component.id]?.isVisible ?: true }
+            .map { component ->
+                when (component) {
+                    is ComponentUiModel.Shutter ->
+                        component.copy(components = withoutHiddenComponents(component.components))
+
+                    is ComponentUiModel.Row ->
+                        component.copy(components = withoutHiddenComponents(component.components))
+
+                    is ComponentUiModel.Tabs -> component.copy(
+                        tabs = component.tabs.map { tab ->
+                            tab.copy(components = withoutHiddenComponents(tab.components))
+                        }
+                    )
+
+                    else -> component
+                }
+            }
     }
 
     private fun updateProperty(
@@ -224,6 +254,7 @@ class ServerDrivenEngine(
             if (component.id == componentId) return component
             findComponent(childrenOf(component), componentId)?.let { child -> return child }
         }
+
         return null
     }
 

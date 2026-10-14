@@ -6,7 +6,7 @@ import core.serverdriven.presentation.model.DependencyOperator
 import core.serverdriven.presentation.model.DependencyUiModel
 import core.util.CustomLogger
 
-class DependencyUiMapper {
+internal class DependencyUiMapper {
 
     fun mapToUiModels(
         responses: List<DependencyResponse>

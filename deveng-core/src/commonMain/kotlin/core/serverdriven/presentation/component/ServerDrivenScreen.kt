@@ -20,7 +20,7 @@ fun ServerDrivenScreen(
     modifier: Modifier = Modifier,
     onComponentEvent: (ComponentEvent) -> Unit
 ) {
-    val components by engine.components.collectAsState()
+    val components by engine.visibleComponents.collectAsState()
     val componentValues by engine.componentValues.collectAsState()
     val componentProperties by engine.componentProperties.collectAsState()
 

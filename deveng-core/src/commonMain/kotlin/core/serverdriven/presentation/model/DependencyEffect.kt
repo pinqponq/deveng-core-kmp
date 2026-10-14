@@ -1,6 +1,6 @@
 package core.serverdriven.presentation.model
 
-enum class DependencyEffect {
+internal enum class DependencyEffect {
     EDITABLE,
     VISIBILITY;
 

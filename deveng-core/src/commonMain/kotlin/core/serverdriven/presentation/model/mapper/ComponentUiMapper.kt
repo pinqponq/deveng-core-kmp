@@ -9,7 +9,7 @@ import core.serverdriven.presentation.model.TextFieldMaskType
 import core.util.CustomLogger
 import core.util.EMPTY
 
-class ComponentUiMapper {
+internal class ComponentUiMapper {
 
     fun mapToUiModels(
         responses: List<ComponentResponse>

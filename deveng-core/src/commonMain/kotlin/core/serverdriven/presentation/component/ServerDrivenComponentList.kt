@@ -22,17 +22,13 @@ internal fun ServerDrivenComponentList(
     onComponentEvent: (ComponentEvent) -> Unit
 ) {
     val serverDrivenScreenTheme = LocalComponentTheme.current.serverDrivenScreen
-    val visibleComponents = components.filter { component ->
-        componentProperties[component.id]?.isVisible ?: true
-    }
-
     when (containerType) {
         ContainerType.COLUMN -> Column(
             modifier = modifier,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(serverDrivenScreenTheme.columnSpacing)
         ) {
-            visibleComponents.forEach { component ->
+            components.forEach { component ->
                 ServerDrivenComponent(
                     modifier = Modifier.fillMaxWidth(),
                     component = component,
@@ -48,7 +44,7 @@ internal fun ServerDrivenComponentList(
             horizontalArrangement = Arrangement.spacedBy(serverDrivenScreenTheme.rowSpacing),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            visibleComponents.forEach { component ->
+            components.forEach { component ->
                 ServerDrivenComponent(
                     modifier = Modifier.weight(1f),
                     component = component,

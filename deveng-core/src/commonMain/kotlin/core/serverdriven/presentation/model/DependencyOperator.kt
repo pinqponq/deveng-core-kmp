@@ -1,6 +1,6 @@
 package core.serverdriven.presentation.model
 
-enum class DependencyOperator {
+internal enum class DependencyOperator {
     EQUALS,
     LESS_THAN,
     GREATER_THAN;

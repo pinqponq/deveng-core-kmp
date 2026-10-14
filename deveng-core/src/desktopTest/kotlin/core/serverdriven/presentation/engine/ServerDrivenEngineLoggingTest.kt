@@ -5,7 +5,7 @@ import core.serverdriven.data.model.response.DependencyResponse
 import core.serverdriven.data.model.response.LayoutResponse
 import core.serverdriven.presentation.model.ComponentEvent
 import core.util.CustomLogger
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.test.AfterTest
@@ -91,7 +91,7 @@ class ServerDrivenEngineLoggingTest {
     }
 
     @Test
-    fun enterTextField_onNotEditableField_logsIgnoredValue() {
+    fun enterTextField_onNotEditableField_logsIgnoredValue() = runTest {
         val engine = ServerDrivenEngine()
         engine.setLayout(
             layout = LayoutResponse(
@@ -118,7 +118,7 @@ class ServerDrivenEngineLoggingTest {
             )
         )
 
-        runBlocking { engine.handleEvent(ComponentEvent.EnterTextField(componentId = TEXT_FIELD_ID, value = TITLE)) }
+        engine.handleEvent(ComponentEvent.EnterTextField(componentId = TEXT_FIELD_ID, value = TITLE))
 
         assertEquals(1, loggedLines().count { line -> line.contains("'$TEXT_FIELD_ID'") })
     }

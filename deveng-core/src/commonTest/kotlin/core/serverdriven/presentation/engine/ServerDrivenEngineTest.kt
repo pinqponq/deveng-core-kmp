@@ -457,6 +457,82 @@ class ServerDrivenEngineTest {
         assertEquals(listOf(CAMERA_SHUTTER_ID, CAMERA_SHUTTER_ID), loader.requestedShutterIds)
     }
 
+    @Test
+    fun clickSwitch_withVisibilityDependency_dropsTargetFromVisibleComponents() = runTest {
+        val engine = ServerDrivenEngine()
+        engine.setLayout(
+            layout = switchAndSliderLayout(
+                dependency = visibilityDependency(triggerValue = "false", effectValue = false)
+            )
+        )
+        assertEquals(listOf(RECORD_SWITCH_ID, BRIGHTNESS_SLIDER_ID), visibleComponentIds(engine))
+
+        engine.handleEvent(ComponentEvent.ClickSwitch(componentId = RECORD_SWITCH_ID, isChecked = false))
+
+        assertEquals(listOf(RECORD_SWITCH_ID), visibleComponentIds(engine))
+    }
+
+    @Test
+    fun clickTabItem_withVisibilityDependency_dropsTargetNestedInShutterRow() = runTest {
+        val engine = ServerDrivenEngine()
+        engine.setLayout(json = LAYOUT_JSON)
+
+        engine.handleEvent(ComponentEvent.ClickTabItem(componentId = MAIN_TABS_ID, tabId = NETWORK_TAB_ID))
+        val hiddenSwitchIds = visibleComponentIds(engine)
+        engine.handleEvent(ComponentEvent.ClickTabItem(componentId = MAIN_TABS_ID, tabId = IMAGE_TAB_ID))
+
+        assertEquals(
+            listOf(
+                CAMERA_SHUTTER_ID, NAME_TEXT_FIELD_ID, ROW_ID, RESOLUTION_DROPDOWN_ID,
+                "camera_divider", MAIN_TABS_ID, BRIGHTNESS_SLIDER_ID
+            ),
+            hiddenSwitchIds
+        )
+        assertEquals(
+            listOf(
+                CAMERA_SHUTTER_ID, NAME_TEXT_FIELD_ID, ROW_ID, RECORD_SWITCH_ID, RESOLUTION_DROPDOWN_ID,
+                "camera_divider", MAIN_TABS_ID, BRIGHTNESS_SLIDER_ID
+            ),
+            visibleComponentIds(engine)
+        )
+    }
+
+    @Test
+    fun clickSwitch_withVisibilityDependency_dropsTargetNestedInTab() = runTest {
+        val engine = ServerDrivenEngine()
+        engine.setLayout(
+            layout = LayoutResponse(
+                components = listOf(
+                    switchResponse(),
+                    ComponentResponse.TabsResponse(
+                        id = MAIN_TABS_ID,
+                        tabs = listOf(
+                            TabResponse(id = IMAGE_TAB_ID, title = TAB_TITLE, components = listOf(sliderResponse()))
+                        )
+                    )
+                ),
+                dependencies = listOf(visibilityDependency(triggerValue = "false", effectValue = false))
+            )
+        )
+
+        engine.handleEvent(ComponentEvent.ClickSwitch(componentId = RECORD_SWITCH_ID, isChecked = false))
+
+        assertEquals(listOf(RECORD_SWITCH_ID, MAIN_TABS_ID), visibleComponentIds(engine))
+    }
+
+    private fun visibleComponentIds(engine: ServerDrivenEngine): List<String> =
+        componentIds(engine.visibleComponents.value)
+
+    private fun componentIds(components: List<ComponentUiModel>): List<String> = components.flatMap { component ->
+        val children = when (component) {
+            is ComponentUiModel.Shutter -> component.components
+            is ComponentUiModel.Row -> component.components
+            is ComponentUiModel.Tabs -> component.tabs.flatMap { tab -> tab.components }
+            else -> emptyList()
+        }
+        listOf(component.id) + componentIds(children)
+    }
+
     private fun isVisible(engine: ServerDrivenEngine, componentId: String): Boolean =
         engine.componentProperties.value.getValue(componentId).isVisible
 
