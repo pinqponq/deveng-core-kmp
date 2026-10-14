@@ -10,14 +10,14 @@ import kotlin.test.Test
 class ServerDrivenScreenTest {
 
     @Test
-    fun clickShutterHeader_sendsClickShutterEvent() = runDesktopComposeUiTest {
+    fun clickShutterHeader_whenCollapsed_sendsClickShutterEvent() = runDesktopComposeUiTest {
         recordingRobot(isShutterExpanded = false)
             .clickShutterHeader()
             .assertSentEvents(listOf(shutterClick()))
     }
 
     @Test
-    fun clickSwitch_sendsNewCheckedState() = runDesktopComposeUiTest {
+    fun clickSwitch_whenEditable_sendsNewCheckedState() = runDesktopComposeUiTest {
         recordingRobot(isShutterExpanded = true)
             .clickSwitch()
             .assertSentEvents(
@@ -33,7 +33,7 @@ class ServerDrivenScreenTest {
     }
 
     @Test
-    fun clickTab_sendsSelectedTabId() = runDesktopComposeUiTest {
+    fun clickTab_onUnselectedTab_sendsSelectedTabId() = runDesktopComposeUiTest {
         recordingRobot(isShutterExpanded = false)
             .clickNetworkTab()
             .assertSentEvents(listOf(networkTabClick()))
@@ -47,7 +47,7 @@ class ServerDrivenScreenTest {
     }
 
     @Test
-    fun enterTextField_sendsEnteredText() = runDesktopComposeUiTest {
+    fun enterTextField_whenEditable_sendsEnteredText() = runDesktopComposeUiTest {
         recordingRobot(isShutterExpanded = true)
             .enterText(ENTERED_TEXT)
             .assertSentEvents(
@@ -61,7 +61,7 @@ class ServerDrivenScreenTest {
     }
 
     @Test
-    fun changeSlider_sendsFinishedValue() = runDesktopComposeUiTest {
+    fun changeSlider_whenEditable_sendsFinishedValue() = runDesktopComposeUiTest {
         recordingRobot(isShutterExpanded = false)
             .moveSlider(SLIDER_TARGET_VALUE)
             .assertSentEvents(

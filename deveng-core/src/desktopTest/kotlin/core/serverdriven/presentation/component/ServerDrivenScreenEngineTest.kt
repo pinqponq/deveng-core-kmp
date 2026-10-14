@@ -10,7 +10,7 @@ import kotlin.test.assertEquals
 class ServerDrivenScreenEngineTest {
 
     @Test
-    fun clickShutterHeaderTwice_showsThenHidesShutterContent() = runDesktopComposeUiTest {
+    fun clickShutterHeader_twice_showsThenHidesShutterContent() = runDesktopComposeUiTest {
         engineRobot()
             .assertTextNotShown(ServerDrivenScreenTestLayout.TEXT_FIELD_TITLE)
             .clickShutterHeader()
@@ -20,7 +20,7 @@ class ServerDrivenScreenEngineTest {
     }
 
     @Test
-    fun clickNetworkTab_showsItsContentAndAppliesDependencies() = runDesktopComposeUiTest {
+    fun clickNetworkTab_withDependencies_showsItsContentAndAppliesThem() = runDesktopComposeUiTest {
         engineRobot()
             .clickShutterHeader()
             .assertTextShown(ServerDrivenScreenTestLayout.SLIDER_TITLE)
@@ -30,7 +30,7 @@ class ServerDrivenScreenEngineTest {
     }
 
     @Test
-    fun clickSwitch_unlocksDropdownAndSelectedOptionIsShown() = runDesktopComposeUiTest {
+    fun clickSwitch_onLockedDropdown_unlocksItAndShowsSelectedOption() = runDesktopComposeUiTest {
         val robot = engineRobot()
             .clickShutterHeader()
             .clickSwitch()
@@ -46,7 +46,7 @@ class ServerDrivenScreenEngineTest {
     }
 
     @Test
-    fun enterTextField_showsEnteredText() = runDesktopComposeUiTest {
+    fun enterTextField_onEditableField_showsEnteredText() = runDesktopComposeUiTest {
         engineRobot()
             .clickShutterHeader()
             .enterText(ENTERED_TEXT)
@@ -54,7 +54,7 @@ class ServerDrivenScreenEngineTest {
     }
 
     @Test
-    fun changeSlider_showsNewValue() = runDesktopComposeUiTest {
+    fun changeSlider_onEditableSlider_showsNewValue() = runDesktopComposeUiTest {
         val robot = engineRobot()
             .moveSlider(SLIDER_TARGET_VALUE)
             .assertTextShown(SLIDER_TARGET_VALUE.toInt().toString())

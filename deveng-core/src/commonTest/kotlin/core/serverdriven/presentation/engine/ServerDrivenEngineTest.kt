@@ -167,7 +167,7 @@ class ServerDrivenEngineTest {
     @Test
     fun changeSliderValue_aboveGreaterThanTrigger_makesTargetNotEditable() = runTest {
         val engine = ServerDrivenEngine()
-        engine.setLayout(layout = sliderSourceLayout(operator = "GREATER_THAN", triggerValue = "90"))
+        engine.setLayout(layout = sliderSourceLayout(operator = GREATER_THAN, triggerValue = UPPER_TRIGGER))
         assertTrue(isEditable(engine, RECORD_SWITCH_ID))
 
         engine.handleEvent(ComponentEvent.ChangeSliderValue(componentId = BRIGHTNESS_SLIDER_ID, value = 91f))
@@ -178,7 +178,7 @@ class ServerDrivenEngineTest {
     @Test
     fun changeSliderValue_equalToGreaterThanTrigger_keepsTargetEditable() = runTest {
         val engine = ServerDrivenEngine()
-        engine.setLayout(layout = sliderSourceLayout(operator = "GREATER_THAN", triggerValue = "90"))
+        engine.setLayout(layout = sliderSourceLayout(operator = GREATER_THAN, triggerValue = UPPER_TRIGGER))
 
         engine.handleEvent(ComponentEvent.ChangeSliderValue(componentId = BRIGHTNESS_SLIDER_ID, value = 90f))
 
@@ -188,7 +188,7 @@ class ServerDrivenEngineTest {
     @Test
     fun changeSliderValue_belowLessThanTrigger_makesTargetNotEditable() = runTest {
         val engine = ServerDrivenEngine()
-        engine.setLayout(layout = sliderSourceLayout(operator = "LESS_THAN", triggerValue = "20"))
+        engine.setLayout(layout = sliderSourceLayout(operator = LESS_THAN, triggerValue = LOWER_TRIGGER))
         assertTrue(isEditable(engine, RECORD_SWITCH_ID))
 
         engine.handleEvent(ComponentEvent.ChangeSliderValue(componentId = BRIGHTNESS_SLIDER_ID, value = 19f))
@@ -199,7 +199,7 @@ class ServerDrivenEngineTest {
     @Test
     fun changeSliderValue_equalToLessThanTrigger_keepsTargetEditable() = runTest {
         val engine = ServerDrivenEngine()
-        engine.setLayout(layout = sliderSourceLayout(operator = "LESS_THAN", triggerValue = "20"))
+        engine.setLayout(layout = sliderSourceLayout(operator = LESS_THAN, triggerValue = LOWER_TRIGGER))
 
         engine.handleEvent(ComponentEvent.ChangeSliderValue(componentId = BRIGHTNESS_SLIDER_ID, value = 20f))
 
@@ -219,7 +219,7 @@ class ServerDrivenEngineTest {
     @Test
     fun changeSliderValue_withNonNumericComparisonTrigger_neverMatches() = runTest {
         val engine = ServerDrivenEngine()
-        engine.setLayout(layout = sliderSourceLayout(operator = "GREATER_THAN", triggerValue = "high"))
+        engine.setLayout(layout = sliderSourceLayout(operator = GREATER_THAN, triggerValue = "high"))
 
         engine.handleEvent(ComponentEvent.ChangeSliderValue(componentId = BRIGHTNESS_SLIDER_ID, value = 99f))
 
@@ -484,14 +484,14 @@ class ServerDrivenEngineTest {
         assertEquals(
             listOf(
                 CAMERA_SHUTTER_ID, NAME_TEXT_FIELD_ID, ROW_ID, RESOLUTION_DROPDOWN_ID,
-                "camera_divider", MAIN_TABS_ID, BRIGHTNESS_SLIDER_ID
+                DIVIDER_ID, MAIN_TABS_ID, BRIGHTNESS_SLIDER_ID
             ),
             hiddenSwitchIds
         )
         assertEquals(
             listOf(
                 CAMERA_SHUTTER_ID, NAME_TEXT_FIELD_ID, ROW_ID, RECORD_SWITCH_ID, RESOLUTION_DROPDOWN_ID,
-                "camera_divider", MAIN_TABS_ID, BRIGHTNESS_SLIDER_ID
+                DIVIDER_ID, MAIN_TABS_ID, BRIGHTNESS_SLIDER_ID
             ),
             visibleComponentIds(engine)
         )
@@ -632,6 +632,11 @@ class ServerDrivenEngineTest {
     }
 
     private companion object {
+        const val GREATER_THAN = "GREATER_THAN"
+        const val LESS_THAN = "LESS_THAN"
+        const val UPPER_TRIGGER = "90"
+        const val LOWER_TRIGGER = "20"
+        const val DIVIDER_ID = "camera_divider"
         const val CAMERA_SHUTTER_ID = "camera_shutter"
         const val NAME_TEXT_FIELD_ID = "camera_name_text_field"
         const val ROW_ID = "record_row"
@@ -672,7 +677,7 @@ class ServerDrivenEngineTest {
                     }
                   ]
                 },
-                { "type": "divider", "id": "camera_divider" },
+                { "type": "divider", "id": "$DIVIDER_ID" },
                 {
                   "type": "tabs", "id": "$MAIN_TABS_ID",
                   "tabs": [

@@ -37,8 +37,8 @@ ServerDrivenScreen(
 ```
 
 Observe the result with `engine.componentValues` (id → value) and `engine.componentProperties`
-(id → `ComponentProperty(isVisible, isEditable, isExpanded)`); `engine.visibleComponents` is the component
-tree without the hidden components, which `ServerDrivenScreen` draws. The layout's response classes are
+(id → `ComponentProperty(isVisible, isEditable, isExpanded)`); `engine.components` is the whole component tree
+and `engine.visibleComponents` the same tree without the hidden components, which `ServerDrivenScreen` draws. The layout's response classes are
 `@Serializable`, so the app's service can return `LayoutResponse` directly. The `Json` that decodes it must
 use `ignoreUnknownKeys = true` (deveng-networking-kmp and the engine's own parser do).
 
@@ -190,8 +190,9 @@ Each dependency reads the value of `sourceId` and sets one property of `targetId
   same setting use two ids (`day_brightness_slider`, `night_brightness_slider`).
 - **Unknown values do not break the layout.** A component with an unknown `type` is skipped, a dependency
   with an unknown `operator` or `effectType` is skipped, an unknown `keyboardType` falls back to `TEXT` and an
-  unknown `format` to no mask. Each case is logged through `CustomLogger`, so an older app keeps working when
-  the backend adds something new.
+  unknown `format` to no mask. A dependency whose `sourceId` or `targetId` is not in the layout waits until
+  that id is loaded (for example by a shutter). Each case is logged through `CustomLogger`, so an older app
+  keeps working when the backend adds something new.
 - **Lazy shutter content:** with a `ShutterContentLoader`, the first expand of a shutter calls the loader with
   the shutter id. The returned components are appended after the shutter's own components and the returned
   dependencies join the layout's. Each shutter loads once per `setLayout`; when the loader throws, the shutter

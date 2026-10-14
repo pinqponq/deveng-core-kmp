@@ -59,6 +59,7 @@ class ServerDrivenEngine(
         val componentValues = buildMap { collectInitialValues(components, this) }
         val layoutDependencies = dependencyUiMapper.mapToUiModels(layout.dependencies)
         val componentProperties = componentIds.associateWith { ComponentProperty() }
+        logDependenciesWithMissingIds(layoutDependencies, componentIds)
 
         loadedShutterIds.value = emptySet()
         dependencies.value = layoutDependencies
@@ -154,9 +155,9 @@ class ServerDrivenEngine(
         _componentProperties.update { componentProperties ->
             componentProperties + loadedComponentIds.associateWith { ComponentProperty() }
         }
-        dependencies.update { layoutDependencies ->
-            layoutDependencies + dependencyUiMapper.mapToUiModels(shutterContent.dependencies)
-        }
+        val loadedDependencies = dependencyUiMapper.mapToUiModels(shutterContent.dependencies)
+        logDependenciesWithMissingIds(loadedDependencies, collectComponentIds(_components.value))
+        dependencies.update { layoutDependencies -> layoutDependencies + loadedDependencies }
         resolveDependencies()
     }
 
@@ -169,6 +170,20 @@ class ServerDrivenEngine(
             )
         }
         publishVisibleComponents()
+    }
+
+    private fun logDependenciesWithMissingIds(
+        newDependencies: List<DependencyUiModel>,
+        componentIds: List<String>
+    ) {
+        newDependencies
+            .filter { dependency -> dependency.sourceId !in componentIds || dependency.targetId !in componentIds }
+            .forEach { dependency ->
+                CustomLogger.log(
+                    "Server-driven UI: dependency '${dependency.sourceId}' -> '${dependency.targetId}' names an id " +
+                        "that is not in the layout; it applies once that id is loaded"
+                )
+            }
     }
 
     private fun publishVisibleComponents() {

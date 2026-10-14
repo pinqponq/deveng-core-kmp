@@ -12,7 +12,7 @@ import kotlin.test.assertEquals
 class ServerDrivenScreenRecompositionTest {
 
     @Test
-    fun replaceEventHandler_sendsEveryLaterEventToNewHandler() = runDesktopComposeUiTest {
+    fun replaceEventHandler_whileShown_sendsEveryLaterEventToNewHandler() = runDesktopComposeUiTest {
         val robot = ServerDrivenScreenRobot(composeUiTest = this)
             .prepareEngine(
                 listOf(
@@ -54,7 +54,7 @@ class ServerDrivenScreenRecompositionTest {
     }
 
     @Test
-    fun replaceModifier_appliesNewModifier() = runDesktopComposeUiTest {
+    fun replaceModifier_whileShown_appliesNewModifier() = runDesktopComposeUiTest {
         ServerDrivenScreenRobot(composeUiTest = this)
             .setContent(isForwardingToEngine = false)
             .assertScreenTag(ServerDrivenScreenRobot.SCREEN_TAG)
@@ -64,7 +64,7 @@ class ServerDrivenScreenRecompositionTest {
     }
 
     @Test
-    fun divider_takesThemeThickness() = runDesktopComposeUiTest {
+    fun divider_withDefaultTheme_takesThemeThickness() = runDesktopComposeUiTest {
         ServerDrivenScreenRobot(composeUiTest = this)
             .setLayout(json = """{ "components": [{ "type": "divider", "id": "divider" }], "dependencies": [] }""")
             .setContent(isForwardingToEngine = false)
@@ -72,7 +72,7 @@ class ServerDrivenScreenRecompositionTest {
     }
 
     @Test
-    fun tabsWithoutTabs_drawNothing() = runDesktopComposeUiTest {
+    fun tabs_withoutAnyTab_drawNothing() = runDesktopComposeUiTest {
         ServerDrivenScreenRobot(composeUiTest = this)
             .setLayout(json = """{ "components": [{ "type": "tabs", "id": "tabs", "tabs": [] }], "dependencies": [] }""")
             .setContent(isForwardingToEngine = false)

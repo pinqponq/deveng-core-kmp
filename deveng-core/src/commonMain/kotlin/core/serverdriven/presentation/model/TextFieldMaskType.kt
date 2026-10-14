@@ -7,7 +7,7 @@ enum class TextFieldMaskType {
     DATE_AND_TIME;
 
     companion object {
-        fun fromValue(value: String): TextFieldMaskType? {
+        internal fun fromValue(value: String): TextFieldMaskType? {
             return entries.firstOrNull { maskType -> maskType.name.equals(value, ignoreCase = true) }
         }
     }
