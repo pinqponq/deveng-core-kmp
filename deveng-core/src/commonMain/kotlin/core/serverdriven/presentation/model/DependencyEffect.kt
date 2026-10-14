@@ -6,7 +6,7 @@ enum class DependencyEffect {
 
     companion object {
         fun fromValue(value: String): DependencyEffect? {
-            return entries.firstOrNull { effect -> effect.name == value.uppercase() }
+            return entries.firstOrNull { effect -> effect.name.equals(value, ignoreCase = true) }
         }
     }
 }

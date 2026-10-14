@@ -8,7 +8,7 @@ enum class TextFieldMaskType {
 
     companion object {
         fun fromValue(value: String): TextFieldMaskType? {
-            return entries.firstOrNull { maskType -> maskType.name == value.uppercase() }
+            return entries.firstOrNull { maskType -> maskType.name.equals(value, ignoreCase = true) }
         }
     }
 }

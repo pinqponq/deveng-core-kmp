@@ -8,7 +8,7 @@ enum class TextFieldKeyboardType {
 
     companion object {
         fun fromValue(value: String): TextFieldKeyboardType? {
-            return entries.firstOrNull { keyboardType -> keyboardType.name == value.uppercase() }
+            return entries.firstOrNull { keyboardType -> keyboardType.name.equals(value, ignoreCase = true) }
         }
     }
 }

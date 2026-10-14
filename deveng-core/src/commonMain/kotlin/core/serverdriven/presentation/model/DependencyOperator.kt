@@ -7,7 +7,7 @@ enum class DependencyOperator {
 
     companion object {
         fun fromValue(value: String): DependencyOperator? {
-            return entries.firstOrNull { operator -> operator.name == value.uppercase() }
+            return entries.firstOrNull { operator -> operator.name.equals(value, ignoreCase = true) }
         }
     }
 }
