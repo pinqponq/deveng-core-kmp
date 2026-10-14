@@ -145,9 +145,15 @@ class ServerDrivenEngine(
         shutterKey: String,
         shutterContent: LayoutResponse
     ) {
-        val shutterScopeKeys = collectScopedComponentIds(_components.value, scopeKeys = emptyList())
-            .first { scopedId -> scopedId.key == shutterKey }
-            .scopeKeys
+        val shutterScopedId = collectScopedComponentIds(_components.value, scopeKeys = emptyList())
+            .firstOrNull { scopedId -> scopedId.key == shutterKey }
+
+        if (shutterScopedId == null) {
+            CustomLogger.log("Server-driven UI: dropped the loaded content of '$shutterKey', it is no longer in the layout")
+            return
+        }
+
+        val shutterScopeKeys = shutterScopedId.scopeKeys
         val loadedComponents = componentUiMapper.mapToUiModels(shutterContent.components)
         val loadedScopedIds = collectScopedComponentIds(loadedComponents, shutterScopeKeys)
         val updatedComponents = appendToShutter(_components.value, shutterKey, loadedComponents, scopeKey = null)

@@ -5,6 +5,8 @@ import core.serverdriven.data.model.response.DependencyResponse
 import core.serverdriven.data.model.response.LayoutResponse
 import core.serverdriven.presentation.model.ComponentEvent
 import core.util.CustomLogger
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
@@ -172,6 +174,26 @@ class ServerDrivenEngineLoggingTest {
         val loggedLine = loggedLines().single()
         assertTrue(loggedLine.contains("'${DayNightTestLayout.TABS_ID}'"))
         assertTrue(loggedLine.contains("'$DEPRECATED_TABS_TYPE'"))
+    }
+
+    @Test
+    fun clickShutter_whenLayoutReplacedDuringLoad_logsAndKeepsNewLayout() = runTest {
+        val loadedContent = CompletableDeferred<LayoutResponse>()
+        val engine = ServerDrivenEngine(shutterContentLoader = { loadedContent.await() })
+        engine.setLayout(
+            layout = LayoutResponse(
+                components = listOf(ComponentResponse.ShutterResponse(id = SHUTTER_ID, title = TITLE))
+            )
+        )
+        val shutterLoad = launch { engine.handleEvent(ComponentEvent.ClickShutter(componentId = SHUTTER_ID)) }
+        testScheduler.runCurrent()
+
+        engine.setLayout(layout = LayoutResponse(components = listOf(switchResponse())))
+        loadedContent.complete(LayoutResponse(components = listOf(switchResponse().copy(id = TEXT_FIELD_ID))))
+        shutterLoad.join()
+
+        assertEquals(listOf(SWITCH_ID), engine.components.value.map { component -> component.id })
+        assertEquals(1, loggedLines().count { line -> line.contains("'$SHUTTER_ID'") })
     }
 
     private fun switchResponse() = ComponentResponse.SwitchResponse(id = SWITCH_ID, title = TITLE, currentValue = true)
