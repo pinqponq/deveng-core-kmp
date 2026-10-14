@@ -338,6 +338,10 @@ private const val NETWORK_SHUTTER_CONTENT_JSON = """
 
 private val shutterContentJson = Json { ignoreUnknownKeys = true }
 
+private fun formatSkippedElement(skippedElement: SkippedLayoutElement): String {
+    return "Skipped ${skippedElement.kind}: '${skippedElement.name}' (${skippedElement.componentId})"
+}
+
 /**
  * Playground for [ServerDrivenScreen]: a layout with every component type, a visibility dependency
  * (the advanced shutter only shows while "Advanced settings" is on), an editable dependency
@@ -393,9 +397,7 @@ internal fun ServerDrivenDemoScreen(onBack: () -> Unit) {
         )
 
         Text(
-            text = skippedElements.joinToString(separator = "\n") { skippedElement ->
-                "Skipped ${skippedElement.kind}: '${skippedElement.name}' (${skippedElement.componentId})"
-            },
+            text = skippedElements.joinToString(separator = "\n", transform = ::formatSkippedElement),
             style = CoreRegularTextStyle().copy(fontSize = 12.sp),
         )
 

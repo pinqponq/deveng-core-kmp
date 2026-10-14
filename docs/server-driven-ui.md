@@ -356,7 +356,8 @@ backend can tell from an app's skip reports which layout version it is behind.
   is `null` when the component has no `type`), operator (`OPERATOR`) or effect (`EFFECT`; for both,
   `componentId` = the dependency's `targetId`). A dependency with an unknown operator and an unknown effect
   reports both. The same element is reported once per `setLayout`, including content shutters load later;
-  the next `setLayout` reports again. Send it to analytics so the backend learns which apps miss what.
+  the next `setLayout` reports again. Reports are sent after the layout (or the loaded content) is applied; a
+  layout or content rejected for duplicate ids reports nothing. Send it to analytics so the backend learns which apps miss what.
 - **Lazy shutter content:** with a `ShutterContentLoader`, the first expand of a shutter calls the loader with
   the shutter id (not its key). The returned components are appended after the shutter's own components and the returned
   dependencies join the layout's. Each shutter loads once per `setLayout`; when the loader throws, the shutter

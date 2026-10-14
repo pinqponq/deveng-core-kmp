@@ -10,6 +10,7 @@ import core.serverdriven.presentation.model.SkippedLayoutElement
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class ServerDrivenEngineSkippedElementTest {
@@ -89,7 +90,7 @@ class ServerDrivenEngineSkippedElementTest {
     }
 
     @Test
-    fun setLayout_again_reportsSkippedElementsOfNewLayout() {
+    fun setLayout_calledAgain_reportsSkippedElementsAgain() {
         val engine = ServerDrivenEngine(onLayoutElementSkip = { skippedElement -> skippedElements += skippedElement })
         val layout = LayoutResponse(components = listOf(chartResponse()))
 
@@ -127,6 +128,57 @@ class ServerDrivenEngineSkippedElementTest {
             ),
             skippedElements
         )
+    }
+
+    @Test
+    fun setLayout_withDuplicateIds_reportsNothing() {
+        val engine = ServerDrivenEngine(onLayoutElementSkip = { skippedElement -> skippedElements += skippedElement })
+
+        assertFailsWith<IllegalArgumentException> {
+            engine.setLayout(layout = LayoutResponse(components = listOf(chartResponse(), switchResponse(), switchResponse())))
+        }
+        engine.setLayout(layout = LayoutResponse(components = listOf(switchResponse())))
+
+        assertEquals(emptyList(), skippedElements)
+    }
+
+    @Test
+    fun clickShutter_afterRejectedLayout_doesNotReportCurrentLayoutElementsAgain() = runTest {
+        val engine = ServerDrivenEngine(
+            shutterContentLoader = { LayoutResponse(components = listOf(chartResponse())) },
+            onLayoutElementSkip = { skippedElement -> skippedElements += skippedElement }
+        )
+        engine.setLayout(
+            layout = LayoutResponse(
+                components = listOf(chartResponse(), ComponentResponse.ShutterResponse(id = SHUTTER_ID, title = TITLE))
+            )
+        )
+        assertFailsWith<IllegalArgumentException> {
+            engine.setLayout(layout = LayoutResponse(components = listOf(switchResponse(), switchResponse())))
+        }
+
+        engine.handleEvent(ComponentEvent.ClickShutter(componentId = SHUTTER_ID))
+
+        assertEquals(listOf(chartElement()), skippedElements)
+    }
+
+    @Test
+    fun clickShutter_withDuplicateIdInLoadedContent_reportsNothingFromIt() = runTest {
+        val engine = ServerDrivenEngine(
+            shutterContentLoader = { LayoutResponse(components = listOf(chartResponse(), switchResponse())) },
+            onLayoutElementSkip = { skippedElement -> skippedElements += skippedElement }
+        )
+        engine.setLayout(
+            layout = LayoutResponse(
+                components = listOf(switchResponse(), ComponentResponse.ShutterResponse(id = SHUTTER_ID, title = TITLE))
+            )
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            engine.handleEvent(ComponentEvent.ClickShutter(componentId = SHUTTER_ID))
+        }
+
+        assertEquals(emptyList(), skippedElements)
     }
 
     @Test
