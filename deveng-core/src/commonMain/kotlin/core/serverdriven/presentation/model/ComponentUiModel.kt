@@ -41,7 +41,7 @@ sealed class ComponentUiModel {
         val defaultValue: String,
         val factoryValue: String,
         val errorMessage: String?,
-        val hintMessage: String?,
+        val hintMessage: String,
         val maskType: TextFieldMaskType?,
         val keyboardType: TextFieldKeyboardType
     ) : ComponentUiModel()

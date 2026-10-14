@@ -146,6 +146,23 @@ class ComponentUiMapperTest {
     }
 
     @Test
+    fun mapToUiModels_withTextFieldWithoutHint_usesEmptyHint() {
+        val textField = componentUiMapper.mapToUiModels(
+            listOf(
+                ComponentResponse.TextFieldResponse(
+                    id = TEXT_FIELD_ID,
+                    title = TITLE,
+                    currentValue = CURRENT_VALUE,
+                    defaultValue = DEFAULT_VALUE,
+                    factoryValue = FACTORY_VALUE
+                )
+            )
+        ).single() as ComponentUiModel.TextField
+
+        assertEquals("", textField.hintMessage)
+    }
+
+    @Test
     fun mapToUiModels_withUnknownComponent_dropsOnlyThatComponent() {
         val components = componentUiMapper.mapToUiModels(
             listOf(ComponentResponse.UnknownResponse(id = UNKNOWN_ID, type = UNKNOWN_TYPE), switchResponse())

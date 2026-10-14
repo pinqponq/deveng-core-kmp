@@ -18,7 +18,6 @@ import core.presentation.theme.LocalComponentTheme
 import core.serverdriven.presentation.model.ComponentEvent
 import core.serverdriven.presentation.model.ComponentProperty
 import core.serverdriven.presentation.model.ComponentUiModel
-import core.util.EMPTY
 
 @Composable
 internal fun ServerDrivenComponent(
@@ -50,10 +49,8 @@ internal fun ServerDrivenComponent(
         )
 
         is ComponentUiModel.Tabs -> {
-            val selectedTabId = componentValues[component.id] as? String
-            val selectedTab = component.tabs.firstOrNull { tab -> tab.id == selectedTabId }
-                ?: component.tabs.firstOrNull()
-                ?: return
+            val selectedTabId = componentValues[component.id] as? String ?: return
+            val selectedTab = component.tabs.first { tab -> tab.id == selectedTabId }
 
             TabRow(
                 modifier = modifier,
@@ -77,7 +74,7 @@ internal fun ServerDrivenComponent(
         }
 
         is ComponentUiModel.Slider -> {
-            val engineValue = componentValues[component.id] as? Float ?: component.currentValue
+            val engineValue = componentValues.getValue(component.id) as Float
             var sliderValue by remember(engineValue) { mutableStateOf(engineValue) }
 
             CustomSlider(
@@ -97,8 +94,8 @@ internal fun ServerDrivenComponent(
         is ComponentUiModel.TextField -> CustomTextField(
             containerModifier = modifier,
             title = component.title,
-            value = componentValues[component.id] as? String ?: component.currentValue,
-            hint = component.hintMessage ?: String.EMPTY,
+            value = componentValues.getValue(component.id) as String,
+            hint = component.hintMessage,
             errorMessage = component.errorMessage,
             keyboardType = component.keyboardType.toComposeKeyboardType(),
             enabled = componentProperty.isEditable,
@@ -110,7 +107,7 @@ internal fun ServerDrivenComponent(
         is ComponentUiModel.Switch -> LabeledSwitch(
             modifier = modifier,
             label = component.title,
-            isChecked = componentValues[component.id] as? Boolean ?: component.currentValue,
+            isChecked = componentValues.getValue(component.id) as Boolean,
             isEnabled = componentProperty.isEditable,
             onSwitchClick = { isChecked ->
                 onComponentEvent(ComponentEvent.ClickSwitch(componentId = component.id, isChecked = isChecked))
@@ -121,7 +118,7 @@ internal fun ServerDrivenComponent(
             modifier = modifier,
             title = component.title,
             items = component.options,
-            selectedItem = componentValues[component.id] as? String ?: component.currentValue,
+            selectedItem = componentValues.getValue(component.id) as String,
             isEnabled = componentProperty.isEditable,
             onItemSelected = { option ->
                 onComponentEvent(ComponentEvent.ClickDropdownOption(componentId = component.id, option = option))

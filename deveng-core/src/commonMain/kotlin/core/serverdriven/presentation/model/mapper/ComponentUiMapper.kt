@@ -7,6 +7,7 @@ import core.serverdriven.presentation.model.TabUiModel
 import core.serverdriven.presentation.model.TextFieldKeyboardType
 import core.serverdriven.presentation.model.TextFieldMaskType
 import core.util.CustomLogger
+import core.util.EMPTY
 
 class ComponentUiMapper {
 
@@ -58,7 +59,7 @@ class ComponentUiMapper {
                 defaultValue = response.defaultValue,
                 factoryValue = response.factoryValue,
                 errorMessage = response.errorMessage,
-                hintMessage = response.hintMessage,
+                hintMessage = response.hintMessage ?: String.EMPTY,
                 maskType = mapToMaskType(response),
                 keyboardType = mapToKeyboardType(response)
             )

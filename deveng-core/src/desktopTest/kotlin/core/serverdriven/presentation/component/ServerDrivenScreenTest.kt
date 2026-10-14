@@ -111,6 +111,7 @@ class ServerDrivenScreenTest {
             ),
             sentEvents
         )
+        onNodeWithText(SLIDER_TARGET_VALUE.toInt().toString()).assertExists()
     }
 
     @Test

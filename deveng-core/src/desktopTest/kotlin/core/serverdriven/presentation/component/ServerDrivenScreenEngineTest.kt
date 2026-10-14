@@ -85,6 +85,42 @@ class ServerDrivenScreenEngineTest {
         onNodeWithText(SLIDER_TARGET_VALUE.toInt().toString()).assertExists()
     }
 
+    @Test
+    fun setLayout_whileShown_sendsEventsWithTheNewLayoutIds() = runDesktopComposeUiTest {
+        val engine = setServerDrivenScreenWithEngine()
+        onNodeWithText(ServerDrivenScreenTestLayout.SHUTTER_TITLE).performClick()
+
+        engine.setLayout(json = replacedLayoutJson())
+        onNodeWithText(ServerDrivenScreenTestLayout.SHUTTER_TITLE).performClick()
+        onNode(isToggleable()).performClick()
+        onNodeWithText(ServerDrivenScreenTestLayout.DROPDOWN_VALUE).performClick()
+        onNodeWithText(ServerDrivenScreenTestLayout.DROPDOWN_OTHER_OPTION).performClick()
+        onNode(hasSetTextAction() and hasText(ServerDrivenScreenTestLayout.TEXT_FIELD_VALUE))
+            .performTextReplacement(ENTERED_TEXT)
+        onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(current = 85f, range = 0f..100f)))
+            .performSemanticsAction(SemanticsActions.SetProgress) { setProgress -> setProgress(SLIDER_TARGET_VALUE) }
+        onNodeWithText(ServerDrivenScreenTestLayout.NETWORK_TAB_TITLE).performClick()
+
+        assertEquals(
+            mapOf(
+                newId(ServerDrivenScreenTestLayout.SWITCH_ID) to true,
+                newId(ServerDrivenScreenTestLayout.DROPDOWN_ID) to ServerDrivenScreenTestLayout.DROPDOWN_OTHER_OPTION,
+                newId(ServerDrivenScreenTestLayout.TEXT_FIELD_ID) to ENTERED_TEXT,
+                newId(ServerDrivenScreenTestLayout.SLIDER_ID) to SLIDER_TARGET_VALUE,
+                newId(ServerDrivenScreenTestLayout.TABS_ID) to newId(ServerDrivenScreenTestLayout.NETWORK_TAB_ID)
+            ),
+            engine.componentValues.value
+        )
+    }
+
+    private fun replacedLayoutJson(): String {
+        return REPLACED_IDS.fold(ServerDrivenScreenTestLayout.JSON) { json, componentId ->
+            json.replace("\"$componentId\"", "\"${newId(componentId)}\"")
+        }
+    }
+
+    private fun newId(componentId: String) = "$componentId$NEW_LAYOUT_ID_SUFFIX"
+
     private fun ComposeUiTest.setServerDrivenScreenWithEngine(): ServerDrivenEngine {
         val engine = ServerDrivenEngine()
         engine.setLayout(json = ServerDrivenScreenTestLayout.JSON)
@@ -104,5 +140,18 @@ class ServerDrivenScreenEngineTest {
     private companion object {
         const val ENTERED_TEXT = "Parking"
         const val SLIDER_TARGET_VALUE = 40f
+        const val NEW_LAYOUT_ID_SUFFIX = "_v2"
+        val REPLACED_IDS = listOf(
+            ServerDrivenScreenTestLayout.SHUTTER_ID,
+            ServerDrivenScreenTestLayout.SWITCH_ID,
+            ServerDrivenScreenTestLayout.DROPDOWN_ID,
+            ServerDrivenScreenTestLayout.TEXT_FIELD_ID,
+            ServerDrivenScreenTestLayout.SLIDER_ID,
+            ServerDrivenScreenTestLayout.TABS_ID,
+            ServerDrivenScreenTestLayout.NETWORK_TAB_ID,
+            "image_tab",
+            "record_row",
+            "camera_divider"
+        )
     }
 }
