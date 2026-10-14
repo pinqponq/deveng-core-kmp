@@ -10,6 +10,7 @@ import core.serverdriven.presentation.model.SkippedLayoutElement
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class ServerDrivenEngineSkippedElementTest {
 
@@ -30,10 +31,10 @@ class ServerDrivenEngineSkippedElementTest {
 
         engine.setLayout(json = """{"components":[{"id":"$CHART_ID"}]}""")
 
-        assertEquals(
-            listOf(SkippedLayoutElement(kind = SkippedElementKind.COMPONENT_TYPE, name = null, componentId = CHART_ID)),
-            skippedElements
-        )
+        val skippedElement = skippedElements.single()
+        assertEquals(SkippedElementKind.COMPONENT_TYPE, skippedElement.kind)
+        assertNull(skippedElement.name)
+        assertEquals(CHART_ID, skippedElement.componentId)
     }
 
     @Test

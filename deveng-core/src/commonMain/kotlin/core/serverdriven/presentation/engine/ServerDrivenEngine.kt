@@ -47,7 +47,7 @@ class ServerDrivenEngine(
     private val dependencies = MutableStateFlow<List<DependencyUiModel>>(emptyList())
     private val loadedShutterKeys = MutableStateFlow<Set<String>>(emptySet())
     private val reportedSkippedElements = MutableStateFlow<Set<SkippedLayoutElement>>(emptySet())
-    private val layoutGeneration = MutableStateFlow(0)
+    private val layoutVersion = MutableStateFlow(0)
 
     val components: StateFlow<List<ComponentUiModel>> = _components.asStateFlow()
     val componentValues: StateFlow<Map<String, Any>> = _componentValues.asStateFlow()
@@ -70,7 +70,7 @@ class ServerDrivenEngine(
         val componentProperties = scopedComponentIds.associate { scopedId -> scopedId.key to ComponentProperty() }
         logDependenciesWithMissingIds(layoutDependencies, scopedComponentIds)
 
-        layoutGeneration.update { generation -> generation + 1 }
+        layoutVersion.update { version -> version + 1 }
         loadedShutterKeys.value = emptySet()
         dependencies.value = layoutDependencies
         _components.value = components
@@ -138,11 +138,11 @@ class ServerDrivenEngine(
             .contains(shutterKey)
         if (isAlreadyLoaded) return
 
-        val layoutGenerationAtLoad = layoutGeneration.value
+        val layoutVersionAtLoad = layoutVersion.value
         val shutterContent = try {
             loader.loadShutterContent(shutter.id)
         } catch (exception: Exception) {
-            if (layoutGeneration.value == layoutGenerationAtLoad) {
+            if (layoutVersion.value == layoutVersionAtLoad) {
                 loadedShutterKeys.update { shutterKeys -> shutterKeys - shutterKey }
                 updateProperty(shutterKey) { property -> property.copy(isExpanded = false) }
             }
@@ -150,7 +150,7 @@ class ServerDrivenEngine(
             throw exception
         }
 
-        if (layoutGeneration.value != layoutGenerationAtLoad) {
+        if (layoutVersion.value != layoutVersionAtLoad) {
             CustomLogger.log("Server-driven UI: dropped the loaded content of '$shutterKey', the layout was replaced")
             return
         }
