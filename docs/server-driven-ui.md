@@ -37,7 +37,8 @@ ServerDrivenScreen(
 ```
 
 Observe the result with `engine.componentValues` (id → value) and `engine.componentProperties`
-(id → `ComponentProperty(isVisible, isEditable, isExpanded)`). The layout's response classes are
+(id → `ComponentProperty(isVisible, isEditable, isExpanded)`); `engine.visibleComponents` is the component
+tree without the hidden components, which `ServerDrivenScreen` draws. The layout's response classes are
 `@Serializable`, so the app's service can return `LayoutResponse` directly. The `Json` that decodes it must
 use `ignoreUnknownKeys = true` (deveng-networking-kmp and the engine's own parser do).
 
