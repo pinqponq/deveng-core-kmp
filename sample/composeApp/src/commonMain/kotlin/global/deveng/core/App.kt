@@ -361,10 +361,12 @@ internal fun App() {
         var showScrollToEdgeScreen by remember { mutableStateOf(false) }
         var showMediaViewerScreen by remember { mutableStateOf(false) }
         var showNavigationBarScreen by remember { mutableStateOf(false) }
+        var showServerDrivenScreen by remember { mutableStateOf(false) }
         when {
             showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
             showMediaViewerScreen -> MediaViewerDemoScreen(onBack = { showMediaViewerScreen = false })
             showNavigationBarScreen -> NavigationBarDemoScreen(onBack = { showNavigationBarScreen = false })
+            showServerDrivenScreen -> ServerDrivenDemoScreen(onBack = { showServerDrivenScreen = false })
             showQrGeneratorScreen -> QrGeneratorDemoScreen(onBack = { showQrGeneratorScreen = false })
             showQrScannerScreen -> QrScannerDemoScreen(onBack = { showQrScannerScreen = false })
             showCameraScreen -> CameraScreen(onBack = { showCameraScreen = false })
@@ -375,6 +377,7 @@ internal fun App() {
                 onOpenScrollToEdge = { showScrollToEdgeScreen = true },
                 onOpenMediaViewer = { showMediaViewerScreen = true },
                 onOpenNavigationBar = { showNavigationBarScreen = true },
+                onOpenServerDriven = { showServerDrivenScreen = true },
             )
         }
     }
@@ -638,6 +641,7 @@ private fun ThemingDemo(
     onOpenScrollToEdge: () -> Unit = {},
     onOpenMediaViewer: () -> Unit = {},
     onOpenNavigationBar: () -> Unit = {},
+    onOpenServerDriven: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1034,6 +1038,12 @@ private fun ThemingDemo(
                             text = "Open Navigation Bar Demo",
                             containerColor = Color(0xFF0E0E0E),
                             onClick = onOpenNavigationBar
+                        )
+
+                        CustomButton(
+                            text = "Open Server-driven UI Demo",
+                            containerColor = Color(0xFF00695C),
+                            onClick = onOpenServerDriven
                         )
 
                         RatingRow(
