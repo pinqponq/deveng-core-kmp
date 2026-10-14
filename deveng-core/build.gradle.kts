@@ -76,6 +76,7 @@ kotlin {
             implementation(libs.coil3.ktor)
             implementation(libs.qrose)
             implementation(libs.material3.adaptive)
+            api(libs.androidx.lifecycle.viewmodel)
         }
 
         androidMain.dependencies {
@@ -106,6 +107,7 @@ kotlin {
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.turbine)
         }
 
         val desktopTest by getting {
