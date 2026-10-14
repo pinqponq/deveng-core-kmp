@@ -68,4 +68,11 @@ actual class MultiPlatformUtils(
         if (text.isBlank()) return
         window.navigator.clipboard.writeText(text)
     }
+
+    actual suspend fun shareTextWithResult(text: String): ShareTextResult {
+        if (text.isBlank()) return ShareTextResult(outcome = ShareTextOutcome.NOT_SHOWN)
+
+        shareText(text = text)
+        return ShareTextResult(outcome = ShareTextOutcome.COPIED_TO_CLIPBOARD)
+    }
 }

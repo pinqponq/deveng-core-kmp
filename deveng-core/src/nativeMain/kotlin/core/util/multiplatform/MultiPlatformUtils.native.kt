@@ -25,6 +25,8 @@ import platform.UIKit.UIApplication
 import platform.UIKit.UIDevice
 import platform.UIKit.UIPasteboard
 import platform.darwin.NSObject
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_get_main_queue
 import platform.posix.uname
 import platform.posix.utsname
 import kotlin.coroutines.resume
@@ -137,6 +139,31 @@ actual class MultiPlatformUtils {
         if (text.isBlank()) return
 
         IosShareSheetPresenter.presentOnMainQueue(activityItems = listOf(text))
+    }
+
+    actual suspend fun shareTextWithResult(text: String): ShareTextResult {
+        if (text.isBlank()) return ShareTextResult(outcome = ShareTextOutcome.NOT_SHOWN)
+
+        return suspendCancellableCoroutine { continuation ->
+            dispatch_async(dispatch_get_main_queue()) {
+                val isPresented = IosShareSheetPresenter.present(
+                    activityItems = listOf(text),
+                    onClose = { activityType, isCompleted ->
+                        // Cancelling a picked share extension returns to the still open sheet; only
+                        // the final close settles the result.
+                        val isBackOnShareSheet = activityType != null && !isCompleted
+                        if (isBackOnShareSheet) return@present
+                        val outcome = if (isCompleted) ShareTextOutcome.SHARED else ShareTextOutcome.DISMISSED
+                        if (continuation.isActive) {
+                            continuation.resume(ShareTextResult(outcome = outcome, targetApp = activityType))
+                        }
+                    },
+                )
+                if (!isPresented && continuation.isActive) {
+                    continuation.resume(ShareTextResult(outcome = ShareTextOutcome.NOT_SHOWN))
+                }
+            }
+        }
     }
 }
 
