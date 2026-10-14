@@ -187,6 +187,34 @@ class ServerDrivenEngineSkippedElementTest {
     }
 
     @Test
+    fun clickShutter_afterRejectedShutterContent_reportsNothingFromIt() = runTest {
+        val engine = ServerDrivenEngine(
+            shutterContentLoader = { shutterId ->
+                val rejectedComponents = listOf(chartResponse(), switchResponse())
+                LayoutResponse(components = if (shutterId == SHUTTER_ID) rejectedComponents else emptyList())
+            },
+            onLayoutElementSkip = { skippedElement -> skippedElements += skippedElement }
+        )
+        engine.setLayout(
+            layout = LayoutResponse(
+                components = listOf(
+                    switchResponse(),
+                    ComponentResponse.ShutterResponse(id = SHUTTER_ID, title = TITLE),
+                    ComponentResponse.ShutterResponse(id = SECOND_SHUTTER_ID, title = TITLE)
+                )
+            )
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            engine.handleEvent(ComponentEvent.ClickShutter(componentId = SHUTTER_ID))
+        }
+
+        engine.handleEvent(ComponentEvent.ClickShutter(componentId = SECOND_SHUTTER_ID))
+
+        assertEquals(emptyList(), skippedElements)
+    }
+
+    @Test
     fun setLayout_withKnownElementsOnly_reportsNothing() {
         val engine = ServerDrivenEngine(onLayoutElementSkip = { skippedElement -> skippedElements += skippedElement })
 
@@ -233,6 +261,7 @@ class ServerDrivenEngineSkippedElementTest {
         const val MAP_ID = "coverage_map"
         const val MAP_TYPE = "map"
         const val SHUTTER_ID = "network_shutter"
+        const val SECOND_SHUTTER_ID = "storage_shutter"
         const val TABS_ID = "profile_tabs"
         const val DAY_TAB_ID = "day_tab"
         const val NIGHT_TAB_ID = "night_tab"
