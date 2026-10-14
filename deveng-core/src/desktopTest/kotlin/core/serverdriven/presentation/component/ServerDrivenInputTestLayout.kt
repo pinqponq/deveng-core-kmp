@@ -6,11 +6,13 @@ internal object ServerDrivenInputTestLayout {
     const val LABEL_TEXT = "Settings apply after a restart"
     const val SECTION_ID = "schedule_section"
     const val SECTION_TITLE = "Schedule"
+    const val SECTION_DESCRIPTION = "When the camera records"
     const val SEGMENTED_ID = "mode_segmented"
     const val SEGMENTED_VALUE = "Day"
     const val SEGMENTED_OTHER_OPTION = "Night"
     const val RADIO_ID = "quality_radio"
     const val RADIO_TITLE = "Quality"
+    const val RADIO_DESCRIPTION = "Higher quality uses more data"
     const val RADIO_VALUE = "High"
     const val RADIO_OTHER_OPTION = "Low"
     const val RATING_ID = "service_rating"
@@ -30,7 +32,7 @@ internal object ServerDrivenInputTestLayout {
 
     const val RADIO_JSON = """
         {
-          "type": "radio", "id": "$RADIO_ID", "title": "$RADIO_TITLE", "description": "Higher quality uses more data",
+          "type": "radio", "id": "$RADIO_ID", "title": "$RADIO_TITLE", "description": "$RADIO_DESCRIPTION",
           "currentValue": "$RADIO_VALUE", "defaultValue": "$RADIO_VALUE", "factoryValue": "$RADIO_OTHER_OPTION",
           "options": ["$RADIO_OTHER_OPTION", "$RADIO_VALUE"]
         }
@@ -52,7 +54,7 @@ internal object ServerDrivenInputTestLayout {
 
     const val SECTION_JSON = """
         {
-          "type": "section", "id": "$SECTION_ID", "title": "$SECTION_TITLE", "description": "When the camera records",
+          "type": "section", "id": "$SECTION_ID", "title": "$SECTION_TITLE", "description": "$SECTION_DESCRIPTION",
           "components": [$LABEL_JSON, $DATE_JSON]
         }
     """

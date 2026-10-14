@@ -14,9 +14,9 @@ class ComponentUiMapperInputComponentTest {
     fun mapToUiModels_withLabel_keepsText() {
         val label = componentUiMapper.mapToUiModels(
             listOf(ComponentResponse.LabelResponse(id = LABEL_ID, text = TEXT))
-        ).single()
+        ).single() as ComponentUiModel.Label
 
-        assertEquals(ComponentUiModel.Label(id = LABEL_ID, text = TEXT), label)
+        assertEquals(listOf(LABEL_ID, TEXT), listOf(label.id, label.text))
     }
 
     @Test
@@ -44,28 +44,15 @@ class ComponentUiMapperInputComponentTest {
             )
         )
 
+        val segmented = components[0] as ComponentUiModel.Segmented
+        val radio = components[1] as ComponentUiModel.Radio
         assertEquals(
-            listOf(
-                ComponentUiModel.Segmented(
-                    id = SEGMENTED_ID,
-                    title = TITLE,
-                    description = DESCRIPTION,
-                    currentValue = CURRENT_VALUE,
-                    defaultValue = DEFAULT_VALUE,
-                    factoryValue = FACTORY_VALUE,
-                    options = OPTIONS
-                ),
-                ComponentUiModel.Radio(
-                    id = RADIO_ID,
-                    title = TITLE,
-                    description = DESCRIPTION,
-                    currentValue = CURRENT_VALUE,
-                    defaultValue = DEFAULT_VALUE,
-                    factoryValue = FACTORY_VALUE,
-                    options = OPTIONS
-                )
-            ),
-            components
+            listOf<Any?>(SEGMENTED_ID, TITLE, DESCRIPTION, CURRENT_VALUE, DEFAULT_VALUE, FACTORY_VALUE, OPTIONS),
+            with(segmented) { listOf(id, title, description, currentValue, defaultValue, factoryValue, options) }
+        )
+        assertEquals(
+            listOf<Any?>(RADIO_ID, TITLE, DESCRIPTION, CURRENT_VALUE, DEFAULT_VALUE, FACTORY_VALUE, OPTIONS),
+            with(radio) { listOf(id, title, description, currentValue, defaultValue, factoryValue, options) }
         )
     }
 
@@ -83,19 +70,11 @@ class ComponentUiMapperInputComponentTest {
                     factoryValue = 3f
                 )
             )
-        ).single()
+        ).single() as ComponentUiModel.Rating
 
         assertEquals(
-            ComponentUiModel.Rating(
-                id = RATING_ID,
-                title = TITLE,
-                description = DESCRIPTION,
-                maxValue = 10,
-                currentValue = 7f,
-                defaultValue = 5f,
-                factoryValue = 3f
-            ),
-            rating
+            listOf<Any?>(RATING_ID, TITLE, DESCRIPTION, 10, 7f, 5f, 3f),
+            with(rating) { listOf(id, title, description, maxValue, currentValue, defaultValue, factoryValue) }
         )
     }
 
@@ -114,19 +93,12 @@ class ComponentUiMapperInputComponentTest {
                     )
                 )
             )
-        ).single()
+        ).single() as ComponentUiModel.Section
 
+        assertEquals(listOf(SECTION_ID, TITLE, DESCRIPTION), with(section) { listOf(id, title, description) })
         assertEquals(
-            ComponentUiModel.Section(
-                id = SECTION_ID,
-                title = TITLE,
-                description = DESCRIPTION,
-                components = listOf(
-                    ComponentUiModel.Label(id = LABEL_ID, text = TEXT),
-                    ComponentUiModel.Divider(id = DIVIDER_ID)
-                )
-            ),
-            section
+            listOf(ComponentUiModel.Label(id = LABEL_ID, text = TEXT), ComponentUiModel.Divider(id = DIVIDER_ID)),
+            section.components
         )
     }
 
@@ -135,16 +107,8 @@ class ComponentUiMapperInputComponentTest {
         val date = mapDate(currentValue = DATE_VALUE, targetDates = "future")
 
         assertEquals(
-            ComponentUiModel.Date(
-                id = DATE_ID,
-                title = TITLE,
-                description = DESCRIPTION,
-                currentValue = DATE_VALUE,
-                defaultValue = DEFAULT_VALUE,
-                factoryValue = FACTORY_VALUE,
-                targetDates = TargetDates.FUTURE
-            ),
-            date
+            listOf<Any?>(DATE_ID, TITLE, DESCRIPTION, DATE_VALUE, DEFAULT_VALUE, FACTORY_VALUE, TargetDates.FUTURE),
+            with(date) { listOf(id, title, description, currentValue, defaultValue, factoryValue, targetDates) }
         )
     }
 

@@ -33,6 +33,14 @@ class ServerDrivenScreenInputComponentTest {
     }
 
     @Test
+    fun setLayout_withTitledComponents_showsEachTitleAndDescription() = runDesktopComposeUiTest {
+        recordingRobot(isLocked = false)
+            .assertTextShown(ServerDrivenInputTestLayout.RADIO_TITLE)
+            .assertTextShown(ServerDrivenInputTestLayout.RADIO_DESCRIPTION)
+            .assertTextShown(ServerDrivenInputTestLayout.SECTION_DESCRIPTION)
+    }
+
+    @Test
     fun clickSegmentedOption_whenEditable_sendsOption() = runDesktopComposeUiTest {
         recordingRobot(isLocked = false)
             .clickText(ServerDrivenInputTestLayout.SEGMENTED_OTHER_OPTION)
