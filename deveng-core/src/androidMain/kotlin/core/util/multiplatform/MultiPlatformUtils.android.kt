@@ -177,16 +177,10 @@ actual class MultiPlatformUtils(private val context: Context) {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
 
-        val chooser = Intent.createChooser(sendIntent, SHARE_CHOOSER_TITLE).apply {
+        val chooser = Intent.createChooser(sendIntent, "Share via").apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
         context.startActivity(chooser)
-    }
-
-    actual suspend fun shareTextWithResult(text: String): ShareTextResult {
-        if (text.isBlank()) return ShareTextResult(outcome = ShareTextOutcome.NOT_SHOWN)
-
-        return ShareTextChooser(context = context).share(text = text)
     }
 
     @SuppressLint("MissingPermission")

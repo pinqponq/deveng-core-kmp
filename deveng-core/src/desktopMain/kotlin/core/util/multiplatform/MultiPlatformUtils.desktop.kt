@@ -2,15 +2,12 @@ package core.util.multiplatform
 
 import java.awt.Desktop
 import java.awt.Toolkit
-import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.net.URI
 
 @Suppress(names = ["EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING"])
-actual class MultiPlatformUtils(
-    private val shareClipboardProvider: () -> Clipboard = { Toolkit.getDefaultToolkit().systemClipboard },
-) {
+actual class MultiPlatformUtils {
     actual fun dialPhoneNumber(phoneNumber: String): Boolean {
         copyToClipBoard(phoneNumber)
         return false
@@ -58,14 +55,8 @@ actual class MultiPlatformUtils(
 
     actual fun shareText(text: String) {
         if (text.isBlank()) return
-        shareClipboardProvider().setContents(StringSelection(text), null)
-    }
-
-    actual suspend fun shareTextWithResult(text: String): ShareTextResult {
-        if (text.isBlank()) return ShareTextResult(outcome = ShareTextOutcome.NOT_SHOWN)
-
-        shareText(text = text)
-        return ShareTextResult(outcome = ShareTextOutcome.COPIED_TO_CLIPBOARD)
+        val clipboard = Toolkit.getDefaultToolkit().systemClipboard
+        clipboard.setContents(StringSelection(text), null)
     }
 
     private fun getDeviceId(): String? {
