@@ -110,6 +110,7 @@ class ServerDrivenEngineSkippedElementTest {
             },
             onLayoutElementSkip = { skippedElement -> skippedElements += skippedElement }
         )
+
         engine.setLayout(
             layout = LayoutResponse(
                 components = listOf(
@@ -137,6 +138,7 @@ class ServerDrivenEngineSkippedElementTest {
         assertFailsWith<IllegalArgumentException> {
             engine.setLayout(layout = LayoutResponse(components = listOf(chartResponse(), switchResponse(), switchResponse())))
         }
+
         engine.setLayout(layout = LayoutResponse(components = listOf(switchResponse())))
 
         assertEquals(emptyList(), skippedElements)
@@ -148,11 +150,13 @@ class ServerDrivenEngineSkippedElementTest {
             shutterContentLoader = { LayoutResponse(components = listOf(chartResponse())) },
             onLayoutElementSkip = { skippedElement -> skippedElements += skippedElement }
         )
+
         engine.setLayout(
             layout = LayoutResponse(
                 components = listOf(chartResponse(), ComponentResponse.ShutterResponse(id = SHUTTER_ID, title = TITLE))
             )
         )
+
         assertFailsWith<IllegalArgumentException> {
             engine.setLayout(layout = LayoutResponse(components = listOf(switchResponse(), switchResponse())))
         }
@@ -168,6 +172,7 @@ class ServerDrivenEngineSkippedElementTest {
             shutterContentLoader = { LayoutResponse(components = listOf(chartResponse(), switchResponse())) },
             onLayoutElementSkip = { skippedElement -> skippedElements += skippedElement }
         )
+
         engine.setLayout(
             layout = LayoutResponse(
                 components = listOf(switchResponse(), ComponentResponse.ShutterResponse(id = SHUTTER_ID, title = TITLE))
