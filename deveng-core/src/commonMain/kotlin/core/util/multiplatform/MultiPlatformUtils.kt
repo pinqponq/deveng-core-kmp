@@ -20,4 +20,5 @@ expect class MultiPlatformUtils {
     fun getPlatformConfig(): PlatformConfig
     suspend fun getCurrentLocation(): Pair<Double, Double>?
     fun shareText(text: String)
+    suspend fun shareTextWithResult(text: String): ShareTextResult
 }
