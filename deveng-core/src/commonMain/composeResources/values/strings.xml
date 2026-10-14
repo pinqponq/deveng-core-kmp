@@ -16,6 +16,7 @@
     <string name="shared_email">E-Posta</string>
     <string name="shared_cont_desc_camera_icon">kamera ikonu</string>
     <string name="shared_ok">Tamam</string>
+    <string name="shared_error">Hata</string>
     <string name="shared_cancel">İptal</string>
     <string name="shared_day">Gün</string>
     <string name="shared_month">Ay</string>
