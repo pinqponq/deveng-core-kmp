@@ -34,67 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 private const val SHUTTER_CONTENT_LOAD_DELAY_MILLIS = 600L
-
-private val shutterContentJson = Json { ignoreUnknownKeys = true }
-
-/**
- * Playground for [ServerDrivenScreen]: a layout with every component type, a visibility dependency
- * (the advanced shutter only shows while "Advanced settings" is on), an editable dependency
- * (resolution is locked while recording is off) and a shutter whose content is loaded on its first
- * expand, as a backend would send it. The live values are printed under the layout.
- */
-@Composable
-internal fun ServerDrivenDemoScreen(onBack: () -> Unit) {
-    val engine = remember {
-        ServerDrivenEngine(
-            shutterContentLoader = { shutterId ->
-                delay(SHUTTER_CONTENT_LOAD_DELAY_MILLIS)
-                shutterContentJson.decodeFromString(
-                    LayoutResponse.serializer(),
-                    if (shutterId == "network_shutter") NETWORK_SHUTTER_CONTENT_JSON else EMPTY_LAYOUT_JSON
-                )
-            }
-        ).apply { setLayout(json = SERVER_DRIVEN_DEMO_LAYOUT_JSON) }
-    }
-    val coroutineScope = rememberCoroutineScope()
-    val componentValues by engine.componentValues.collectAsState()
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = Color.White)
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .verticalScroll(rememberScrollState())
-            .padding(all = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(space = 16.dp),
-    ) {
-        CustomIconButton(
-            icon = Res.drawable.ic_arrow_left,
-            iconDescription = "Back",
-            onClick = onBack,
-        )
-
-        Text(
-            text = "Server-driven UI",
-            style = CoreMediumTextStyle().copy(fontSize = 20.sp),
-        )
-
-        ServerDrivenScreen(
-            engine = engine,
-            modifier = Modifier.fillMaxWidth(),
-            onComponentEvent = { componentEvent ->
-                coroutineScope.launch { engine.handleEvent(componentEvent) }
-            },
-        )
-
-        Text(
-            text = componentValues.entries.joinToString(separator = "\n") { (componentId, value) ->
-                "$componentId = $value"
-            },
-            style = CoreRegularTextStyle().copy(fontSize = 12.sp),
-        )
-    }
-}
+private const val NETWORK_SHUTTER_ID = "network_shutter"
 
 private const val EMPTY_LAYOUT_JSON = """{ "components": [], "dependencies": [] }"""
 
@@ -179,7 +119,7 @@ private const val SERVER_DRIVEN_DEMO_LAYOUT_JSON = """
     { "type": "switch", "id": "advanced_switch", "title": "Advanced settings", "currentValue": false },
     {
       "type": "shutter",
-      "id": "network_shutter",
+      "id": "$NETWORK_SHUTTER_ID",
       "title": "Network",
       "description": "Loaded from the server on first open",
       "components": []
@@ -196,7 +136,7 @@ private const val SERVER_DRIVEN_DEMO_LAYOUT_JSON = """
     },
     {
       "sourceId": "advanced_switch",
-      "targetId": "network_shutter",
+      "targetId": "$NETWORK_SHUTTER_ID",
       "operator": "EQUALS",
       "triggerValue": "true",
       "effectType": "VISIBILITY",
@@ -232,3 +172,64 @@ private const val NETWORK_SHUTTER_CONTENT_JSON = """
   "dependencies": []
 }
 """
+
+private val shutterContentJson = Json { ignoreUnknownKeys = true }
+
+/**
+ * Playground for [ServerDrivenScreen]: a layout with every component type, a visibility dependency
+ * (the advanced shutter only shows while "Advanced settings" is on), an editable dependency
+ * (resolution is locked while recording is off) and a shutter whose content is loaded on its first
+ * expand, as a backend would send it. The live values are printed under the layout.
+ */
+@Composable
+internal fun ServerDrivenDemoScreen(onBack: () -> Unit) {
+    val engine = remember {
+        ServerDrivenEngine(
+            shutterContentLoader = { shutterId ->
+                delay(SHUTTER_CONTENT_LOAD_DELAY_MILLIS)
+                shutterContentJson.decodeFromString(
+                    LayoutResponse.serializer(),
+                    if (shutterId == NETWORK_SHUTTER_ID) NETWORK_SHUTTER_CONTENT_JSON else EMPTY_LAYOUT_JSON
+                )
+            }
+        ).apply { setLayout(json = SERVER_DRIVEN_DEMO_LAYOUT_JSON) }
+    }
+    val coroutineScope = rememberCoroutineScope()
+    val componentValues by engine.componentValues.collectAsState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = Color.White)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .verticalScroll(rememberScrollState())
+            .padding(all = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(space = 16.dp),
+    ) {
+        CustomIconButton(
+            icon = Res.drawable.ic_arrow_left,
+            iconDescription = "Back",
+            onClick = onBack,
+        )
+
+        Text(
+            text = "Server-driven UI",
+            style = CoreMediumTextStyle().copy(fontSize = 20.sp),
+        )
+
+        ServerDrivenScreen(
+            engine = engine,
+            modifier = Modifier.fillMaxWidth(),
+            onComponentEvent = { componentEvent ->
+                coroutineScope.launch { engine.handleEvent(componentEvent) }
+            },
+        )
+
+        Text(
+            text = componentValues.entries.joinToString(separator = "\n") { (componentId, value) ->
+                "$componentId = $value"
+            },
+            style = CoreRegularTextStyle().copy(fontSize = 12.sp),
+        )
+    }
+}
