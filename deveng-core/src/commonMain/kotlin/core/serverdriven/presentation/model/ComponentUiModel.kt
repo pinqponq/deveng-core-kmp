@@ -12,14 +12,7 @@ sealed class ComponentUiModel {
 
     data class Tabs(
         override val id: String,
-        val tabs: List<Tab>
-    ) : ComponentUiModel()
-
-    data class Tab(
-        override val id: String,
-        val title: String,
-        val description: String?,
-        val components: List<ComponentUiModel>
+        val tabs: List<TabUiModel>
     ) : ComponentUiModel()
 
     data class Slider(

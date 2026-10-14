@@ -172,8 +172,7 @@ class ServerDrivenEngine(
         transform: (ComponentProperty) -> ComponentProperty
     ) {
         _componentProperties.update { componentProperties ->
-            val property = componentProperties[componentId] ?: ComponentProperty()
-            componentProperties + (componentId to transform(property))
+            componentProperties + (componentId to transform(componentProperties.getValue(componentId)))
         }
     }
 
@@ -189,10 +188,9 @@ class ServerDrivenEngine(
                 is ComponentUiModel.Dropdown -> componentValues[component.id] = component.currentValue
                 is ComponentUiModel.Tabs -> {
                     component.tabs.firstOrNull()?.let { firstTab -> componentValues[component.id] = firstTab.id }
-                    collectInitialValues(component.tabs, componentValues)
+                    component.tabs.forEach { tab -> collectInitialValues(tab.components, componentValues) }
                 }
 
-                is ComponentUiModel.Tab -> collectInitialValues(component.components, componentValues)
                 is ComponentUiModel.Shutter -> collectInitialValues(component.components, componentValues)
                 is ComponentUiModel.Row -> collectInitialValues(component.components, componentValues)
                 is ComponentUiModel.Divider -> Unit
@@ -202,7 +200,8 @@ class ServerDrivenEngine(
 
     private fun collectComponentIds(components: List<ComponentUiModel>): List<String> {
         return components.flatMap { component ->
-            listOf(component.id) + collectComponentIds(childrenOf(component))
+            val tabIds = (component as? ComponentUiModel.Tabs)?.tabs.orEmpty().map { tab -> tab.id }
+            listOf(component.id) + tabIds + collectComponentIds(childrenOf(component))
         }
     }
 
@@ -259,8 +258,7 @@ class ServerDrivenEngine(
         return when (component) {
             is ComponentUiModel.Shutter -> component.components
             is ComponentUiModel.Row -> component.components
-            is ComponentUiModel.Tabs -> component.tabs
-            is ComponentUiModel.Tab -> component.components
+            is ComponentUiModel.Tabs -> component.tabs.flatMap { tab -> tab.components }
             else -> emptyList()
         }
     }

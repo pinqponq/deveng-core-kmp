@@ -251,6 +251,52 @@ class ServerDrivenEngineTest {
     }
 
     @Test
+    fun clickDropdownOption_onEditableDropdown_storesOption() = runTest {
+        val engine = ServerDrivenEngine()
+        engine.setLayout(json = LAYOUT_JSON)
+
+        engine.handleEvent(ComponentEvent.ClickDropdownOption(componentId = RESOLUTION_DROPDOWN_ID, option = "720p"))
+
+        assertEquals("720p", engine.componentValues.value[RESOLUTION_DROPDOWN_ID])
+    }
+
+    @Test
+    fun clickSwitch_withEffectValueTrue_showsTargetOnlyWhileMatched() = runTest {
+        val engine = ServerDrivenEngine()
+        engine.setLayout(
+            layout = switchAndSliderLayout(
+                dependency = visibilityDependency(triggerValue = "false", effectValue = true)
+            )
+        )
+        assertFalse(isVisible(engine, BRIGHTNESS_SLIDER_ID))
+
+        engine.handleEvent(ComponentEvent.ClickSwitch(componentId = RECORD_SWITCH_ID, isChecked = false))
+        assertTrue(isVisible(engine, BRIGHTNESS_SLIDER_ID))
+
+        engine.handleEvent(ComponentEvent.ClickSwitch(componentId = RECORD_SWITCH_ID, isChecked = true))
+        assertFalse(isVisible(engine, BRIGHTNESS_SLIDER_ID))
+        assertEquals(true, engine.componentValues.value[RECORD_SWITCH_ID])
+    }
+
+    @Test
+    fun setLayout_withDuplicateTabIds_fails() {
+        val engine = ServerDrivenEngine()
+        val layout = LayoutResponse(
+            components = listOf(
+                ComponentResponse.TabsResponse(
+                    id = MAIN_TABS_ID,
+                    tabs = listOf(
+                        TabResponse(id = IMAGE_TAB_ID, title = TAB_TITLE),
+                        TabResponse(id = IMAGE_TAB_ID, title = TAB_TITLE)
+                    )
+                )
+            )
+        )
+
+        assertFailsWith<IllegalArgumentException> { engine.setLayout(layout = layout) }
+    }
+
+    @Test
     fun enterTextField_onEditableField_storesValue() = runTest {
         val engine = ServerDrivenEngine()
         engine.setLayout(json = LAYOUT_JSON)

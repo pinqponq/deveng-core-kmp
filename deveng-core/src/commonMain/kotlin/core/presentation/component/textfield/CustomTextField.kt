@@ -234,7 +234,9 @@ fun CustomTextField(
     // typing echo, so it must sync even while focused — otherwise the field appears stuck showing
     // text the caller already cleared from its own state.
     val isExternalClear = value.isEmpty() && textFieldValueState.text.isNotEmpty()
-    if ((!isFocused || isExternalClear) && value != textFieldValueState.text) {
+    // A read-only field has no typing to protect; it stays focused after a dropdown selection,
+    // so it must always show the caller's value.
+    if ((!isFocused || readOnly || isExternalClear) && value != textFieldValueState.text) {
         textFieldValueState = TextFieldValue(text = value, selection = TextRange(value.length))
     }
 

@@ -8,7 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import core.presentation.component.CustomDropDownMenu
 import core.presentation.component.CustomSlider
 import core.presentation.component.LabeledSwitch
@@ -19,7 +18,6 @@ import core.presentation.theme.LocalComponentTheme
 import core.serverdriven.presentation.model.ComponentEvent
 import core.serverdriven.presentation.model.ComponentProperty
 import core.serverdriven.presentation.model.ComponentUiModel
-import core.serverdriven.presentation.model.TextFieldKeyboardType
 import core.util.EMPTY
 
 @Composable
@@ -148,23 +146,5 @@ internal fun ServerDrivenComponent(
             containerType = ContainerType.ROW,
             onComponentEvent = onComponentEvent
         )
-
-        is ComponentUiModel.Tab -> ServerDrivenComponentList(
-            modifier = modifier,
-            components = component.components,
-            componentValues = componentValues,
-            componentProperties = componentProperties,
-            containerType = ContainerType.COLUMN,
-            onComponentEvent = onComponentEvent
-        )
-    }
-}
-
-private fun TextFieldKeyboardType.toComposeKeyboardType(): KeyboardType {
-    return when (this) {
-        TextFieldKeyboardType.TEXT -> KeyboardType.Text
-        TextFieldKeyboardType.NUMERIC -> KeyboardType.Number
-        TextFieldKeyboardType.PASSWORD -> KeyboardType.Password
-        TextFieldKeyboardType.EMAIL -> KeyboardType.Email
     }
 }

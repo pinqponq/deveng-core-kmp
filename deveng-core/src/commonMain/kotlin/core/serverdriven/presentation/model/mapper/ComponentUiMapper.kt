@@ -3,6 +3,7 @@ package core.serverdriven.presentation.model.mapper
 import core.serverdriven.data.model.response.ComponentResponse
 import core.serverdriven.data.model.response.TabResponse
 import core.serverdriven.presentation.model.ComponentUiModel
+import core.serverdriven.presentation.model.TabUiModel
 import core.serverdriven.presentation.model.TextFieldKeyboardType
 import core.serverdriven.presentation.model.TextFieldMaskType
 import core.util.CustomLogger
@@ -92,8 +93,8 @@ class ComponentUiMapper {
 
     private fun mapToTabUiModel(
         response: TabResponse
-    ): ComponentUiModel.Tab {
-        return ComponentUiModel.Tab(
+    ): TabUiModel {
+        return TabUiModel(
             id = response.id,
             title = response.title,
             description = response.description,
