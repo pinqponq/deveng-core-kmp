@@ -12,6 +12,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ServerDrivenEngineLoggingTest {
 
@@ -162,6 +163,17 @@ class ServerDrivenEngineLoggingTest {
         assertEquals(1, loggedLines().count { line -> line.contains("'$MISSING_ID'") })
     }
 
+    @Test
+    fun setLayout_withDocumentExampleUsingDeprecatedTabType_logsOnlyTheTypeOnce() {
+        val engine = ServerDrivenEngine()
+
+        engine.setLayout(json = DayNightTestLayout.json(tabsType = DEPRECATED_TABS_TYPE))
+
+        val loggedLine = loggedLines().single()
+        assertTrue(loggedLine.contains("'${DayNightTestLayout.TABS_ID}'"))
+        assertTrue(loggedLine.contains("'$DEPRECATED_TABS_TYPE'"))
+    }
+
     private fun switchResponse() = ComponentResponse.SwitchResponse(id = SWITCH_ID, title = TITLE, currentValue = true)
 
     private fun missingTargetDependency() = DependencyResponse(
@@ -184,6 +196,7 @@ class ServerDrivenEngineLoggingTest {
         const val MISSING_ID = "missing_component"
         const val SHUTTER_ID = "camera_shutter"
         const val TITLE = "Title"
+        const val DEPRECATED_TABS_TYPE = "tab"
         const val UNKNOWN_FORMAT = "IBAN"
         const val UNKNOWN_KEYBOARD_TYPE = "DIAL_PAD"
         const val UNKNOWN_OPERATOR = "CONTAINS"

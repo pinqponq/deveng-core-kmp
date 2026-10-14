@@ -19,9 +19,11 @@ import kotlinx.serialization.json.Json
  * Holds a server-driven layout: the component tree, each component's value, and the visible,
  * editable and expanded state that the layout's dependencies derive from those values.
  *
- * Component ids must be unique across the whole layout, including content loaded later into a
- * shutter, because values and dependencies address components by id; a duplicate id fails
- * [setLayout] and [handleEvent] with an [IllegalArgumentException].
+ * Component ids must be unique inside one tab; components outside every tab are unique across the
+ * layout, including content loaded later into a shutter. A duplicate fails [setLayout] and
+ * [handleEvent] with an [IllegalArgumentException]. Values, properties and [ComponentEvent]s address
+ * a component by its key: its id outside every tab, `<tab key>/<id>` inside a tab
+ * (`day_tab/schedule_switch`), so two tabs with the same id keep separate state.
  *
  * @param shutterContentLoader Loads a shutter's extra content the first time it expands; its
  * components are appended to the shutter's own and its dependencies join the layout's.
@@ -39,7 +41,7 @@ class ServerDrivenEngine(
     private val _componentProperties = MutableStateFlow<Map<String, ComponentProperty>>(emptyMap())
     private val _visibleComponents = MutableStateFlow<List<ComponentUiModel>>(emptyList())
     private val dependencies = MutableStateFlow<List<DependencyUiModel>>(emptyList())
-    private val loadedShutterIds = MutableStateFlow<Set<String>>(emptySet())
+    private val loadedShutterKeys = MutableStateFlow<Set<String>>(emptySet())
 
     val components: StateFlow<List<ComponentUiModel>> = _components.asStateFlow()
     val componentValues: StateFlow<Map<String, Any>> = _componentValues.asStateFlow()
@@ -53,20 +55,20 @@ class ServerDrivenEngine(
 
     fun setLayout(layout: LayoutResponse) {
         val components = componentUiMapper.mapToUiModels(layout.components)
-        val componentIds = collectComponentIds(components)
-        validateUniqueIds(componentIds)
+        val scopedComponentIds = collectScopedComponentIds(components, scopeKeys = emptyList())
+        validateUniqueKeys(scopedComponentIds)
 
-        val componentValues = buildMap { collectInitialValues(components, this) }
+        val componentValues = buildMap { collectInitialValues(components, scopeKey = null, componentValues = this) }
         val layoutDependencies = dependencyUiMapper.mapToUiModels(layout.dependencies)
-        val componentProperties = componentIds.associateWith { ComponentProperty() }
-        logDependenciesWithMissingIds(layoutDependencies, componentIds)
+        val componentProperties = scopedComponentIds.associate { scopedId -> scopedId.key to ComponentProperty() }
+        logDependenciesWithMissingIds(layoutDependencies, scopedComponentIds)
 
-        loadedShutterIds.value = emptySet()
+        loadedShutterKeys.value = emptySet()
         dependencies.value = layoutDependencies
         _components.value = components
         _componentValues.value = componentValues
         _componentProperties.value = dependencyResolver.resolveProperties(
-            dependencies = layoutDependencies,
+            dependencies = dependencyResolver.scopeDependencies(layoutDependencies, scopedComponentIds),
             componentValues = componentValues,
             componentProperties = componentProperties
         )
@@ -86,89 +88,99 @@ class ServerDrivenEngine(
     }
 
     private fun updateValue(
-        componentId: String,
+        componentKey: String,
         value: Any
     ) {
-        val isEditable = _componentProperties.value[componentId]?.isEditable ?: false
+        val isEditable = _componentProperties.value[componentKey]?.isEditable ?: false
 
         if (!isEditable) {
-            CustomLogger.log("Server-driven UI: ignored a value for '$componentId', it is not editable")
+            CustomLogger.log("Server-driven UI: ignored a value for '$componentKey', it is not editable")
             return
         }
 
-        _componentValues.update { componentValues -> componentValues + (componentId to value) }
+        _componentValues.update { componentValues -> componentValues + (componentKey to value) }
         resolveDependencies()
     }
 
     private fun selectTab(
-        tabsId: String,
+        tabsKey: String,
         tabId: String
     ) {
-        val tabs = findComponent(_components.value, tabsId) as? ComponentUiModel.Tabs
+        val tabs = findComponent(_components.value, tabsKey, scopeKey = null) as? ComponentUiModel.Tabs
         val isTabOfComponent = tabs?.tabs?.any { tab -> tab.id == tabId } ?: false
 
-        require(isTabOfComponent) { "Server-driven UI: '$tabId' is not a tab of '$tabsId'" }
+        require(isTabOfComponent) { "Server-driven UI: '$tabId' is not a tab of '$tabsKey'" }
 
-        _componentValues.update { componentValues -> componentValues + (tabsId to tabId) }
+        _componentValues.update { componentValues -> componentValues + (tabsKey to tabId) }
         resolveDependencies()
     }
 
-    private suspend fun toggleShutter(shutterId: String) {
-        val shutter = findComponent(_components.value, shutterId)
+    private suspend fun toggleShutter(shutterKey: String) {
+        val shutter = findComponent(_components.value, shutterKey, scopeKey = null)
 
-        require(shutter is ComponentUiModel.Shutter) { "Server-driven UI: '$shutterId' is not a shutter" }
+        require(shutter is ComponentUiModel.Shutter) { "Server-driven UI: '$shutterKey' is not a shutter" }
 
-        val isExpanding = _componentProperties.value[shutterId]?.isExpanded != true
-        updateProperty(shutterId) { property -> property.copy(isExpanded = isExpanding) }
+        val isExpanding = _componentProperties.value[shutterKey]?.isExpanded != true
+        updateProperty(shutterKey) { property -> property.copy(isExpanded = isExpanding) }
 
         val loader = shutterContentLoader ?: return
         if (!isExpanding) return
 
-        val isAlreadyLoaded = loadedShutterIds.getAndUpdate { shutterIds -> shutterIds + shutterId }
-            .contains(shutterId)
+        val isAlreadyLoaded = loadedShutterKeys.getAndUpdate { shutterKeys -> shutterKeys + shutterKey }
+            .contains(shutterKey)
         if (isAlreadyLoaded) return
 
         val shutterContent = try {
-            loader.loadShutterContent(shutterId)
+            loader.loadShutterContent(shutter.id)
         } catch (exception: Exception) {
-            loadedShutterIds.update { shutterIds -> shutterIds - shutterId }
-            updateProperty(shutterId) { property -> property.copy(isExpanded = false) }
+            loadedShutterKeys.update { shutterKeys -> shutterKeys - shutterKey }
+            updateProperty(shutterKey) { property -> property.copy(isExpanded = false) }
             throw exception
         }
 
-        appendShutterContent(shutterId, shutterContent)
+        appendShutterContent(shutterKey, shutterContent)
     }
 
     private fun appendShutterContent(
-        shutterId: String,
+        shutterKey: String,
         shutterContent: LayoutResponse
     ) {
+        val shutterScopeKeys = collectScopedComponentIds(_components.value, scopeKeys = emptyList())
+            .first { scopedId -> scopedId.key == shutterKey }
+            .scopeKeys
         val loadedComponents = componentUiMapper.mapToUiModels(shutterContent.components)
-        val loadedComponentIds = collectComponentIds(loadedComponents)
-        validateUniqueIds(collectComponentIds(_components.value) + loadedComponentIds)
+        val loadedScopedIds = collectScopedComponentIds(loadedComponents, shutterScopeKeys)
+        val updatedComponents = appendToShutter(_components.value, shutterKey, loadedComponents, scopeKey = null)
+        val scopedComponentIds = collectScopedComponentIds(updatedComponents, scopeKeys = emptyList())
+        validateUniqueKeys(scopedComponentIds)
 
-        _components.update { components ->
-            appendToShutter(components, shutterId, loadedComponents)
-        }
+        _components.value = updatedComponents
 
         _componentValues.update { componentValues ->
-            componentValues + buildMap { collectInitialValues(loadedComponents, this) }
+            componentValues + buildMap {
+                collectInitialValues(loadedComponents, scopeKey = shutterScopeKeys.lastOrNull(), componentValues = this)
+            }
         }
 
         _componentProperties.update { componentProperties ->
-            componentProperties + loadedComponentIds.associateWith { ComponentProperty() }
+            componentProperties + loadedScopedIds.associate { scopedId -> scopedId.key to ComponentProperty() }
         }
 
         val loadedDependencies = dependencyUiMapper.mapToUiModels(shutterContent.dependencies)
-        logDependenciesWithMissingIds(loadedDependencies, collectComponentIds(_components.value))
+        logDependenciesWithMissingIds(loadedDependencies, scopedComponentIds)
         dependencies.update { layoutDependencies -> layoutDependencies + loadedDependencies }
         resolveDependencies()
     }
 
     private fun resolveDependencies() {
+        val scopedDependencies = dependencyResolver.scopeDependencies(
+            dependencies = dependencies.value,
+            scopedComponentIds = collectScopedComponentIds(_components.value, scopeKeys = emptyList())
+        )
+
         _componentProperties.update { componentProperties ->
             dependencyResolver.resolveProperties(
-                dependencies = dependencies.value,
+                dependencies = scopedDependencies,
                 componentValues = _componentValues.value,
                 componentProperties = componentProperties
             )
@@ -179,10 +191,12 @@ class ServerDrivenEngine(
 
     private fun logDependenciesWithMissingIds(
         newDependencies: List<DependencyUiModel>,
-        componentIds: List<String>
+        scopedComponentIds: List<ScopedComponentId>
     ) {
         newDependencies
-            .filter { dependency -> dependency.sourceId !in componentIds || dependency.targetId !in componentIds }
+            .filter { dependency ->
+                dependencyResolver.scopeDependencies(listOf(dependency), scopedComponentIds).isEmpty()
+            }
             .forEach { dependency ->
                 CustomLogger.log(
                     "Server-driven UI: dependency '${dependency.sourceId}' -> '${dependency.targetId}' names an id " +
@@ -192,23 +206,29 @@ class ServerDrivenEngine(
     }
 
     private fun publishVisibleComponents() {
-        _visibleComponents.value = withoutHiddenComponents(_components.value)
+        _visibleComponents.value = withoutHiddenComponents(_components.value, scopeKey = null)
     }
 
-    private fun withoutHiddenComponents(components: List<ComponentUiModel>): List<ComponentUiModel> {
+    private fun withoutHiddenComponents(
+        components: List<ComponentUiModel>,
+        scopeKey: String?
+    ): List<ComponentUiModel> {
         return components
-            .filter { component -> _componentProperties.value[component.id]?.isVisible ?: true }
+            .filter { component ->
+                _componentProperties.value[scopedComponentKey(scopeKey, component.id)]?.isVisible ?: true
+            }
             .map { component ->
                 when (component) {
                     is ComponentUiModel.Shutter ->
-                        component.copy(components = withoutHiddenComponents(component.components))
+                        component.copy(components = withoutHiddenComponents(component.components, scopeKey))
 
                     is ComponentUiModel.Row ->
-                        component.copy(components = withoutHiddenComponents(component.components))
+                        component.copy(components = withoutHiddenComponents(component.components, scopeKey))
 
                     is ComponentUiModel.Tabs -> component.copy(
                         tabs = component.tabs.map { tab ->
-                            tab.copy(components = withoutHiddenComponents(tab.components))
+                            val tabKey = scopedComponentKey(scopeKey, tab.id)
+                            tab.copy(components = withoutHiddenComponents(tab.components, tabKey))
                         }
                     )
 
@@ -218,61 +238,100 @@ class ServerDrivenEngine(
     }
 
     private fun updateProperty(
-        componentId: String,
+        componentKey: String,
         transform: (ComponentProperty) -> ComponentProperty
     ) {
         _componentProperties.update { componentProperties ->
-            componentProperties + (componentId to transform(componentProperties.getValue(componentId)))
+            componentProperties + (componentKey to transform(componentProperties.getValue(componentKey)))
         }
     }
 
     private fun collectInitialValues(
         components: List<ComponentUiModel>,
+        scopeKey: String?,
         componentValues: MutableMap<String, Any>
     ) {
         components.forEach { component ->
+            val componentKey = scopedComponentKey(scopeKey, component.id)
+
             when (component) {
-                is ComponentUiModel.Slider -> componentValues[component.id] = component.currentValue
-                is ComponentUiModel.Switch -> componentValues[component.id] = component.currentValue
-                is ComponentUiModel.TextField -> componentValues[component.id] = component.currentValue
-                is ComponentUiModel.Dropdown -> componentValues[component.id] = component.currentValue
+                is ComponentUiModel.Slider -> componentValues[componentKey] = component.currentValue
+                is ComponentUiModel.Switch -> componentValues[componentKey] = component.currentValue
+                is ComponentUiModel.TextField -> componentValues[componentKey] = component.currentValue
+                is ComponentUiModel.Dropdown -> componentValues[componentKey] = component.currentValue
                 is ComponentUiModel.Tabs -> {
-                    component.tabs.firstOrNull()?.let { firstTab -> componentValues[component.id] = firstTab.id }
-                    component.tabs.forEach { tab -> collectInitialValues(tab.components, componentValues) }
+                    component.tabs.firstOrNull()?.let { firstTab -> componentValues[componentKey] = firstTab.id }
+                    component.tabs.forEach { tab ->
+                        collectInitialValues(tab.components, scopedComponentKey(scopeKey, tab.id), componentValues)
+                    }
                 }
 
-                is ComponentUiModel.Shutter -> collectInitialValues(component.components, componentValues)
-                is ComponentUiModel.Row -> collectInitialValues(component.components, componentValues)
+                is ComponentUiModel.Shutter -> collectInitialValues(component.components, scopeKey, componentValues)
+                is ComponentUiModel.Row -> collectInitialValues(component.components, scopeKey, componentValues)
                 is ComponentUiModel.Divider -> Unit
             }
         }
     }
 
-    private fun collectComponentIds(components: List<ComponentUiModel>): List<String> {
+    private fun collectScopedComponentIds(
+        components: List<ComponentUiModel>,
+        scopeKeys: List<String>
+    ): List<ScopedComponentId> {
+        val scopeKey = scopeKeys.lastOrNull()
+
         return components.flatMap { component ->
-            val tabIds = (component as? ComponentUiModel.Tabs)?.tabs.orEmpty().map { tab -> tab.id }
-            listOf(component.id) + tabIds + collectComponentIds(childrenOf(component))
+            val scopedId = ScopedComponentId(
+                key = scopedComponentKey(scopeKey, component.id),
+                componentId = component.id,
+                scopeKeys = scopeKeys
+            )
+            val nestedScopedIds = when (component) {
+                is ComponentUiModel.Tabs -> component.tabs.flatMap { tab ->
+                    val tabKey = scopedComponentKey(scopeKey, tab.id)
+                    val tabScopedId = ScopedComponentId(key = tabKey, componentId = tab.id, scopeKeys = scopeKeys)
+                    listOf(tabScopedId) + collectScopedComponentIds(tab.components, scopeKeys + tabKey)
+                }
+
+                is ComponentUiModel.Shutter -> collectScopedComponentIds(component.components, scopeKeys)
+                is ComponentUiModel.Row -> collectScopedComponentIds(component.components, scopeKeys)
+                else -> emptyList()
+            }
+
+            listOf(scopedId) + nestedScopedIds
         }
     }
 
-    private fun validateUniqueIds(componentIds: List<String>) {
-        val duplicateIds = componentIds.groupingBy { componentId -> componentId }
+    private fun validateUniqueKeys(scopedComponentIds: List<ScopedComponentId>) {
+        val duplicateKeys = scopedComponentIds.groupingBy { scopedId -> scopedId.key }
             .eachCount()
             .filterValues { count -> count > 1 }
             .keys
 
-        require(duplicateIds.isEmpty()) {
-            "Server-driven UI: component ids must be unique, duplicated: ${duplicateIds.joinToString()}"
+        require(duplicateKeys.isEmpty()) {
+            "Server-driven UI: component ids must be unique inside a tab and outside the tabs, " +
+                "duplicated: ${duplicateKeys.joinToString()}"
         }
     }
 
     private fun findComponent(
         components: List<ComponentUiModel>,
-        componentId: String
+        componentKey: String,
+        scopeKey: String?
     ): ComponentUiModel? {
         components.forEach { component ->
-            if (component.id == componentId) return component
-            findComponent(childrenOf(component), componentId)?.let { child -> return child }
+            if (scopedComponentKey(scopeKey, component.id) == componentKey) return component
+
+            val nestedComponent = when (component) {
+                is ComponentUiModel.Tabs -> component.tabs.firstNotNullOfOrNull { tab ->
+                    findComponent(tab.components, componentKey, scopedComponentKey(scopeKey, tab.id))
+                }
+
+                is ComponentUiModel.Shutter -> findComponent(component.components, componentKey, scopeKey)
+                is ComponentUiModel.Row -> findComponent(component.components, componentKey, scopeKey)
+                else -> null
+            }
+
+            if (nestedComponent != null) return nestedComponent
         }
 
         return null
@@ -280,37 +339,33 @@ class ServerDrivenEngine(
 
     private fun appendToShutter(
         components: List<ComponentUiModel>,
-        shutterId: String,
-        loadedComponents: List<ComponentUiModel>
+        shutterKey: String,
+        loadedComponents: List<ComponentUiModel>,
+        scopeKey: String?
     ): List<ComponentUiModel> {
         return components.map { component ->
             when (component) {
-                is ComponentUiModel.Shutter -> if (component.id == shutterId) {
+                is ComponentUiModel.Shutter -> if (scopedComponentKey(scopeKey, component.id) == shutterKey) {
                     component.copy(components = component.components + loadedComponents)
                 } else {
-                    component.copy(components = appendToShutter(component.components, shutterId, loadedComponents))
+                    component.copy(
+                        components = appendToShutter(component.components, shutterKey, loadedComponents, scopeKey)
+                    )
                 }
 
-                is ComponentUiModel.Row ->
-                    component.copy(components = appendToShutter(component.components, shutterId, loadedComponents))
+                is ComponentUiModel.Row -> component.copy(
+                    components = appendToShutter(component.components, shutterKey, loadedComponents, scopeKey)
+                )
 
                 is ComponentUiModel.Tabs -> component.copy(
                     tabs = component.tabs.map { tab ->
-                        tab.copy(components = appendToShutter(tab.components, shutterId, loadedComponents))
+                        val tabKey = scopedComponentKey(scopeKey, tab.id)
+                        tab.copy(components = appendToShutter(tab.components, shutterKey, loadedComponents, tabKey))
                     }
                 )
 
                 else -> component
             }
-        }
-    }
-
-    private fun childrenOf(component: ComponentUiModel): List<ComponentUiModel> {
-        return when (component) {
-            is ComponentUiModel.Shutter -> component.components
-            is ComponentUiModel.Row -> component.components
-            is ComponentUiModel.Tabs -> component.tabs.flatMap { tab -> tab.components }
-            else -> emptyList()
         }
     }
 }

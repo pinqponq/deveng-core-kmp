@@ -33,19 +33,36 @@ class ComponentResponseSerializerTest {
     @Test
     fun decode_withUnknownOrMissingType_returnsUnknownResponse() {
         val components = layoutJson.decodeFromString<List<ComponentResponse>>(
-            """[{"type":"tab","id":"$COMPONENT_ID"},{"id":"$COMPONENT_ID"}]"""
+            """[{"type":"$UNKNOWN_TYPE","id":"$COMPONENT_ID"},{"id":"$COMPONENT_ID"}]"""
         )
 
         assertEquals(
             listOf(
-                ComponentResponse.UnknownResponse(id = COMPONENT_ID, type = "tab"),
+                ComponentResponse.UnknownResponse(id = COMPONENT_ID, type = UNKNOWN_TYPE),
                 ComponentResponse.UnknownResponse(id = COMPONENT_ID, type = null)
             ),
             components
         )
 
         val unknownComponent = components.first() as ComponentResponse.UnknownResponse
-        assertEquals(listOf(COMPONENT_ID, "tab"), listOf(unknownComponent.id, unknownComponent.type))
+        assertEquals(listOf(COMPONENT_ID, UNKNOWN_TYPE), listOf(unknownComponent.id, unknownComponent.type))
+    }
+
+    @Test
+    fun decode_withDeprecatedTabType_returnsTabsResponse() {
+        val components = layoutJson.decodeFromString<List<ComponentResponse>>(
+            """[{"type":"tab","id":"$COMPONENT_ID","tabs":[{"id":"$TAB_ID","title":"Day"}]}]"""
+        )
+
+        assertEquals(
+            listOf(
+                ComponentResponse.TabsResponse(
+                    id = COMPONENT_ID,
+                    tabs = listOf(TabResponse(id = TAB_ID, title = "Day"))
+                )
+            ),
+            components
+        )
     }
 
     private fun componentJson(type: String): String {
@@ -61,5 +78,7 @@ class ComponentResponseSerializerTest {
 
     private companion object {
         const val COMPONENT_ID = "component"
+        const val TAB_ID = "day_tab"
+        const val UNKNOWN_TYPE = "chart"
     }
 }

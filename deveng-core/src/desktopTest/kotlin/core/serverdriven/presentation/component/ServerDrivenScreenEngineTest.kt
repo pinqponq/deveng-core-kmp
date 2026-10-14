@@ -3,6 +3,7 @@ package core.serverdriven.presentation.component
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runDesktopComposeUiTest
+import core.serverdriven.presentation.engine.scopedComponentKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -59,7 +60,7 @@ class ServerDrivenScreenEngineTest {
             .moveSlider(SLIDER_TARGET_VALUE)
             .assertTextShown(SLIDER_TARGET_VALUE.toInt().toString())
 
-        assertEquals(SLIDER_TARGET_VALUE, robot.engine.componentValues.value[ServerDrivenScreenTestLayout.SLIDER_ID])
+        assertEquals(SLIDER_TARGET_VALUE, robot.engine.componentValues.value[ServerDrivenScreenTestLayout.SLIDER_KEY])
     }
 
     @Test
@@ -80,7 +81,10 @@ class ServerDrivenScreenEngineTest {
                 newId(ServerDrivenScreenTestLayout.SWITCH_ID) to true,
                 newId(ServerDrivenScreenTestLayout.DROPDOWN_ID) to ServerDrivenScreenTestLayout.DROPDOWN_OTHER_OPTION,
                 newId(ServerDrivenScreenTestLayout.TEXT_FIELD_ID) to ENTERED_TEXT,
-                newId(ServerDrivenScreenTestLayout.SLIDER_ID) to SLIDER_TARGET_VALUE,
+                scopedComponentKey(
+                    scopeKey = newId(ServerDrivenScreenTestLayout.IMAGE_TAB_ID),
+                    componentId = newId(ServerDrivenScreenTestLayout.SLIDER_ID)
+                ) to SLIDER_TARGET_VALUE,
                 newId(ServerDrivenScreenTestLayout.TABS_ID) to newId(ServerDrivenScreenTestLayout.NETWORK_TAB_ID)
             ),
             robot.engine.componentValues.value
@@ -111,7 +115,7 @@ class ServerDrivenScreenEngineTest {
             ServerDrivenScreenTestLayout.SLIDER_ID,
             ServerDrivenScreenTestLayout.TABS_ID,
             ServerDrivenScreenTestLayout.NETWORK_TAB_ID,
-            "image_tab",
+            ServerDrivenScreenTestLayout.IMAGE_TAB_ID,
             "record_row",
             "camera_divider"
         )
