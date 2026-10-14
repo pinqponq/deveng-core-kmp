@@ -4,8 +4,10 @@ import core.serverdriven.data.model.response.ComponentResponse
 import core.serverdriven.data.model.response.DependencyResponse
 import core.serverdriven.data.model.response.LayoutResponse
 import core.serverdriven.presentation.model.ComponentEvent
+import core.serverdriven.presentation.model.ComponentUiModel
 import core.util.CustomLogger
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import java.io.ByteArrayOutputStream
@@ -196,6 +198,47 @@ class ServerDrivenEngineLoggingTest {
         assertEquals(1, loggedLines().count { line -> line.contains("'$SHUTTER_ID'") })
     }
 
+    @Test
+    fun clickShutter_whenLayoutWithSameShutterReplacedDuringLoad_dropsOldContent() = runTest {
+        val loadedContent = CompletableDeferred<LayoutResponse>()
+        val engine = ServerDrivenEngine(shutterContentLoader = { loadedContent.await() })
+        val shutterLayout = LayoutResponse(
+            components = listOf(ComponentResponse.ShutterResponse(id = SHUTTER_ID, title = TITLE))
+        )
+        engine.setLayout(layout = shutterLayout)
+        val shutterLoad = launch { engine.handleEvent(ComponentEvent.ClickShutter(componentId = SHUTTER_ID)) }
+        testScheduler.runCurrent()
+
+        engine.setLayout(layout = shutterLayout)
+        loadedContent.complete(LayoutResponse(components = listOf(switchResponse())))
+        shutterLoad.join()
+
+        assertEquals(listOf(SHUTTER_ID), engine.components.value.map { component -> component.id })
+        assertEquals(emptyList(), (engine.components.value.single() as ComponentUiModel.Shutter).components)
+        assertEquals(1, loggedLines().count { line -> line.contains("'$SHUTTER_ID'") })
+    }
+
+    @Test
+    fun clickShutter_whenLoaderFailsAfterLayoutReplaced_rethrowsLoaderException() = runTest {
+        val loadedContent = CompletableDeferred<LayoutResponse>()
+        val engine = ServerDrivenEngine(shutterContentLoader = { loadedContent.await() })
+        engine.setLayout(
+            layout = LayoutResponse(
+                components = listOf(ComponentResponse.ShutterResponse(id = SHUTTER_ID, title = TITLE))
+            )
+        )
+        val shutterLoad = async {
+            runCatching { engine.handleEvent(ComponentEvent.ClickShutter(componentId = SHUTTER_ID)) }
+        }
+        testScheduler.runCurrent()
+
+        engine.setLayout(layout = LayoutResponse(components = listOf(switchResponse())))
+        loadedContent.completeExceptionally(IllegalStateException(LOADER_FAILURE_MESSAGE))
+
+        assertEquals(LOADER_FAILURE_MESSAGE, shutterLoad.await().exceptionOrNull()?.message)
+        assertEquals(listOf(SWITCH_ID), engine.components.value.map { component -> component.id })
+    }
+
     private fun switchResponse() = ComponentResponse.SwitchResponse(id = SWITCH_ID, title = TITLE, currentValue = true)
 
     private fun missingTargetDependency() = DependencyResponse(
@@ -219,6 +262,7 @@ class ServerDrivenEngineLoggingTest {
         const val SHUTTER_ID = "camera_shutter"
         const val TITLE = "Title"
         const val DEPRECATED_TABS_TYPE = "tab"
+        const val LOADER_FAILURE_MESSAGE = "shutter content unavailable"
         const val UNKNOWN_FORMAT = "IBAN"
         const val UNKNOWN_KEYBOARD_TYPE = "DIAL_PAD"
         const val UNKNOWN_OPERATOR = "CONTAINS"

@@ -339,4 +339,6 @@ Each dependency reads the value of `sourceId` and sets one property of `targetId
 - **Lazy shutter content:** with a `ShutterContentLoader`, the first expand of a shutter calls the loader with
   the shutter id (not its key). The returned components are appended after the shutter's own components and the returned
   dependencies join the layout's. Each shutter loads once per `setLayout`; when the loader throws, the shutter
-  collapses, the exception reaches the caller of `handleEvent`, and the next expand tries again.
+  collapses, the exception reaches the caller of `handleEvent`, and the next expand tries again. When `setLayout`
+  replaces the layout while a load is running, the loaded content is dropped (and logged); a loader exception
+  still reaches the caller.

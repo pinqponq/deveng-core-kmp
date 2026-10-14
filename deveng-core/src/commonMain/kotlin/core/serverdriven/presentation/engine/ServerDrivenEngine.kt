@@ -42,6 +42,7 @@ class ServerDrivenEngine(
     private val _visibleComponents = MutableStateFlow<List<ComponentUiModel>>(emptyList())
     private val dependencies = MutableStateFlow<List<DependencyUiModel>>(emptyList())
     private val loadedShutterKeys = MutableStateFlow<Set<String>>(emptySet())
+    private val layoutVersion = MutableStateFlow(0)
 
     val components: StateFlow<List<ComponentUiModel>> = _components.asStateFlow()
     val componentValues: StateFlow<Map<String, Any>> = _componentValues.asStateFlow()
@@ -63,6 +64,7 @@ class ServerDrivenEngine(
         val componentProperties = scopedComponentIds.associate { scopedId -> scopedId.key to ComponentProperty() }
         logDependenciesWithMissingIds(layoutDependencies, scopedComponentIds)
 
+        layoutVersion.update { version -> version + 1 }
         loadedShutterKeys.value = emptySet()
         dependencies.value = layoutDependencies
         _components.value = components
@@ -130,12 +132,21 @@ class ServerDrivenEngine(
             .contains(shutterKey)
         if (isAlreadyLoaded) return
 
+        val layoutVersionAtLoad = layoutVersion.value
         val shutterContent = try {
             loader.loadShutterContent(shutter.id)
         } catch (exception: Exception) {
-            loadedShutterKeys.update { shutterKeys -> shutterKeys - shutterKey }
-            updateProperty(shutterKey) { property -> property.copy(isExpanded = false) }
+            if (layoutVersion.value == layoutVersionAtLoad) {
+                loadedShutterKeys.update { shutterKeys -> shutterKeys - shutterKey }
+                updateProperty(shutterKey) { property -> property.copy(isExpanded = false) }
+            }
+
             throw exception
+        }
+
+        if (layoutVersion.value != layoutVersionAtLoad) {
+            CustomLogger.log("Server-driven UI: dropped the loaded content of '$shutterKey', the layout was replaced")
+            return
         }
 
         appendShutterContent(shutterKey, shutterContent)
@@ -145,15 +156,9 @@ class ServerDrivenEngine(
         shutterKey: String,
         shutterContent: LayoutResponse
     ) {
-        val shutterScopedId = collectScopedComponentIds(_components.value, scopeKeys = emptyList())
-            .firstOrNull { scopedId -> scopedId.key == shutterKey }
-
-        if (shutterScopedId == null) {
-            CustomLogger.log("Server-driven UI: dropped the loaded content of '$shutterKey', it is no longer in the layout")
-            return
-        }
-
-        val shutterScopeKeys = shutterScopedId.scopeKeys
+        val shutterScopeKeys = collectScopedComponentIds(_components.value, scopeKeys = emptyList())
+            .first { scopedId -> scopedId.key == shutterKey }
+            .scopeKeys
         val loadedComponents = componentUiMapper.mapToUiModels(shutterContent.components)
         val loadedScopedIds = collectScopedComponentIds(loadedComponents, shutterScopeKeys)
         val updatedComponents = appendToShutter(_components.value, shutterKey, loadedComponents, scopeKey = null)
