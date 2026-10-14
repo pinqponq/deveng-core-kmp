@@ -129,22 +129,48 @@ class ServerDrivenEngineLoggingTest {
 
         engine.setLayout(
             layout = LayoutResponse(
-                components = listOf(ComponentResponse.SwitchResponse(id = SWITCH_ID, title = TITLE, currentValue = true)),
-                dependencies = listOf(
-                    DependencyResponse(
-                        sourceId = SWITCH_ID,
-                        targetId = MISSING_ID,
-                        operator = "EQUALS",
-                        triggerValue = "true",
-                        effectType = "VISIBILITY",
-                        effectValue = false
-                    )
-                )
+                components = listOf(switchResponse()),
+                dependencies = listOf(missingTargetDependency())
             )
         )
 
         assertEquals(1, loggedLines().count { line -> line.contains("'$MISSING_ID'") })
     }
+
+    @Test
+    fun clickShutter_withLoadedDependencyOnMissingId_logsThatDependency() = runTest {
+        val engine = ServerDrivenEngine(
+            shutterContentLoader = {
+                LayoutResponse(dependencies = listOf(missingTargetDependency()))
+            }
+        )
+        engine.setLayout(
+            layout = LayoutResponse(
+                components = listOf(
+                    ComponentResponse.ShutterResponse(
+                        id = SHUTTER_ID,
+                        title = TITLE,
+                        components = listOf(switchResponse())
+                    )
+                )
+            )
+        )
+
+        engine.handleEvent(ComponentEvent.ClickShutter(componentId = SHUTTER_ID))
+
+        assertEquals(1, loggedLines().count { line -> line.contains("'$MISSING_ID'") })
+    }
+
+    private fun switchResponse() = ComponentResponse.SwitchResponse(id = SWITCH_ID, title = TITLE, currentValue = true)
+
+    private fun missingTargetDependency() = DependencyResponse(
+        sourceId = SWITCH_ID,
+        targetId = MISSING_ID,
+        operator = "EQUALS",
+        triggerValue = "true",
+        effectType = "VISIBILITY",
+        effectValue = false
+    )
 
     private fun loggedLines(): List<String> =
         capturedOutput.toString().lines().filter { line -> line.isNotBlank() }
@@ -155,6 +181,7 @@ class ServerDrivenEngineLoggingTest {
         const val TEXT_FIELD_ID = "start_time_text_field"
         const val SWITCH_ID = "record_switch"
         const val MISSING_ID = "missing_component"
+        const val SHUTTER_ID = "camera_shutter"
         const val TITLE = "Title"
         const val UNKNOWN_FORMAT = "IBAN"
         const val UNKNOWN_KEYBOARD_TYPE = "DIAL_PAD"
