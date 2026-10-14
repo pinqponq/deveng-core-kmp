@@ -78,39 +78,183 @@ private const val SERVER_DRIVEN_DEMO_LAYOUT_JSON = """
     },
     {
       "type": "tabs",
-      "id": "mode_tabs",
+      "id": "tab_id",
       "tabs": [
         {
-          "type": "tab",
           "id": "day_tab",
-          "title": "Day",
+          "title": "Day Profile (Config 0)",
           "components": [
             {
               "type": "slider",
-              "id": "day_brightness_slider",
+              "id": "brightness_slider",
               "title": "Brightness",
+              "description": "Configure brightness setting, default value is 40",
               "minValue": 0,
               "maxValue": 100,
-              "currentValue": 85,
-              "defaultValue": 50,
+              "currentValue": 43,
+              "defaultValue": 40,
               "factoryValue": 50
+            },
+            {
+              "type": "slider",
+              "id": "contrast_slider",
+              "title": "Contrast",
+              "description": "Configure contrast setting, default value is 40",
+              "minValue": 0,
+              "maxValue": 100,
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "slider",
+              "id": "hue_slider",
+              "title": "Hue",
+              "description": "Configure hue setting, default value is 40",
+              "minValue": 0,
+              "maxValue": 100,
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "slider",
+              "id": "saturation_slider",
+              "title": "Saturation",
+              "description": "Configure saturation setting, default value is 40",
+              "minValue": 0,
+              "maxValue": 100,
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "divider",
+              "id": "divider_id"
+            },
+            {
+              "type": "switch",
+              "id": "schedule_switch",
+              "title": "Schedule Settings",
+              "description": "Enable Schedule for this Profile",
+              "currentValue": true
+            },
+            {
+              "type": "row",
+              "id": "row_id",
+              "components": [
+                {
+                  "type": "textfield",
+                  "id": "start_time_textfield",
+                  "title": "Start Time",
+                  "description": "Configure start time settings, default value is 06:00:00",
+                  "currentValue": "06:30:00",
+                  "defaultValue": "06:00:00",
+                  "factoryValue": "06:00:00",
+                  "errorMessage": "There is an error",
+                  "hintMessage": "Enter Start Time"
+                },
+                {
+                  "type": "textfield",
+                  "id": "end_time_textfield",
+                  "title": "End Time",
+                  "description": "Configure end time settings, default value is 18:00:00",
+                  "currentValue": "18:30:00",
+                  "defaultValue": "18:00:00",
+                  "factoryValue": "18:00:00",
+                  "errorMessage": "There is an error",
+                  "hintMessage": "Enter End Time"
+                }
+              ]
             }
           ]
         },
         {
-          "type": "tab",
           "id": "night_tab",
-          "title": "Night",
+          "title": "Night Profile (Config 1)",
           "components": [
             {
               "type": "slider",
-              "id": "night_brightness_slider",
+              "id": "brightness_slider",
               "title": "Brightness",
+              "description": "Configure brightness setting, default value is 40",
               "minValue": 0,
               "maxValue": 100,
-              "currentValue": 30,
-              "defaultValue": 30,
-              "factoryValue": 30
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "slider",
+              "id": "contrast_slider",
+              "title": "Contrast",
+              "description": "Configure contrast setting, default value is 40",
+              "minValue": 0,
+              "maxValue": 100,
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "slider",
+              "id": "hue_slider",
+              "title": "Hue",
+              "description": "Configure hue setting, default value is 40",
+              "minValue": 0,
+              "maxValue": 100,
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "slider",
+              "id": "saturation_slider",
+              "title": "Saturation",
+              "description": "Configure saturation setting, default value is 40",
+              "minValue": 0,
+              "maxValue": 100,
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "divider",
+              "id": "divider_2_id"
+            },
+            {
+              "type": "switch",
+              "id": "schedule_switch",
+              "title": "Schedule Settings",
+              "description": "Enable Schedule for this Profile",
+              "currentValue": true
+            },
+            {
+              "type": "row",
+              "id": "row_2_id",
+              "components": [
+                {
+                  "type": "textfield",
+                  "id": "start_time_textfield",
+                  "title": "Start Time",
+                  "description": "Configure start time settings, default value is 18:00:00",
+                  "currentValue": "18:30:00",
+                  "defaultValue": "18:00:00",
+                  "factoryValue": "18:00:00",
+                  "errorMessage": "There is an error",
+                  "hintMessage": "Enter Start Time"
+                },
+                {
+                  "type": "textfield",
+                  "id": "end_time_textfield",
+                  "title": "End Time",
+                  "description": "Configure end time settings, default value is 06:00:00",
+                  "currentValue": "06:30:00",
+                  "defaultValue": "06:00:00",
+                  "factoryValue": "06:00:00",
+                  "errorMessage": "There is an error",
+                  "hintMessage": "Enter End Time"
+                }
+              ]
             }
           ]
         }
@@ -140,6 +284,22 @@ private const val SERVER_DRIVEN_DEMO_LAYOUT_JSON = """
       "operator": "EQUALS",
       "triggerValue": "true",
       "effectType": "VISIBILITY",
+      "effectValue": true
+    },
+    {
+      "sourceId": "schedule_switch",
+      "targetId": "start_time_textfield",
+      "operator": "EQUALS",
+      "triggerValue": "true",
+      "effectType": "EDITABLE",
+      "effectValue": true
+    },
+    {
+      "sourceId": "schedule_switch",
+      "targetId": "end_time_textfield",
+      "operator": "EQUALS",
+      "triggerValue": "true",
+      "effectType": "EDITABLE",
       "effectValue": true
     }
   ]
@@ -178,8 +338,9 @@ private val shutterContentJson = Json { ignoreUnknownKeys = true }
 /**
  * Playground for [ServerDrivenScreen]: a layout with every component type, a visibility dependency
  * (the advanced shutter only shows while "Advanced settings" is on), an editable dependency
- * (resolution is locked while recording is off) and a shutter whose content is loaded on its first
- * expand, as a backend would send it. The live values are printed under the layout.
+ * (resolution is locked while recording is off), the design document's day/night tabs that repeat
+ * the same ids (each tab's schedule switch locks only that tab's times) and a shutter whose content is
+ * loaded on its first expand, as a backend would send it. The live values are printed under the layout.
  */
 @Composable
 internal fun ServerDrivenDemoScreen(onBack: () -> Unit) {

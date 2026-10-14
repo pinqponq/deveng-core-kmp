@@ -36,95 +36,201 @@ ServerDrivenScreen(
 )
 ```
 
-Observe the result with `engine.componentValues` (id → value) and `engine.componentProperties`
-(id → `ComponentProperty(isVisible, isEditable, isExpanded)`); `engine.components` is the whole component tree
+Observe the result with `engine.componentValues` (component key → value) and `engine.componentProperties`
+(component key → `ComponentProperty(isVisible, isEditable, isExpanded)`). A component's key is its id
+outside every tab and `<tab key>/<id>` inside a tab (`day_tab/schedule_switch`, `day_tab/inner_tab/hue_slider`
+for a tab inside a tab); `ComponentEvent.componentId` carries the same key; `engine.components` is the whole component tree
 and `engine.visibleComponents` the same tree without the hidden components, which `ServerDrivenScreen` draws. The layout's response classes are
 `@Serializable`, so the app's service can return `LayoutResponse` directly. The `Json` that decodes it must
 use `ignoreUnknownKeys = true` (deveng-networking-kmp and the engine's own parser do).
 
 ## Format
 
+The day/night camera profile from the original design document: both tabs use the same ids, and the
+two dependencies lock each tab's start and end time while that tab's schedule switch is off.
+
 ```json
 {
   "components": [
     {
-      "type": "shutter",
-      "id": "camera_shutter",
-      "title": "Camera settings",
-      "description": "Basic camera settings",
-      "components": [
-        {
-          "type": "textfield",
-          "id": "camera_name_text_field",
-          "title": "Camera name",
-          "description": "",
-          "currentValue": "Entrance",
-          "defaultValue": "",
-          "factoryValue": "",
-          "hintMessage": "Parking 1",
-          "errorMessage": null,
-          "format": "TIME",
-          "keyboardType": "TEXT"
-        },
-        { "type": "divider", "id": "camera_divider" },
-        {
-          "type": "row",
-          "id": "record_row",
-          "components": [
-            { "type": "switch", "id": "record_switch", "title": "Recording", "description": "", "currentValue": true },
-            {
-              "type": "dropdown",
-              "id": "resolution_dropdown",
-              "title": "Resolution",
-              "description": "",
-              "currentValue": "1080p",
-              "defaultValue": "1080p",
-              "factoryValue": "720p",
-              "options": ["480p", "720p", "1080p", "4K"]
-            }
-          ]
-        }
-      ]
-    },
-    {
       "type": "tabs",
-      "id": "mode_tabs",
+      "id": "tab_id",
       "tabs": [
         {
-          "type": "tab",
           "id": "day_tab",
-          "title": "Day",
-          "description": "",
+          "title": "Day Profile (Config 0)",
           "components": [
             {
               "type": "slider",
-              "id": "day_brightness_slider",
+              "id": "brightness_slider",
               "title": "Brightness",
-              "description": "",
+              "description": "Configure brightness setting, default value is 40",
               "minValue": 0,
               "maxValue": 100,
-              "currentValue": 85,
-              "defaultValue": 50,
+              "currentValue": 43,
+              "defaultValue": 40,
               "factoryValue": 50
+            },
+            {
+              "type": "slider",
+              "id": "contrast_slider",
+              "title": "Contrast",
+              "description": "Configure contrast setting, default value is 40",
+              "minValue": 0,
+              "maxValue": 100,
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "slider",
+              "id": "hue_slider",
+              "title": "Hue",
+              "description": "Configure hue setting, default value is 40",
+              "minValue": 0,
+              "maxValue": 100,
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "slider",
+              "id": "saturation_slider",
+              "title": "Saturation",
+              "description": "Configure saturation setting, default value is 40",
+              "minValue": 0,
+              "maxValue": 100,
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "divider",
+              "id": "divider_id"
+            },
+            {
+              "type": "switch",
+              "id": "schedule_switch",
+              "title": "Schedule Settings",
+              "description": "Enable Schedule for this Profile",
+              "currentValue": true
+            },
+            {
+              "type": "row",
+              "id": "row_id",
+              "components": [
+                {
+                  "type": "textfield",
+                  "id": "start_time_textfield",
+                  "title": "Start Time",
+                  "description": "Configure start time settings, default value is 06:00:00",
+                  "currentValue": "06:30:00",
+                  "defaultValue": "06:00:00",
+                  "factoryValue": "06:00:00",
+                  "errorMessage": "There is an error",
+                  "hintMessage": "Enter Start Time"
+                },
+                {
+                  "type": "textfield",
+                  "id": "end_time_textfield",
+                  "title": "End Time",
+                  "description": "Configure end time settings, default value is 18:00:00",
+                  "currentValue": "18:30:00",
+                  "defaultValue": "18:00:00",
+                  "factoryValue": "18:00:00",
+                  "errorMessage": "There is an error",
+                  "hintMessage": "Enter End Time"
+                }
+              ]
             }
           ]
         },
         {
-          "type": "tab",
           "id": "night_tab",
-          "title": "Night",
-          "description": "",
+          "title": "Night Profile (Config 1)",
           "components": [
             {
               "type": "slider",
-              "id": "night_brightness_slider",
+              "id": "brightness_slider",
               "title": "Brightness",
-              "description": "",
+              "description": "Configure brightness setting, default value is 40",
               "minValue": 0,
               "maxValue": 100,
-              "currentValue": 30,
-              "defaultValue": 30,
-              "factoryValue": 30
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "slider",
+              "id": "contrast_slider",
+              "title": "Contrast",
+              "description": "Configure contrast setting, default value is 40",
+              "minValue": 0,
+              "maxValue": 100,
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "slider",
+              "id": "hue_slider",
+              "title": "Hue",
+              "description": "Configure hue setting, default value is 40",
+              "minValue": 0,
+              "maxValue": 100,
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "slider",
+              "id": "saturation_slider",
+              "title": "Saturation",
+              "description": "Configure saturation setting, default value is 40",
+              "minValue": 0,
+              "maxValue": 100,
+              "currentValue": 43,
+              "defaultValue": 40,
+              "factoryValue": 50
+            },
+            {
+              "type": "divider",
+              "id": "divider_2_id"
+            },
+            {
+              "type": "switch",
+              "id": "schedule_switch",
+              "title": "Schedule Settings",
+              "description": "Enable Schedule for this Profile",
+              "currentValue": true
+            },
+            {
+              "type": "row",
+              "id": "row_2_id",
+              "components": [
+                {
+                  "type": "textfield",
+                  "id": "start_time_textfield",
+                  "title": "Start Time",
+                  "description": "Configure start time settings, default value is 18:00:00",
+                  "currentValue": "18:30:00",
+                  "defaultValue": "18:00:00",
+                  "factoryValue": "18:00:00",
+                  "errorMessage": "There is an error",
+                  "hintMessage": "Enter Start Time"
+                },
+                {
+                  "type": "textfield",
+                  "id": "end_time_textfield",
+                  "title": "End Time",
+                  "description": "Configure end time settings, default value is 06:00:00",
+                  "currentValue": "06:30:00",
+                  "defaultValue": "06:00:00",
+                  "factoryValue": "06:00:00",
+                  "errorMessage": "There is an error",
+                  "hintMessage": "Enter End Time"
+                }
+              ]
             }
           ]
         }
@@ -133,12 +239,42 @@ use `ignoreUnknownKeys = true` (deveng-networking-kmp and the engine's own parse
   ],
   "dependencies": [
     {
-      "sourceId": "record_switch",
-      "targetId": "resolution_dropdown",
+      "sourceId": "schedule_switch",
+      "targetId": "start_time_textfield",
       "operator": "EQUALS",
-      "triggerValue": "false",
+      "triggerValue": "true",
       "effectType": "EDITABLE",
-      "effectValue": false
+      "effectValue": true
+    },
+    {
+      "sourceId": "schedule_switch",
+      "targetId": "end_time_textfield",
+      "operator": "EQUALS",
+      "triggerValue": "true",
+      "effectType": "EDITABLE",
+      "effectValue": true
+    }
+  ]
+}
+```
+
+A shutter (whose content can also be loaded later, see the rules) and a dropdown:
+
+```json
+{
+  "type": "shutter",
+  "id": "camera_shutter",
+  "title": "Camera settings",
+  "description": "Basic camera settings",
+  "components": [
+    {
+      "type": "dropdown",
+      "id": "resolution_dropdown",
+      "title": "Resolution",
+      "currentValue": "1080p",
+      "defaultValue": "1080p",
+      "factoryValue": "720p",
+      "options": ["480p", "720p", "1080p", "4K"]
     }
   ]
 }
@@ -158,8 +294,9 @@ use `ignoreUnknownKeys = true` (deveng-networking-kmp and the engine's own parse
 | `dropdown` | `title`, `description`, `currentValue`, `defaultValue`, `factoryValue`, `options` | `String` | `CustomDropDownMenu` |
 | `divider` | — | — | `HorizontalDivider` |
 
-- `tabs` holds tab objects, not components. A tab object's `"type": "tab"` is accepted and ignored; a tab
-  object placed in a `components` list is an unknown component.
+- Write the tab component's type as `tabs`. `tabs` holds tab objects, not components; a tab object needs no
+  `type` (a `"type": "tab"` on it is ignored). A component written as `"type": "tab"` (as in parts of the
+  original design document) is read as `tabs` and logged once as deprecated.
 - `description` is optional everywhere. The shutter shows it under its title; the other components do not
   draw it.
 - `keyboardType`: `TEXT` (default), `NUMERIC`, `PASSWORD`, `EMAIL`. `format`: `PHONE_NUMBER`, `TIME`, `DATE`,
@@ -181,19 +318,25 @@ Each dependency reads the value of `sourceId` and sets one property of `targetId
 - A hidden container hides its children. A component that is not editable is drawn disabled, and the engine
   ignores value events for it.
 - The selected tab is a value too, so a dependency can use a `tabs` id as its source.
+- Dependencies name ids, not keys. Every component with the `sourceId` is a source. Its target is the
+  `targetId` in the nearest scope: the source's own tab, then the tabs around it, then outside every tab. When
+  none of those has the id, every component with the `targetId` is a target, so a switch outside the tabs can
+  hide the same slider in every tab. In the example above `schedule_switch` in the day tab locks only the day
+  tab's time fields.
 
 ## Rules
 
-- **Ids are unique in the whole layout**, including content a shutter loads later. Values and dependencies
-  address components by id; a duplicate would make both ambiguous. `setLayout` (and a shutter load that
-  brings a duplicate) fails with an `IllegalArgumentException` naming the duplicate ids. Two tabs that show the
-  same setting use two ids (`day_brightness_slider`, `night_brightness_slider`).
+- **Ids are unique inside one tab.** Two tabs may use the same ids and keep separate values and properties.
+  Ids outside every tab (components and tab objects) are unique across the layout. Content a shutter loads
+  later joins the shutter's tab and follows the same rule. A duplicate makes `setLayout` (or the
+  shutter load that brings it) fail with an `IllegalArgumentException` naming the duplicate keys; a failed load
+  leaves the layout unchanged.
 - **Unknown values do not break the layout.** A component with an unknown `type` is skipped, a dependency
   with an unknown `operator` or `effectType` is skipped, an unknown `keyboardType` falls back to `TEXT` and an
   unknown `format` to no mask. A dependency whose `sourceId` or `targetId` is not in the layout waits until
   that id is loaded (for example by a shutter). Each case is logged through `CustomLogger`, so an older app
   keeps working when the backend adds something new.
 - **Lazy shutter content:** with a `ShutterContentLoader`, the first expand of a shutter calls the loader with
-  the shutter id. The returned components are appended after the shutter's own components and the returned
+  the shutter id (not its key). The returned components are appended after the shutter's own components and the returned
   dependencies join the layout's. Each shutter loads once per `setLayout`; when the loader throws, the shutter
   collapses, the exception reaches the caller of `handleEvent`, and the next expand tries again.
