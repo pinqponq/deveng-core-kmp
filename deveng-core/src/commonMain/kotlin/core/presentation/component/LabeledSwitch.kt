@@ -30,6 +30,7 @@ import core.presentation.theme.LocalComponentTheme
  * @param uncheckedTrackColor Color of the switch track when unchecked. If null, uses theme default.
  * @param uncheckedBorderColor Color of the switch border when unchecked. If null, uses theme default.
  * @param switchScale Scale factor to resize the switch. If null, uses theme default.
+ * @param isEnabled Whether the switch accepts clicks. Default is true.
  * @param onSwitchClick Callback invoked when the switch is clicked, receives the new checked state.
  */
 @Composable
@@ -46,6 +47,7 @@ fun LabeledSwitch(
     uncheckedTrackColor: Color? = null,
     uncheckedBorderColor: Color? = null,
     switchScale: Float? = null,
+    isEnabled: Boolean = true,
     onSwitchClick: (Boolean) -> Unit
 ) {
     val componentTheme = LocalComponentTheme.current
@@ -77,6 +79,7 @@ fun LabeledSwitch(
         Switch(
             modifier = Modifier.scale(finalScale),
             checked = isChecked,
+            enabled = isEnabled,
             onCheckedChange = onSwitchClick,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = finalCheckedThumbColor,

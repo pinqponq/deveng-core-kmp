@@ -52,6 +52,7 @@ import org.jetbrains.compose.resources.stringResource
  * @param scrollBarColor Color of the scrollbar thumb. If null, uses theme default.
  * @param scrollBarTrackColor Color of the scrollbar track. If null, uses theme default.
  * @param dropDownMenuHeight Maximum height of the dropdown menu. Default is 450.dp.
+ * @param isEnabled Whether the menu opens and accepts a selection. Default is true.
  * @param items List of items to display in the dropdown menu.
  * @param selectedItem Currently selected item, or null if none selected.
  * @param onItemSelected Callback invoked when an item is selected from the dropdown.
@@ -73,6 +74,7 @@ fun <T> CustomDropDownMenu(
     scrollBarColor: Color? = null,
     scrollBarTrackColor: Color? = null,
     dropDownMenuHeight: Dp = 450.dp,
+    isEnabled: Boolean = true,
     items: List<T>,
     selectedItem: T?,
     onItemSelected: (T) -> Unit
@@ -105,7 +107,7 @@ fun <T> CustomDropDownMenu(
         ExposedDropdownMenuBox(
             modifier = Modifier.fillMaxWidth(),
             expanded = isExpanded,
-            onExpandedChange = { isExpanded = !isExpanded }
+            onExpandedChange = { isExpanded = isEnabled && !isExpanded }
         ) {
             val displayText = if (selectedItem == null ||
                 selectedItem.toString().isEmpty() ||
@@ -122,7 +124,7 @@ fun <T> CustomDropDownMenu(
                 textFieldModifier = Modifier
                     .menuAnchor(
                         type = MenuAnchorType.PrimaryNotEditable,
-                        enabled = true
+                        enabled = isEnabled
                     )
                     .height(50.dp)
                     .fillMaxWidth(),
@@ -130,6 +132,7 @@ fun <T> CustomDropDownMenu(
                 value = displayText,
                 onValueChange = {},
                 readOnly = true,
+                enabled = isEnabled,
                 trailingSlot = {
                     Icon(
                         modifier = Modifier
