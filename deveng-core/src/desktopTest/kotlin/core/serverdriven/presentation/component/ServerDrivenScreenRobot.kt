@@ -29,8 +29,7 @@ import global.deveng.deveng_core.generated.resources.Res
 import global.deveng.deveng_core.generated.resources.shared_content_dest_icon_star
 import global.deveng.deveng_core.generated.resources.shared_ok
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 import kotlin.test.assertEquals
 
 @OptIn(ExperimentalTestApi::class)
@@ -40,6 +39,8 @@ class ServerDrivenScreenRobot(private val composeUiTest: ComposeUiTest) {
     val replacedHandlerEvents = mutableListOf<ComponentEvent>()
     private var onComponentEvent by mutableStateOf<(ComponentEvent) -> Unit>({ event -> sentEvents += event })
     private var screenTag by mutableStateOf(SCREEN_TAG)
+    private var ratingStarDescription = ""
+    private var datePickerConfirmText = ""
 
     init {
         engine.setLayout(json = ServerDrivenScreenTestLayout.JSON)
@@ -57,6 +58,8 @@ class ServerDrivenScreenRobot(private val composeUiTest: ComposeUiTest) {
         composeUiTest.setContent {
             val coroutineScope = rememberCoroutineScope()
             val currentEventHandler = onComponentEvent
+            ratingStarDescription = stringResource(Res.string.shared_content_dest_icon_star)
+            datePickerConfirmText = stringResource(Res.string.shared_ok)
             AppTheme(darkTheme = false) {
                 ServerDrivenScreen(
                     engine = engine,
@@ -116,12 +119,15 @@ class ServerDrivenScreenRobot(private val composeUiTest: ComposeUiTest) {
     }
 
     fun clickRatingStar(starIndex: Int) = apply {
-        composeUiTest.onAllNodesWithContentDescription(runBlocking { getString(Res.string.shared_content_dest_icon_star) })[starIndex]
-            .performClick()
+        composeUiTest.onAllNodesWithContentDescription(ratingStarDescription)[starIndex].performClick()
     }
 
     fun confirmDatePicker() = apply {
-        composeUiTest.onNodeWithText(runBlocking { getString(Res.string.shared_ok) }).performClick()
+        composeUiTest.onNodeWithText(datePickerConfirmText).performClick()
+    }
+
+    fun assertDatePickerNotShown() = apply {
+        composeUiTest.onNodeWithText(datePickerConfirmText).assertDoesNotExist()
     }
 
     fun assertTextShown(text: String) = apply {

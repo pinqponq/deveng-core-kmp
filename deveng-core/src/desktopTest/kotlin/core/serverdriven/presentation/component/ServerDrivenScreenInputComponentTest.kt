@@ -4,9 +4,6 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import core.serverdriven.presentation.model.ComponentEvent
-import global.deveng.deveng_core.generated.resources.Res
-import global.deveng.deveng_core.generated.resources.shared_ok
-import org.jetbrains.compose.resources.getString
 import java.util.TimeZone
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -124,7 +121,7 @@ class ServerDrivenScreenInputComponentTest {
     fun clickDatePicker_whenNotEditable_doesNotOpenDialog() = runDesktopComposeUiTest {
         recordingRobot(isLocked = true)
             .clickText(ServerDrivenInputTestLayout.DATE_VALUE)
-            .assertTextNotShown(getString(Res.string.shared_ok))
+            .assertDatePickerNotShown()
             .assertSentEvents(emptyList())
     }
 
