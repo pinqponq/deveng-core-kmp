@@ -30,6 +30,7 @@ class ServerDrivenEngineTest {
             ),
             componentTypes
         )
+
         assertEquals(
             mapOf(
                 NAME_TEXT_FIELD_ID to "Gate",
@@ -268,6 +269,7 @@ class ServerDrivenEngineTest {
                 dependency = visibilityDependency(triggerValue = "false", effectValue = true)
             )
         )
+
         assertFalse(isVisible(engine, BRIGHTNESS_SLIDER_ID))
 
         engine.handleEvent(ComponentEvent.ClickSwitch(componentId = RECORD_SWITCH_ID, isChecked = false))
@@ -364,6 +366,7 @@ class ServerDrivenEngineTest {
             listOf(NAME_TEXT_FIELD_ID, ROW_ID, LAZY_SWITCH_ID),
             shutter.components.map { component -> component.id }
         )
+
         assertEquals(listOf(CAMERA_SHUTTER_ID), loader.requestedShutterIds)
         assertEquals(true, engine.componentValues.value[LAZY_SWITCH_ID])
         assertFalse(isEditable(engine, NAME_TEXT_FIELD_ID))
@@ -390,6 +393,7 @@ class ServerDrivenEngineTest {
         assertFailsWith<IllegalStateException> {
             engine.handleEvent(ComponentEvent.ClickShutter(componentId = CAMERA_SHUTTER_ID))
         }
+
         assertFalse(isExpanded(engine, CAMERA_SHUTTER_ID))
         engine.handleEvent(ComponentEvent.ClickShutter(componentId = CAMERA_SHUTTER_ID))
 
@@ -465,6 +469,7 @@ class ServerDrivenEngineTest {
                 dependency = visibilityDependency(triggerValue = "false", effectValue = false)
             )
         )
+
         assertEquals(listOf(RECORD_SWITCH_ID, BRIGHTNESS_SLIDER_ID), visibleComponentIds(engine))
 
         engine.handleEvent(ComponentEvent.ClickSwitch(componentId = RECORD_SWITCH_ID, isChecked = false))
@@ -488,6 +493,7 @@ class ServerDrivenEngineTest {
             ),
             hiddenSwitchIds
         )
+
         assertEquals(
             listOf(
                 CAMERA_SHUTTER_ID, NAME_TEXT_FIELD_ID, ROW_ID, RECORD_SWITCH_ID, RESOLUTION_DROPDOWN_ID,
@@ -530,6 +536,7 @@ class ServerDrivenEngineTest {
             is ComponentUiModel.Tabs -> component.tabs.flatMap { tab -> tab.components }
             else -> emptyList()
         }
+
         listOf(component.id) + componentIds(children)
     }
 
@@ -627,6 +634,7 @@ class ServerDrivenEngineTest {
                 failureCount--
                 throw IllegalStateException(LOADER_FAILURE_MESSAGE)
             }
+
             return content
         }
     }

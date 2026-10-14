@@ -70,6 +70,7 @@ class ServerDrivenEngine(
             componentValues = componentValues,
             componentProperties = componentProperties
         )
+
         publishVisibleComponents()
     }
 
@@ -149,12 +150,15 @@ class ServerDrivenEngine(
         _components.update { components ->
             appendToShutter(components, shutterId, loadedComponents)
         }
+
         _componentValues.update { componentValues ->
             componentValues + buildMap { collectInitialValues(loadedComponents, this) }
         }
+
         _componentProperties.update { componentProperties ->
             componentProperties + loadedComponentIds.associateWith { ComponentProperty() }
         }
+
         val loadedDependencies = dependencyUiMapper.mapToUiModels(shutterContent.dependencies)
         logDependenciesWithMissingIds(loadedDependencies, collectComponentIds(_components.value))
         dependencies.update { layoutDependencies -> layoutDependencies + loadedDependencies }
@@ -169,6 +173,7 @@ class ServerDrivenEngine(
                 componentProperties = componentProperties
             )
         }
+
         publishVisibleComponents()
     }
 

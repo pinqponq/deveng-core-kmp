@@ -43,6 +43,7 @@ class ComponentResponseSerializerTest {
             ),
             components
         )
+
         val unknownComponent = components.first() as ComponentResponse.UnknownResponse
         assertEquals(listOf(COMPONENT_ID, "tab"), listOf(unknownComponent.id, unknownComponent.type))
     }

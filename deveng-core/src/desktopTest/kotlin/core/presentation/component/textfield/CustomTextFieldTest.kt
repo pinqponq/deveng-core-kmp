@@ -22,6 +22,7 @@ class CustomTextFieldTest {
                 CustomTextField(value = value, readOnly = true, onValueChange = {})
             }
         }
+
         onNodeWithText(FIRST_VALUE)
             .performClick()
             .assertIsFocused()

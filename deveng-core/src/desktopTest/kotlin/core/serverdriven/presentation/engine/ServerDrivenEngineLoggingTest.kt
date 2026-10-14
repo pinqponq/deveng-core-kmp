@@ -144,6 +144,7 @@ class ServerDrivenEngineLoggingTest {
                 LayoutResponse(dependencies = listOf(missingTargetDependency()))
             }
         )
+
         engine.setLayout(
             layout = LayoutResponse(
                 components = listOf(

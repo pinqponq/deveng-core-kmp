@@ -25,6 +25,7 @@ internal class DependencyUiMapper {
                 "Server-driven UI: skipped dependency '${response.sourceId}' -> '${response.targetId}' " +
                     "with unknown operator '${response.operator}' or effect '${response.effectType}'"
             )
+
             return null
         }
 

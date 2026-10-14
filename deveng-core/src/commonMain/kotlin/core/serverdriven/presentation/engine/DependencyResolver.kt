@@ -40,6 +40,7 @@ internal class DependencyResolver {
             operator = dependency.operator,
             triggerValue = dependency.triggerValue
         )
+
         val effectValue = if (isTriggered) dependency.effectValue else !dependency.effectValue
 
         return when (dependency.effect) {

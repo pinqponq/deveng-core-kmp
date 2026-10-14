@@ -41,6 +41,7 @@ class ServerDrivenScreenScreenshotTest {
                     }
                 }
             }
+
             waitForIdle()
 
             onRoot().captureRoboImage(filePath = screenshotPath(name = "server_driven_screen_every_component"))

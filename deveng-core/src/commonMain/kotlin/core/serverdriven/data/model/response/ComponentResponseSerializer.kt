@@ -16,6 +16,8 @@ import kotlinx.serialization.json.jsonPrimitive
 internal object ComponentResponseSerializer :
     JsonContentPolymorphicSerializer<ComponentResponse>(ComponentResponse::class) {
 
+    private const val TYPE_KEY = "type"
+
     override fun selectDeserializer(
         element: JsonElement
     ): DeserializationStrategy<ComponentResponse> {
@@ -33,6 +35,4 @@ internal object ComponentResponseSerializer :
             null -> ComponentResponse.UnknownResponse.serializer()
         }
     }
-
-    private const val TYPE_KEY = "type"
 }

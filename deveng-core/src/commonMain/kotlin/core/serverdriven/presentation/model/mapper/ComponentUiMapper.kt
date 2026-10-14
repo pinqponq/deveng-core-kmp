@@ -87,6 +87,7 @@ internal class ComponentUiMapper {
                 CustomLogger.log(
                     "Server-driven UI: skipped component '${response.id}' with unknown type '${response.type}'"
                 )
+
                 null
             }
         }
