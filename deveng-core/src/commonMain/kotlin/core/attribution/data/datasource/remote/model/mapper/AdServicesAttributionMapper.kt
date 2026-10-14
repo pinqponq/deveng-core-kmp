@@ -21,6 +21,7 @@ class AdServicesAttributionMapper {
             campaignName = null,
             campaignTerm = null,
             campaignContent = null,
+            inviteCode = null,
         )
     }
 }

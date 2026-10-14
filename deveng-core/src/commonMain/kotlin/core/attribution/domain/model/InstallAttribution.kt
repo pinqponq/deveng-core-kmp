@@ -16,4 +16,5 @@ data class InstallAttribution(
     val campaignName: String?,
     val campaignTerm: String?,
     val campaignContent: String?,
+    val inviteCode: String?,
 )

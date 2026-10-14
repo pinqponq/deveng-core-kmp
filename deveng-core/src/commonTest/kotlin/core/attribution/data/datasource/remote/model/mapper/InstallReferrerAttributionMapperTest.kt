@@ -80,7 +80,43 @@ class InstallReferrerAttributionMapperTest {
         assertNull(attribution.campaignMedium)
     }
 
+    @Test
+    fun mapToDomain_withInviteCodeOnly_readsInviteCodeWithoutAttribution() {
+        val attribution = installReferrerAttributionMapper.mapToDomain(installReferrer = "invite_code=$INVITE_CODE")
+
+        assertFalse(attribution.isAttributed)
+        assertEquals(INVITE_CODE, attribution.inviteCode)
+        assertNull(attribution.googleClickId)
+    }
+
+    @Test
+    fun mapToDomain_withInviteCodeAndGoogleAdsReferrer_keepsCampaignAttribution() {
+        val attribution = installReferrerAttributionMapper.mapToDomain(
+            installReferrer = "$GOOGLE_ADS_REFERRER&invite_code=$INVITE_CODE",
+        )
+
+        assertTrue(attribution.isAttributed)
+        assertEquals(INVITE_CODE, attribution.inviteCode)
+        assertEquals(GOOGLE_CLICK_ID, attribution.googleClickId)
+        assertEquals("korea ad first", attribution.campaignName)
+    }
+
+    @Test
+    fun mapToDomain_withoutInviteCode_hasNoInviteCode() {
+        val attribution = installReferrerAttributionMapper.mapToDomain(installReferrer = GOOGLE_ADS_REFERRER)
+
+        assertNull(attribution.inviteCode)
+    }
+
+    @Test
+    fun mapToDomain_withBlankInviteCode_hasNoInviteCode() {
+        val attribution = installReferrerAttributionMapper.mapToDomain(installReferrer = "invite_code=&utm_medium=organic")
+
+        assertNull(attribution.inviteCode)
+    }
+
     private companion object {
+        const val INVITE_CODE = "ABC123"
         const val GOOGLE_CLICK_ID = "Cj0KCQjwtest"
         const val GOOGLE_ADS_REFERRER = "gclid=$GOOGLE_CLICK_ID&utm_source=google&utm_medium=cpc" +
             "&utm_campaign=korea%20ad%20first&utm_term=couple+app&utm_content=banner_1"

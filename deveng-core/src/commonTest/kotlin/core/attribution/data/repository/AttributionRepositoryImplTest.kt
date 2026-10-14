@@ -158,6 +158,7 @@ class AttributionRepositoryImplTest {
             campaignName = null,
             campaignTerm = null,
             campaignContent = null,
+            inviteCode = null,
         )
     }
 }

@@ -48,6 +48,15 @@ class InstallAttributionTrackerTest {
     }
 
     @Test
+    fun track_withInviteCodeInGoogleAdsReferrer_firesCampaignParamsWithoutInviteCode() {
+        createTracker(installReferrer = "$GOOGLE_ADS_REFERRER&invite_code=$INVITE_CODE").track()
+
+        val trackedParams = analyticsLogSink.savedLogs.single().detail
+        assertEquals(GOOGLE_CLICK_ID, trackedParams["googleClickId"])
+        assertFalse(trackedParams.values.contains(INVITE_CODE))
+    }
+
+    @Test
     fun track_withAppleSearchAdsAttribution_firesInstallAttributedWithAdIds() {
         val attributionRepository = FakeAttributionRepository(attribution = APPLE_SEARCH_ADS_ATTRIBUTION)
 
@@ -139,6 +148,7 @@ class InstallAttributionTrackerTest {
 
     private companion object {
         const val INSTALL_ATTRIBUTED_KEY = "INSTALL_ATTRIBUTED"
+        const val INVITE_CODE = "ABC123"
         const val GOOGLE_CLICK_ID = "Cj0KCQjwtest"
         const val GOOGLE_ADS_REFERRER = "gclid=$GOOGLE_CLICK_ID&utm_source=google&utm_medium=cpc" +
             "&utm_campaign=ukus3&utm_term=couple%20app&utm_content=video_1"
@@ -162,6 +172,7 @@ class InstallAttributionTrackerTest {
             campaignName = null,
             campaignTerm = null,
             campaignContent = null,
+            inviteCode = null,
         )
     }
 }
