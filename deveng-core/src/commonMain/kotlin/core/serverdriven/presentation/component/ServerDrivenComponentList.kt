@@ -14,7 +14,7 @@ import core.serverdriven.presentation.model.ComponentUiModel
 
 @Composable
 internal fun ServerDrivenComponentList(
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
     components: List<ComponentUiModel>,
     componentValues: Map<String, Any>,
     componentProperties: Map<String, ComponentProperty>,

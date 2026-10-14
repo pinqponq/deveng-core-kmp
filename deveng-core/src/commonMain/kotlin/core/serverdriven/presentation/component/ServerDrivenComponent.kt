@@ -3,10 +3,6 @@ package core.serverdriven.presentation.component
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import core.presentation.component.CustomDropDownMenu
 import core.presentation.component.CustomSlider
@@ -73,23 +69,18 @@ internal fun ServerDrivenComponent(
             )
         }
 
-        is ComponentUiModel.Slider -> {
-            val engineValue = componentValues.getValue(component.id) as Float
-            var sliderValue by remember(engineValue) { mutableStateOf(engineValue) }
-
-            CustomSlider(
-                containerModifier = modifier,
-                title = component.title,
-                minValue = component.minValue,
-                maxValue = component.maxValue,
-                value = sliderValue,
-                isEnabled = componentProperty.isEditable,
-                onValueChange = { value -> sliderValue = value },
-                onValueChangeFinished = { value ->
-                    onComponentEvent(ComponentEvent.ChangeSliderValue(componentId = component.id, value = value))
-                }
-            )
-        }
+        is ComponentUiModel.Slider -> CustomSlider(
+            containerModifier = modifier,
+            title = component.title,
+            minValue = component.minValue,
+            maxValue = component.maxValue,
+            value = componentValues.getValue(component.id) as Float,
+            isEnabled = componentProperty.isEditable,
+            onValueChange = {},
+            onValueChangeFinished = { value ->
+                onComponentEvent(ComponentEvent.ChangeSliderValue(componentId = component.id, value = value))
+            }
+        )
 
         is ComponentUiModel.TextField -> CustomTextField(
             containerModifier = modifier,
