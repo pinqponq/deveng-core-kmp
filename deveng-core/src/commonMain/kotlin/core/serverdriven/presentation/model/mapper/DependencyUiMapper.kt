@@ -4,9 +4,13 @@ import core.serverdriven.data.model.response.DependencyResponse
 import core.serverdriven.presentation.model.DependencyEffect
 import core.serverdriven.presentation.model.DependencyOperator
 import core.serverdriven.presentation.model.DependencyUiModel
+import core.serverdriven.presentation.model.SkippedElementKind
+import core.serverdriven.presentation.model.SkippedLayoutElement
 import core.util.CustomLogger
 
-internal class DependencyUiMapper {
+internal class DependencyUiMapper(
+    private val onElementSkip: (SkippedLayoutElement) -> Unit = {}
+) {
 
     fun mapToUiModels(
         responses: List<DependencyResponse>
@@ -26,6 +30,8 @@ internal class DependencyUiMapper {
                     "with unknown operator '${response.operator}' or effect '${response.effectType}'"
             )
 
+            reportUnknownValues(response, operator, effect)
+
             return null
         }
 
@@ -37,5 +43,31 @@ internal class DependencyUiMapper {
             effect = effect,
             effectValue = response.effectValue
         )
+    }
+
+    private fun reportUnknownValues(
+        response: DependencyResponse,
+        operator: DependencyOperator?,
+        effect: DependencyEffect?
+    ) {
+        if (operator == null) {
+            onElementSkip(
+                SkippedLayoutElement(
+                    kind = SkippedElementKind.OPERATOR,
+                    name = response.operator,
+                    componentId = response.targetId
+                )
+            )
+        }
+
+        if (effect == null) {
+            onElementSkip(
+                SkippedLayoutElement(
+                    kind = SkippedElementKind.EFFECT,
+                    name = response.effectType,
+                    componentId = response.targetId
+                )
+            )
+        }
     }
 }

@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -27,6 +28,7 @@ import core.presentation.theme.CoreRegularTextStyle
 import core.serverdriven.data.model.response.LayoutResponse
 import core.serverdriven.presentation.component.ServerDrivenScreen
 import core.serverdriven.presentation.engine.ServerDrivenEngine
+import core.serverdriven.presentation.model.SkippedLayoutElement
 import deveng_core_kmp.sample.composeapp.generated.resources.Res
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_arrow_left
 import kotlinx.coroutines.delay
@@ -261,6 +263,7 @@ private const val SERVER_DRIVEN_DEMO_LAYOUT_JSON = """
       ]
     },
     { "type": "switch", "id": "advanced_switch", "title": "Advanced settings", "currentValue": false },
+    { "type": "chart", "id": "traffic_chart", "title": "Traffic" },
     {
       "type": "shutter",
       "id": "$NETWORK_SHUTTER_ID",
@@ -340,10 +343,12 @@ private val shutterContentJson = Json { ignoreUnknownKeys = true }
  * (the advanced shutter only shows while "Advanced settings" is on), an editable dependency
  * (resolution is locked while recording is off), the design document's day/night tabs that repeat
  * the same ids (each tab's schedule switch locks only that tab's times) and a shutter whose content is
- * loaded on its first expand, as a backend would send it. The live values are printed under the layout.
+ * loaded on its first expand, as a backend would send it. A component of the unknown type `chart` is
+ * skipped; the skip reports and the live values are printed under the layout.
  */
 @Composable
 internal fun ServerDrivenDemoScreen(onBack: () -> Unit) {
+    val skippedElements = remember { mutableStateListOf<SkippedLayoutElement>() }
     val engine = remember {
         ServerDrivenEngine(
             shutterContentLoader = { shutterId ->
@@ -352,7 +357,8 @@ internal fun ServerDrivenDemoScreen(onBack: () -> Unit) {
                     LayoutResponse.serializer(),
                     if (shutterId == NETWORK_SHUTTER_ID) NETWORK_SHUTTER_CONTENT_JSON else EMPTY_LAYOUT_JSON
                 )
-            }
+            },
+            onLayoutElementSkip = { skippedElement -> skippedElements += skippedElement }
         ).apply { setLayout(json = SERVER_DRIVEN_DEMO_LAYOUT_JSON) }
     }
     val coroutineScope = rememberCoroutineScope()
@@ -384,6 +390,13 @@ internal fun ServerDrivenDemoScreen(onBack: () -> Unit) {
             onComponentEvent = { componentEvent ->
                 coroutineScope.launch { engine.handleEvent(componentEvent) }
             },
+        )
+
+        Text(
+            text = skippedElements.joinToString(separator = "\n") { skippedElement ->
+                "Skipped ${skippedElement.kind}: '${skippedElement.name}' (${skippedElement.componentId})"
+            },
+            style = CoreRegularTextStyle().copy(fontSize = 12.sp),
         )
 
         Text(
