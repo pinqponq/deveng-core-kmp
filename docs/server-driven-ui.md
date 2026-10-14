@@ -299,7 +299,7 @@ A shutter (whose content can also be loaded later, see the rules) and a dropdown
 | `segmented` | `title`, `description`, `currentValue`, `defaultValue`, `factoryValue`, `options` | `String` | `ChipsMenu` |
 | `radio` | `title`, `description`, `currentValue`, `defaultValue`, `factoryValue`, `options` | `String` | `OptionItemList` with check icons |
 | `rating` | `title`, `description`, `maxValue` (integer, default 5), `currentValue`, `defaultValue`, `factoryValue` (numbers) | `Float` (whole stars) | `RatingRow` |
-| `date` | `title`, `description`, `currentValue`, `defaultValue`, `factoryValue` (ISO-8601 dates, `""` = no date), `targetDates` | `String` (ISO-8601, `2026-10-15`) | `CustomDatePicker` (`PickerField` + date dialog) |
+| `date` | `title`, `description`, `currentValue`, `defaultValue`, `factoryValue` (ISO-8601 dates, `""` = no date), `targetDates` | `String` (ISO-8601, `2026-10-15`), no entry while no date is selected | `CustomDatePicker` (`PickerField` + date dialog) |
 
 - Write the tab component's type as `tabs`. `tabs` holds tab objects, not components; a tab object needs no
   `type` (a `"type": "tab"` on it is ignored). A component written as `"type": "tab"` (as in parts of the

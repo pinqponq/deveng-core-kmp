@@ -5,6 +5,8 @@ import core.serverdriven.presentation.model.ComponentUiModel
 import core.util.datetime.TargetDates
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlinx.datetime.LocalDate
 
 class ComponentUiMapperInputComponentTest {
 
@@ -107,7 +109,15 @@ class ComponentUiMapperInputComponentTest {
         val date = mapDate(currentValue = DATE_VALUE, targetDates = "future")
 
         assertEquals(
-            listOf<Any?>(DATE_ID, TITLE, DESCRIPTION, DATE_VALUE, DEFAULT_VALUE, FACTORY_VALUE, TargetDates.FUTURE),
+            listOf<Any?>(
+                DATE_ID,
+                TITLE,
+                DESCRIPTION,
+                LocalDate.parse(DATE_VALUE),
+                LocalDate.parse(DEFAULT_DATE_VALUE),
+                null,
+                TargetDates.FUTURE
+            ),
             with(date) { listOf(id, title, description, currentValue, defaultValue, factoryValue, targetDates) }
         )
     }
@@ -123,13 +133,13 @@ class ComponentUiMapperInputComponentTest {
     }
 
     @Test
-    fun mapToUiModels_withEmptyDateValue_keepsNoDate() {
-        assertEquals("", mapDate(currentValue = "", targetDates = null).currentValue)
+    fun mapToUiModels_withEmptyDateValue_selectsNoDate() {
+        assertNull(mapDate(currentValue = "", targetDates = null).currentValue)
     }
 
     @Test
     fun mapToUiModels_withDateValueThatIsNotIso_selectsNoDate() {
-        assertEquals("", mapDate(currentValue = "15.10.2026", targetDates = null).currentValue)
+        assertNull(mapDate(currentValue = "15.10.2026", targetDates = null).currentValue)
     }
 
     private fun mapDate(currentValue: String, targetDates: String?): ComponentUiModel.Date {
@@ -140,8 +150,8 @@ class ComponentUiMapperInputComponentTest {
                     title = TITLE,
                     description = DESCRIPTION,
                     currentValue = currentValue,
-                    defaultValue = DEFAULT_VALUE,
-                    factoryValue = FACTORY_VALUE,
+                    defaultValue = DEFAULT_DATE_VALUE,
+                    factoryValue = "",
                     targetDates = targetDates
                 )
             )
@@ -165,6 +175,7 @@ class ComponentUiMapperInputComponentTest {
         const val DEFAULT_VALUE = "default"
         const val FACTORY_VALUE = "factory"
         const val DATE_VALUE = "2026-10-15"
+        const val DEFAULT_DATE_VALUE = "2026-01-01"
         val OPTIONS = listOf("Low", "High")
     }
 }

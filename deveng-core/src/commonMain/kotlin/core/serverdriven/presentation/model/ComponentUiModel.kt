@@ -1,6 +1,7 @@
 package core.serverdriven.presentation.model
 
 import core.util.datetime.TargetDates
+import kotlinx.datetime.LocalDate
 
 sealed class ComponentUiModel {
     abstract val id: String
@@ -113,9 +114,9 @@ sealed class ComponentUiModel {
         override val id: String,
         val title: String,
         val description: String?,
-        val currentValue: String,
-        val defaultValue: String,
-        val factoryValue: String,
+        val currentValue: LocalDate?,
+        val defaultValue: LocalDate?,
+        val factoryValue: LocalDate?,
         val targetDates: TargetDates
     ) : ComponentUiModel()
 }

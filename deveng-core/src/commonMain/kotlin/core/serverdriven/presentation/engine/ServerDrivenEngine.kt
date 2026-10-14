@@ -302,7 +302,10 @@ class ServerDrivenEngine(
                 is ComponentUiModel.Segmented -> componentValues[componentKey] = component.currentValue
                 is ComponentUiModel.Radio -> componentValues[componentKey] = component.currentValue
                 is ComponentUiModel.Rating -> componentValues[componentKey] = component.currentValue
-                is ComponentUiModel.Date -> componentValues[componentKey] = component.currentValue
+                is ComponentUiModel.Date -> component.currentValue?.let { date ->
+                    componentValues[componentKey] = date.toString()
+                }
+
                 is ComponentUiModel.Tabs -> {
                     component.tabs.firstOrNull()?.let { firstTab -> componentValues[componentKey] = firstTab.id }
                     component.tabs.forEach { tab ->

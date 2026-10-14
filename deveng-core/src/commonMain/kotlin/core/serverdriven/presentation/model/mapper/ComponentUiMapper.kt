@@ -135,9 +135,9 @@ internal class ComponentUiMapper(
                 id = response.id,
                 title = response.title,
                 description = response.description,
-                currentValue = mapToDateValue(response),
-                defaultValue = response.defaultValue,
-                factoryValue = response.factoryValue,
+                currentValue = mapToDate(response.id, response.currentValue),
+                defaultValue = mapToDate(response.id, response.defaultValue),
+                factoryValue = mapToDate(response.id, response.factoryValue),
                 targetDates = mapToTargetDates(response)
             )
 
@@ -200,20 +200,21 @@ internal class ComponentUiMapper(
         return keyboardType ?: TextFieldKeyboardType.TEXT
     }
 
-    private fun mapToDateValue(
-        response: ComponentResponse.DateResponse
-    ): String {
-        val dateValue = response.currentValue
-        val isDateValueValid = dateValue.isEmpty() || runCatching { LocalDate.parse(dateValue) }.isSuccess
+    private fun mapToDate(
+        componentId: String,
+        dateValue: String
+    ): LocalDate? {
+        if (dateValue.isEmpty()) return null
 
-        if (!isDateValueValid) {
+        return try {
+            LocalDate.parse(dateValue)
+        } catch (exception: IllegalArgumentException) {
             CustomLogger.log(
-                "Server-driven UI: date '${response.id}' has a value '$dateValue' that is not an ISO-8601 date, " +
-                    "no date selected"
+                "Server-driven UI: date '$componentId' has a value '$dateValue' that is not an ISO-8601 date, " +
+                    "no date selected: ${exception.message}"
             )
+            null
         }
-
-        return if (isDateValueValid) dateValue else String.EMPTY
     }
 
     private fun mapToTargetDates(

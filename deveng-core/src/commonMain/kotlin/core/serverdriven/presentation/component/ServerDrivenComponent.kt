@@ -232,8 +232,7 @@ internal fun ServerDrivenComponent(
         }
 
         is ComponentUiModel.Date -> {
-            val dateValue = componentValues.getValue(componentKey) as String
-            val selectedDate = runCatching { LocalDate.parse(dateValue) }.getOrNull()
+            val selectedDate = (componentValues[componentKey] as String?)?.let(LocalDate::parse)
 
             CustomDatePicker(
                 modifier = modifier,

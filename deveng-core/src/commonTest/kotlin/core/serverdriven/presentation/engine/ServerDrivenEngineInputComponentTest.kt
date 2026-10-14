@@ -131,6 +131,27 @@ class ServerDrivenEngineInputComponentTest {
     }
 
     @Test
+    fun setLayout_withDateWithoutValue_collectsNoValueForIt() {
+        val engine = ServerDrivenEngine()
+
+        engine.setLayout(
+            layout = LayoutResponse(
+                components = listOf(
+                    ComponentResponse.DateResponse(
+                        id = START_DATE_ID,
+                        title = TITLE,
+                        currentValue = "",
+                        defaultValue = "",
+                        factoryValue = ""
+                    )
+                )
+            )
+        )
+
+        assertEquals(emptyMap(), engine.componentValues.value)
+    }
+
+    @Test
     fun setLayout_withSectionChildIdUsedOutsideSection_fails() {
         val engine = ServerDrivenEngine()
 
