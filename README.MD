@@ -333,11 +333,13 @@ When you use `overlayContent`, prefer a backdrop sized to your logo's natural as
 `ServerDrivenEngine` + `ServerDrivenScreen` (`core.serverdriven`) draw a layout the backend sends as JSON, with
 values, visibility/editable dependencies and lazily loaded shutter content. A layout carries an optional `version`
 (absent = 1) and `onLayoutElementSkip` reports each unknown component type, operator or effect the engine skips,
-once per layout, for analytics. Format, rules and usage:
+once per layout, for analytics. Component types: `shutter`, `tabs`, `row`, `section`, `label`, `divider`, `slider`,
+`switch`, `textfield`, `dropdown`, `segmented`, `radio`, `rating` and `date`. Format, rules and usage:
 [docs/server-driven-ui.md](docs/server-driven-ui.md). The sample app's "Server-driven UI Demo"
 (`ServerDrivenDemoScreen`) draws a JSON layout with every component type, a visibility and an editable dependency, the
 design document's day/night tabs (ids only need to be unique inside one tab), a shutter whose content loads on first
-open and a component of a type the library does not know, which is skipped and reported under the layout.
+open, a feedback section with the label, segmented, radio, rating and date components and their dependencies, and a
+component of a type the library does not know, which is skipped and reported under the layout.
 
 ## Utilities
 

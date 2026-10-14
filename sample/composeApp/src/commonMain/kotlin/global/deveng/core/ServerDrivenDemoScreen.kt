@@ -270,9 +270,78 @@ private const val SERVER_DRIVEN_DEMO_LAYOUT_JSON = """
       "title": "Network",
       "description": "Loaded from the server on first open",
       "components": []
+    },
+    {
+      "type": "section",
+      "id": "feedback_section",
+      "title": "Feedback",
+      "description": "A titled group that does not collapse",
+      "components": [
+        { "type": "label", "id": "feedback_label", "text": "Tell us how the camera setup went." },
+        {
+          "type": "segmented",
+          "id": "mode_segmented",
+          "title": "Mode",
+          "currentValue": "Day",
+          "defaultValue": "Day",
+          "factoryValue": "Day",
+          "options": ["Day", "Night", "Auto"]
+        },
+        {
+          "type": "radio",
+          "id": "quality_radio",
+          "title": "Stream quality",
+          "description": "Higher quality uses more data",
+          "currentValue": "High",
+          "defaultValue": "High",
+          "factoryValue": "Low",
+          "options": ["Low", "Medium", "High"]
+        },
+        {
+          "type": "rating",
+          "id": "setup_rating",
+          "title": "Setup",
+          "currentValue": 3,
+          "defaultValue": 0,
+          "factoryValue": 0
+        },
+        { "type": "label", "id": "thanks_label", "text": "Thanks, glad it went well!" },
+        {
+          "type": "date",
+          "id": "install_date",
+          "title": "Installed on",
+          "currentValue": "2026-10-01",
+          "defaultValue": "",
+          "factoryValue": ""
+        }
+      ]
     }
   ],
   "dependencies": [
+    {
+      "sourceId": "mode_segmented",
+      "targetId": "install_date",
+      "operator": "EQUALS",
+      "triggerValue": "Night",
+      "effectType": "VISIBILITY",
+      "effectValue": false
+    },
+    {
+      "sourceId": "setup_rating",
+      "targetId": "thanks_label",
+      "operator": "GREATER_THAN",
+      "triggerValue": "3",
+      "effectType": "VISIBILITY",
+      "effectValue": true
+    },
+    {
+      "sourceId": "quality_radio",
+      "targetId": "setup_rating",
+      "operator": "EQUALS",
+      "triggerValue": "Low",
+      "effectType": "EDITABLE",
+      "effectValue": false
+    },
     {
       "sourceId": "record_switch",
       "targetId": "resolution_dropdown",
@@ -347,7 +416,9 @@ private fun formatSkippedElement(skippedElement: SkippedLayoutElement): String {
  * (the advanced shutter only shows while "Advanced settings" is on), an editable dependency
  * (resolution is locked while recording is off), the design document's day/night tabs that repeat
  * the same ids (each tab's schedule switch locks only that tab's times) and a shutter whose content is
- * loaded on its first expand, as a backend would send it. A component of the unknown type `chart` is
+ * loaded on its first expand, as a backend would send it. A feedback section shows the label, segmented,
+ * radio, rating and date components with their dependencies (night mode hides the date, a rating above
+ * three shows a thank-you label, low quality locks the rating). A component of the unknown type `chart` is
  * skipped; the skip reports and the live values are printed under the layout.
  */
 @Composable

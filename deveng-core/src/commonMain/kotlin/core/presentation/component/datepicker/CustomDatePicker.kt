@@ -119,8 +119,8 @@ fun CustomDatePicker(
     var showDialog by remember { mutableStateOf(false) }
 
     if (showDialog) {
-        val timeZone = TimeZone.currentSystemDefault()
-        val startOfDayInstant = selectedDate?.atStartOfDayIn(timeZone)
+        // Material's DatePicker reads and returns the selected day as UTC midnight milliseconds.
+        val startOfDayInstant = selectedDate?.atStartOfDayIn(TimeZone.UTC)
         val epochMilliseconds = startOfDayInstant?.toEpochMilliseconds()
 
         val finalSelectableDates = selectableDates ?: CustomSelectableDates().apply {
@@ -138,7 +138,7 @@ fun CustomDatePicker(
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
                         val newDate = Instant.fromEpochMilliseconds(millis)
-                            .toLocalDateTime(TimeZone.currentSystemDefault()).date
+                            .toLocalDateTime(TimeZone.UTC).date
                         onDateChange(newDate)
                     }
                     showDialog = false

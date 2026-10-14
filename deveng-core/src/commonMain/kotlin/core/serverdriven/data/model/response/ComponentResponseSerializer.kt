@@ -40,6 +40,12 @@ internal object ComponentResponseSerializer :
             ComponentType.DROPDOWN -> ComponentResponse.DropdownResponse.serializer()
             ComponentType.DIVIDER -> ComponentResponse.DividerResponse.serializer()
             ComponentType.ROW -> ComponentResponse.RowResponse.serializer()
+            ComponentType.LABEL -> ComponentResponse.LabelResponse.serializer()
+            ComponentType.SEGMENTED -> ComponentResponse.SegmentedResponse.serializer()
+            ComponentType.RADIO -> ComponentResponse.RadioResponse.serializer()
+            ComponentType.RATING -> ComponentResponse.RatingResponse.serializer()
+            ComponentType.SECTION -> ComponentResponse.SectionResponse.serializer()
+            ComponentType.DATE -> ComponentResponse.DateResponse.serializer()
             null -> ComponentResponse.UnknownResponse.serializer()
         }
     }

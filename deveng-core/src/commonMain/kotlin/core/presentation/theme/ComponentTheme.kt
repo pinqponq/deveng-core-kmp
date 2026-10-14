@@ -644,7 +644,21 @@ data class ServerDrivenScreenTheme(
 val columnSpacing: Dp = 30.dp,
 val rowSpacing: Dp = 15.dp,
 val dividerColor: Color = CoreCustomDividerColor,
-val dividerThickness: Dp = 1.dp
+val dividerThickness: Dp = 1.dp,
+val labelTextStyle: TextStyle = TextStyle(
+fontSize = 16.sp,
+color = CoreCustomBlackColor
+),
+val titleTextStyle: TextStyle = TextStyle(
+fontSize = 16.sp,
+color = CoreCustomBlackColor
+),
+val descriptionTextStyle: TextStyle = TextStyle(
+fontSize = 14.sp,
+color = CoreCustomGrayHintColor
+),
+val headerSpacing: Dp = 8.dp,
+val sectionContentPadding: Dp = 16.dp
 )
 
 /**

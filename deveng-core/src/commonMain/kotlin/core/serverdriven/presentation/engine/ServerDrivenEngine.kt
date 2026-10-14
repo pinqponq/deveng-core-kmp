@@ -262,6 +262,9 @@ class ServerDrivenEngine(
                     is ComponentUiModel.Row ->
                         component.copy(components = withoutHiddenComponents(component.components, scopeKey))
 
+                    is ComponentUiModel.Section ->
+                        component.copy(components = withoutHiddenComponents(component.components, scopeKey))
+
                     is ComponentUiModel.Tabs -> component.copy(
                         tabs = component.tabs.map { tab ->
                             val tabKey = scopedComponentKey(scopeKey, tab.id)
@@ -296,6 +299,10 @@ class ServerDrivenEngine(
                 is ComponentUiModel.Switch -> componentValues[componentKey] = component.currentValue
                 is ComponentUiModel.TextField -> componentValues[componentKey] = component.currentValue
                 is ComponentUiModel.Dropdown -> componentValues[componentKey] = component.currentValue
+                is ComponentUiModel.Segmented -> componentValues[componentKey] = component.currentValue
+                is ComponentUiModel.Radio -> componentValues[componentKey] = component.currentValue
+                is ComponentUiModel.Rating -> componentValues[componentKey] = component.currentValue
+                is ComponentUiModel.Date -> componentValues[componentKey] = component.currentValue
                 is ComponentUiModel.Tabs -> {
                     component.tabs.firstOrNull()?.let { firstTab -> componentValues[componentKey] = firstTab.id }
                     component.tabs.forEach { tab ->
@@ -305,7 +312,9 @@ class ServerDrivenEngine(
 
                 is ComponentUiModel.Shutter -> collectInitialValues(component.components, scopeKey, componentValues)
                 is ComponentUiModel.Row -> collectInitialValues(component.components, scopeKey, componentValues)
+                is ComponentUiModel.Section -> collectInitialValues(component.components, scopeKey, componentValues)
                 is ComponentUiModel.Divider -> Unit
+                is ComponentUiModel.Label -> Unit
             }
         }
     }
@@ -331,6 +340,7 @@ class ServerDrivenEngine(
 
                 is ComponentUiModel.Shutter -> collectScopedComponentIds(component.components, scopeKeys)
                 is ComponentUiModel.Row -> collectScopedComponentIds(component.components, scopeKeys)
+                is ComponentUiModel.Section -> collectScopedComponentIds(component.components, scopeKeys)
                 else -> emptyList()
             }
 
@@ -365,6 +375,7 @@ class ServerDrivenEngine(
 
                 is ComponentUiModel.Shutter -> findComponent(component.components, componentKey, scopeKey)
                 is ComponentUiModel.Row -> findComponent(component.components, componentKey, scopeKey)
+                is ComponentUiModel.Section -> findComponent(component.components, componentKey, scopeKey)
                 else -> null
             }
 
@@ -391,6 +402,10 @@ class ServerDrivenEngine(
                 }
 
                 is ComponentUiModel.Row -> component.copy(
+                    components = appendToShutter(component.components, shutterKey, loadedComponents, scopeKey)
+                )
+
+                is ComponentUiModel.Section -> component.copy(
                     components = appendToShutter(component.components, shutterKey, loadedComponents, scopeKey)
                 )
 

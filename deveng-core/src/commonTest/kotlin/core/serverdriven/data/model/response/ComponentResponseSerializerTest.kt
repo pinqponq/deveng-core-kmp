@@ -31,6 +31,43 @@ class ComponentResponseSerializerTest {
     }
 
     @Test
+    fun decode_withEveryInputComponentType_picksMatchingClass() {
+        val components = layoutJson.decodeFromString<List<ComponentResponse>>(
+            """
+                [
+                  {"type":"label","id":"$COMPONENT_ID","text":"Text"},
+                  {"type":"segmented","id":"$COMPONENT_ID","title":"Title","currentValue":"","defaultValue":"","factoryValue":""},
+                  {"type":"radio","id":"$COMPONENT_ID","title":"Title","currentValue":"","defaultValue":"","factoryValue":""},
+                  {"type":"rating","id":"$COMPONENT_ID","title":"Title","currentValue":4.5,"defaultValue":0,"factoryValue":0},
+                  {"type":"section","id":"$COMPONENT_ID","title":"Title"},
+                  {"type":"date","id":"$COMPONENT_ID","title":"Title","currentValue":"","defaultValue":"","factoryValue":""}
+                ]
+            """
+        )
+
+        assertEquals(
+            listOf(
+                ComponentResponse.LabelResponse::class,
+                ComponentResponse.SegmentedResponse::class,
+                ComponentResponse.RadioResponse::class,
+                ComponentResponse.RatingResponse::class,
+                ComponentResponse.SectionResponse::class,
+                ComponentResponse.DateResponse::class
+            ),
+            components.map { component -> component::class }
+        )
+    }
+
+    @Test
+    fun decode_withRatingWithoutMaxValue_usesFiveStars() {
+        val rating = layoutJson.decodeFromString<List<ComponentResponse>>(
+            """[{"type":"rating","id":"$COMPONENT_ID","title":"Title","currentValue":4.5,"defaultValue":0,"factoryValue":0}]"""
+        ).single() as ComponentResponse.RatingResponse
+
+        assertEquals(listOf(5f, 4.5f), listOf(rating.maxValue.toFloat(), rating.currentValue))
+    }
+
+    @Test
     fun decode_withUnknownOrMissingType_returnsUnknownResponse() {
         val components = layoutJson.decodeFromString<List<ComponentResponse>>(
             """[{"type":"$UNKNOWN_TYPE","id":"$COMPONENT_ID"},{"id":"$COMPONENT_ID"}]"""

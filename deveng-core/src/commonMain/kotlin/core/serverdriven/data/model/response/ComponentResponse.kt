@@ -77,8 +77,68 @@ sealed class ComponentResponse {
     ) : ComponentResponse()
 
     @Serializable
+    data class LabelResponse(
+        override val id: String,
+        val text: String
+    ) : ComponentResponse()
+
+    @Serializable
+    data class SegmentedResponse(
+        override val id: String,
+        val title: String,
+        val description: String? = null,
+        val currentValue: String,
+        val defaultValue: String,
+        val factoryValue: String,
+        val options: List<String> = emptyList()
+    ) : ComponentResponse()
+
+    @Serializable
+    data class RadioResponse(
+        override val id: String,
+        val title: String,
+        val description: String? = null,
+        val currentValue: String,
+        val defaultValue: String,
+        val factoryValue: String,
+        val options: List<String> = emptyList()
+    ) : ComponentResponse()
+
+    @Serializable
+    data class RatingResponse(
+        override val id: String,
+        val title: String,
+        val description: String? = null,
+        val maxValue: Int = DEFAULT_MAX_RATING,
+        val currentValue: Float,
+        val defaultValue: Float,
+        val factoryValue: Float
+    ) : ComponentResponse()
+
+    @Serializable
+    data class SectionResponse(
+        override val id: String,
+        val title: String,
+        val description: String? = null,
+        val components: List<ComponentResponse> = emptyList()
+    ) : ComponentResponse()
+
+    @Serializable
+    data class DateResponse(
+        override val id: String,
+        val title: String,
+        val description: String? = null,
+        val currentValue: String,
+        val defaultValue: String,
+        val factoryValue: String,
+        val targetDates: String? = null
+    ) : ComponentResponse()
+
+    @Serializable
     data class UnknownResponse(
         override val id: String,
         val type: String? = null
     ) : ComponentResponse()
 }
+
+private const val DEFAULT_MAX_RATING = 5

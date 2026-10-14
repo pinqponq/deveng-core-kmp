@@ -1,5 +1,7 @@
 package core.serverdriven.presentation.model
 
+import core.util.datetime.TargetDates
+
 sealed class ComponentUiModel {
     abstract val id: String
 
@@ -63,5 +65,57 @@ sealed class ComponentUiModel {
     data class Row(
         override val id: String,
         val components: List<ComponentUiModel>
+    ) : ComponentUiModel()
+
+    data class Label(
+        override val id: String,
+        val text: String
+    ) : ComponentUiModel()
+
+    data class Segmented(
+        override val id: String,
+        val title: String,
+        val description: String?,
+        val currentValue: String,
+        val defaultValue: String,
+        val factoryValue: String,
+        val options: List<String>
+    ) : ComponentUiModel()
+
+    data class Radio(
+        override val id: String,
+        val title: String,
+        val description: String?,
+        val currentValue: String,
+        val defaultValue: String,
+        val factoryValue: String,
+        val options: List<String>
+    ) : ComponentUiModel()
+
+    data class Rating(
+        override val id: String,
+        val title: String,
+        val description: String?,
+        val maxValue: Int,
+        val currentValue: Float,
+        val defaultValue: Float,
+        val factoryValue: Float
+    ) : ComponentUiModel()
+
+    data class Section(
+        override val id: String,
+        val title: String,
+        val description: String?,
+        val components: List<ComponentUiModel>
+    ) : ComponentUiModel()
+
+    data class Date(
+        override val id: String,
+        val title: String,
+        val description: String?,
+        val currentValue: String,
+        val defaultValue: String,
+        val factoryValue: String,
+        val targetDates: TargetDates
     ) : ComponentUiModel()
 }

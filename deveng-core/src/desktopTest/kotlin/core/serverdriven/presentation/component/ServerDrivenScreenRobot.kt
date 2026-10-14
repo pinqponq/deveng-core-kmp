@@ -15,6 +15,7 @@ import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -24,7 +25,12 @@ import androidx.compose.ui.unit.Dp
 import core.presentation.theme.AppTheme
 import core.serverdriven.presentation.engine.ServerDrivenEngine
 import core.serverdriven.presentation.model.ComponentEvent
+import global.deveng.deveng_core.generated.resources.Res
+import global.deveng.deveng_core.generated.resources.shared_content_dest_icon_star
+import global.deveng.deveng_core.generated.resources.shared_ok
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.jetbrains.compose.resources.getString
 import kotlin.test.assertEquals
 
 @OptIn(ExperimentalTestApi::class)
@@ -103,6 +109,19 @@ class ServerDrivenScreenRobot(private val composeUiTest: ComposeUiTest) {
     fun moveSlider(value: Float) = apply {
         composeUiTest.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo(current = 85f, range = 0f..100f)))
             .performSemanticsAction(SemanticsActions.SetProgress) { setProgress -> setProgress(value) }
+    }
+
+    fun clickText(text: String) = apply {
+        composeUiTest.onNodeWithText(text).performClick()
+    }
+
+    fun clickRatingStar(starIndex: Int) = apply {
+        composeUiTest.onAllNodesWithContentDescription(runBlocking { getString(Res.string.shared_content_dest_icon_star) })[starIndex]
+            .performClick()
+    }
+
+    fun confirmDatePicker() = apply {
+        composeUiTest.onNodeWithText(runBlocking { getString(Res.string.shared_ok) }).performClick()
     }
 
     fun assertTextShown(text: String) = apply {
