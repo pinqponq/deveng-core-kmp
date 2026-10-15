@@ -9,7 +9,13 @@ internal enum class ComponentType(val serialName: String) {
     TEXT_FIELD("textfield"),
     DROPDOWN("dropdown"),
     DIVIDER("divider"),
-    ROW("row");
+    ROW("row"),
+    LABEL("label"),
+    SEGMENTED("segmented"),
+    RADIO("radio"),
+    RATING("rating"),
+    SECTION("section"),
+    DATE("date");
 
     companion object {
         fun fromSerialName(serialName: String): ComponentType? {

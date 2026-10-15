@@ -36,7 +36,7 @@ class CustomSelectableDates : SelectableDates {
         val timeZone = TimeZone.currentSystemDefault()
         val todayDate = Clock.System.now().toLocalDateTime(timeZone).date
         val localDate = Instant.fromEpochMilliseconds(utcTimeMillis)
-            .toLocalDateTime(timeZone).date
+            .toLocalDateTime(TimeZone.UTC).date
 
         val passesTargetDateCheck = when (targetDates) {
             TargetDates.PAST -> oldestDateTime.date <= localDate && localDate <= todayDate

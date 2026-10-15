@@ -10,6 +10,8 @@ import core.serverdriven.presentation.model.TextFieldKeyboardType
 import core.serverdriven.presentation.model.TextFieldMaskType
 import core.util.CustomLogger
 import core.util.EMPTY
+import core.util.datetime.TargetDates
+import kotlinx.datetime.LocalDate
 
 internal class ComponentUiMapper(
     private val onElementSkip: (SkippedLayoutElement) -> Unit = {}
@@ -87,6 +89,58 @@ internal class ComponentUiMapper(
                 components = mapToUiModels(response.components)
             )
 
+            is ComponentResponse.LabelResponse -> ComponentUiModel.Label(
+                id = response.id,
+                text = response.text
+            )
+
+            is ComponentResponse.SegmentedResponse -> ComponentUiModel.Segmented(
+                id = response.id,
+                title = response.title,
+                description = response.description,
+                currentValue = response.currentValue,
+                defaultValue = response.defaultValue,
+                factoryValue = response.factoryValue,
+                options = response.options
+            )
+
+            is ComponentResponse.RadioResponse -> ComponentUiModel.Radio(
+                id = response.id,
+                title = response.title,
+                description = response.description,
+                currentValue = response.currentValue,
+                defaultValue = response.defaultValue,
+                factoryValue = response.factoryValue,
+                options = response.options
+            )
+
+            is ComponentResponse.RatingResponse -> ComponentUiModel.Rating(
+                id = response.id,
+                title = response.title,
+                description = response.description,
+                maxValue = response.maxValue,
+                currentValue = response.currentValue,
+                defaultValue = response.defaultValue,
+                factoryValue = response.factoryValue
+            )
+
+            is ComponentResponse.SectionResponse -> ComponentUiModel.Section(
+                id = response.id,
+                title = response.title,
+                description = response.description,
+                components = mapToUiModels(response.components)
+            )
+
+            is ComponentResponse.DateResponse -> ComponentUiModel.Date(
+                id = response.id,
+                title = response.title,
+                description = response.description,
+                currentValue = mapToDate(response.id, response.currentValue),
+                defaultValue = mapToDate(response.id, response.defaultValue),
+                factoryValue = mapToDate(response.id, response.factoryValue),
+                targetDates = mapToTargetDates(response)
+            )
+
             is ComponentResponse.UnknownResponse -> {
                 CustomLogger.log(
                     "Server-driven UI: skipped component '${response.id}' with unknown type '${response.type}'"
@@ -144,5 +198,39 @@ internal class ComponentUiMapper(
         }
 
         return keyboardType ?: TextFieldKeyboardType.TEXT
+    }
+
+    private fun mapToDate(
+        componentId: String,
+        dateValue: String?
+    ): LocalDate? {
+        if (dateValue.isNullOrEmpty()) return null
+
+        return try {
+            LocalDate.parse(dateValue)
+        } catch (exception: IllegalArgumentException) {
+            CustomLogger.log(
+                "Server-driven UI: date '$componentId' has a value '$dateValue' that is not an ISO-8601 date, " +
+                    "no date selected: $exception"
+            )
+            null
+        }
+    }
+
+    private fun mapToTargetDates(
+        response: ComponentResponse.DateResponse
+    ): TargetDates {
+        val targetDatesName = response.targetDates ?: return TargetDates.PAST
+        val targetDates = TargetDates.entries.firstOrNull { targetDatesEntry ->
+            targetDatesEntry.name.equals(targetDatesName, ignoreCase = true)
+        }
+
+        if (targetDates == null) {
+            CustomLogger.log(
+                "Server-driven UI: date '${response.id}' has unknown target dates '$targetDatesName', using PAST"
+            )
+        }
+
+        return targetDates ?: TargetDates.PAST
     }
 }

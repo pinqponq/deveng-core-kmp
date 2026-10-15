@@ -96,6 +96,40 @@ class ServerDrivenEngineLoggingTest {
     }
 
     @Test
+    fun setLayout_withDateValueThatIsNotIso_logsTheValue() {
+        val engine = ServerDrivenEngine()
+
+        engine.setLayout(layout = LayoutResponse(components = listOf(dateResponse(NOT_ISO_DATE, targetDates = null))))
+
+        assertTrue(loggedLines().single().contains("'$NOT_ISO_DATE'"))
+    }
+
+    @Test
+    fun setLayout_withUnknownTargetDates_logsTheValue() {
+        val engine = ServerDrivenEngine()
+
+        engine.setLayout(layout = LayoutResponse(components = listOf(dateResponse(ISO_DATE, UNKNOWN_TARGET_DATES))))
+
+        assertTrue(loggedLines().single().contains("'$UNKNOWN_TARGET_DATES'"))
+    }
+
+    @Test
+    fun setLayout_withIsoOrEmptyDateAndKnownTargetDates_logsNothing() {
+        val engine = ServerDrivenEngine()
+
+        engine.setLayout(
+            layout = LayoutResponse(
+                components = listOf(
+                    dateResponse(currentValue = ISO_DATE, targetDates = KNOWN_TARGET_DATES),
+                    dateResponse(currentValue = "", targetDates = null).copy(id = SECOND_DATE_ID)
+                )
+            )
+        )
+
+        assertEquals(emptyList(), loggedLines())
+    }
+
+    @Test
     fun enterTextField_onNotEditableField_logsIgnoredValue() = runTest {
         val engine = ServerDrivenEngine()
         engine.setLayout(
@@ -250,6 +284,15 @@ class ServerDrivenEngineLoggingTest {
         effectValue = false
     )
 
+    private fun dateResponse(currentValue: String, targetDates: String?) = ComponentResponse.DateResponse(
+        id = DATE_ID,
+        title = TITLE,
+        currentValue = currentValue,
+        defaultValue = "",
+        factoryValue = "",
+        targetDates = targetDates
+    )
+
     private fun loggedLines(): List<String> =
         capturedOutput.toString().lines().filter { line -> line.isNotBlank() }
 
@@ -266,6 +309,12 @@ class ServerDrivenEngineLoggingTest {
         const val UNKNOWN_FORMAT = "IBAN"
         const val UNKNOWN_KEYBOARD_TYPE = "DIAL_PAD"
         const val UNKNOWN_OPERATOR = "CONTAINS"
+        const val DATE_ID = "start_date"
+        const val SECOND_DATE_ID = "end_date"
+        const val ISO_DATE = "2026-10-15"
+        const val NOT_ISO_DATE = "15.10.2026"
+        const val KNOWN_TARGET_DATES = "FUTURE"
+        const val UNKNOWN_TARGET_DATES = "ANYTIME"
         val REPORTED_VALUES = listOf(CHART_TYPE, UNKNOWN_FORMAT, UNKNOWN_KEYBOARD_TYPE, UNKNOWN_OPERATOR)
     }
 }

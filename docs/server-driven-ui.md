@@ -294,16 +294,30 @@ A shutter (whose content can also be loaded later, see the rules) and a dropdown
 | `textfield` | `title`, `description`, `currentValue`, `defaultValue`, `factoryValue`, `hintMessage`, `errorMessage`, `format`, `keyboardType` | `String` | `CustomTextField` |
 | `dropdown` | `title`, `description`, `currentValue`, `defaultValue`, `factoryValue`, `options` | `String` | `CustomDropDownMenu` |
 | `divider` | — | — | `HorizontalDivider` |
+| `label` | `text` | — | `Text` with `serverDrivenScreen.labelTextStyle` |
+| `section` | `title`, `description`, `components` | — | `RoundedSurface` with a title, does not collapse |
+| `segmented` | `title`, `description`, `currentValue`, `defaultValue`, `factoryValue`, `options` | `String` | `ChipsMenu` |
+| `radio` | `title`, `description`, `currentValue`, `defaultValue`, `factoryValue`, `options` | `String` | `OptionItemList` with check icons |
+| `rating` | `title`, `description`, `maxValue` (integer, default 5), `currentValue`, `defaultValue`, `factoryValue` (numbers) | `Float` (whole stars) | `RatingRow` |
+| `date` | `title`, `description`, `currentValue`, `defaultValue`, `factoryValue` (ISO-8601 dates; missing or `""` = no date), `targetDates` | `String` (ISO-8601, `2026-10-15`), no entry while no date is selected | `CustomDatePicker` (`PickerField` + date dialog) |
 
 - Write the tab component's type as `tabs`. `tabs` holds tab objects, not components; a tab object needs no
   `type` (a `"type": "tab"` on it is ignored). A component written as `"type": "tab"` (as in parts of the
   original design document) is read as `tabs` and logged once as deprecated.
-- `description` is optional everywhere. The shutter shows it under its title; the other components do not
-  draw it.
+- `description` is optional everywhere. The shutter, section, segmented, radio and rating components show it
+  under their title; the other components do not draw it.
+- Value events: `segmented` and `radio` send `ClickDropdownOption`, `rating` sends `ChangeSliderValue` (the star
+  count; tapping the selected star again sends `0`), `date` sends `EnterTextField` with the ISO-8601 date. A
+  `segmented` or `radio` that is not editable looks the same but sends nothing.
+- A `section` is not a scope: its children follow the id rules of the scope around it, like a `row` or `shutter`.
+- `date`: `targetDates` is `PAST` (default) or `FUTURE` and limits the days the dialog offers. A `currentValue`
+  that is not an ISO-8601 date opens with no date selected and is logged; an unknown `targetDates` falls back to
+  `PAST`.
 - `keyboardType`: `TEXT` (default), `NUMERIC`, `PASSWORD`, `EMAIL`. `format`: `PHONE_NUMBER`, `TIME`, `DATE`,
   `DATE_AND_TIME`; it is parsed into `TextField.maskType`, the screen does not apply a mask yet.
 - Colors, text styles and spacing come from the app's `AppTheme`/`ComponentTheme`
-  (`serverDrivenScreen` holds the column/row spacing and the divider). All texts come from the layout.
+  (`serverDrivenScreen` holds the column/row spacing, the divider, the label/title/description text styles,
+  the header spacing and the section padding). All texts come from the layout.
 
 ### Dependencies
 
@@ -339,6 +353,11 @@ not allowed under a version bump either: add a new field or type instead.
 **Every new component type or operator (and every new effect) is announced with a version bump**, so the
 backend can tell from an app's skip reports which layout version it is behind.
 
+| Version | Adds |
+|---|---|
+| 1 | `shutter`, `tabs`, `row`, `slider`, `switch`, `textfield`, `dropdown`, `divider`; `EQUALS`, `GREATER_THAN`, `LESS_THAN`; `VISIBILITY`, `EDITABLE` |
+| 2 | `label`, `section`, `segmented`, `radio`, `rating`, `date` |
+
 ## Rules
 
 - **Ids are unique inside one tab.** Two tabs may use the same ids and keep separate values and properties.
@@ -346,11 +365,11 @@ backend can tell from an app's skip reports which layout version it is behind.
   later joins the shutter's tab and follows the same rule. A duplicate makes `setLayout` (or the
   shutter load that brings it) fail with an `IllegalArgumentException` naming the duplicate keys; a failed load
   leaves the layout unchanged.
-- **Unknown values do not break the layout.** A component with an unknown `type` is skipped, a dependency
-  with an unknown `operator` or `effectType` is skipped, an unknown `keyboardType` falls back to `TEXT` and an
-  unknown `format` to no mask. A dependency whose `sourceId` or `targetId` is not in the layout waits until
-  that id is loaded (for example by a shutter). Each case is logged through `CustomLogger`, so an older app
-  keeps working when the backend adds something new.
+- **Unknown values do not break the layout.** A component with an unknown `type` is skipped, a dependency with
+  an unknown `operator` or `effectType` is skipped, an unknown `keyboardType` falls back to `TEXT` and an
+  unknown `format` to no mask, an unknown `targetDates` to `PAST`. A dependency whose `sourceId` or `targetId`
+  is not in the layout waits until that id is loaded (for example by a shutter). Each case is logged through
+  `CustomLogger`, so an older app keeps working when the backend adds something new.
 - **Skipped types are reported.** `onLayoutElementSkip` receives a `SkippedLayoutElement(kind, name,
   componentId)` for each skipped component type (`COMPONENT_TYPE`, `componentId` = the component's id, `name`
   is `null` when the component has no `type`), operator (`OPERATOR`) or effect (`EFFECT`; for both,
