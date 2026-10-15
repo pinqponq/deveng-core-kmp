@@ -638,6 +638,16 @@ val expandIconColor: Color = Color.White
 )
 
 /**
+ * Theme for ServerDrivenScreen layout
+*/
+data class ServerDrivenScreenTheme(
+val columnSpacing: Dp = 30.dp,
+val rowSpacing: Dp = 15.dp,
+val dividerColor: Color = CoreCustomDividerColor,
+val dividerThickness: Dp = 1.dp
+)
+
+/**
  * Theme for RatingRow component
 */
 data class RatingRowTheme(
@@ -784,6 +794,7 @@ val swipeCards: SwipeCardsTheme = SwipeCardsTheme(),
 val reviewStack: ReviewStackTheme = ReviewStackTheme(),
 val tabRow: TabRowTheme = TabRowTheme(),
 val shutter: ShutterTheme = ShutterTheme(),
+val serverDrivenScreen: ServerDrivenScreenTheme = ServerDrivenScreenTheme(),
 val qrCodeView: QrCodeViewTheme = QrCodeViewTheme()
 )
 

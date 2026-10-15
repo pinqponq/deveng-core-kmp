@@ -328,6 +328,14 @@ When you use `overlayContent`, prefer a backdrop sized to your logo's natural as
 
 ---
 
+### Server-driven UI
+
+`ServerDrivenEngine` + `ServerDrivenScreen` (`core.serverdriven`) draw a layout the backend sends as JSON, with
+values, visibility/editable dependencies and lazily loaded shutter content. Format, rules and usage:
+[docs/server-driven-ui.md](docs/server-driven-ui.md). The sample app's "Server-driven UI Demo"
+(`ServerDrivenDemoScreen`) draws a JSON layout with every component type, a visibility and an editable dependency, and a
+shutter whose content loads on first open.
+
 ## Utilities
 
 **Platform & actions** — `MultiPlatformUtils` (use `Context` on Android; no-arg on iOS/Desktop/Wasm):
