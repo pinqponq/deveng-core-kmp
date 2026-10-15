@@ -211,7 +211,7 @@ internal class ComponentUiMapper(
         } catch (exception: IllegalArgumentException) {
             CustomLogger.log(
                 "Server-driven UI: date '$componentId' has a value '$dateValue' that is not an ISO-8601 date, " +
-                    "no date selected: ${exception.message}"
+                    "no date selected: $exception"
             )
             null
         }
@@ -221,8 +221,8 @@ internal class ComponentUiMapper(
         response: ComponentResponse.DateResponse
     ): TargetDates {
         val targetDatesName = response.targetDates ?: return TargetDates.PAST
-        val targetDates = TargetDates.entries.firstOrNull { targetDates ->
-            targetDates.name.equals(targetDatesName, ignoreCase = true)
+        val targetDates = TargetDates.entries.firstOrNull { targetDatesEntry ->
+            targetDatesEntry.name.equals(targetDatesName, ignoreCase = true)
         }
 
         if (targetDates == null) {
