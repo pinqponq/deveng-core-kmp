@@ -25,7 +25,7 @@ class ServerDrivenEngineInputComponentTest {
                 MODE_SEGMENTED_ID to DAY_MODE,
                 START_DATE_ID to START_DATE,
                 QUALITY_RADIO_ID to HIGH_QUALITY,
-                SERVICE_RATING_ID to 3f
+                SERVICE_RATING_ID to INITIAL_RATING.toFloat()
             ),
             engine.componentValues.value
         )
@@ -99,7 +99,7 @@ class ServerDrivenEngineInputComponentTest {
 
         assertEquals(LOW_QUALITY, engine.componentValues.value[QUALITY_RADIO_ID])
         assertFalse(engine.componentProperties.value.getValue(SERVICE_RATING_ID).isEditable)
-        assertEquals(3f, engine.componentValues.value[SERVICE_RATING_ID])
+        assertEquals(INITIAL_RATING.toFloat(), engine.componentValues.value[SERVICE_RATING_ID])
     }
 
     @Test
@@ -222,6 +222,7 @@ class ServerDrivenEngineInputComponentTest {
         const val LOW_QUALITY = "Low"
         const val START_DATE = "2026-10-15"
         const val LAST_DATE = "2026-12-31"
+        const val INITIAL_RATING = 3
 
         const val SEGMENTED_JSON = """
             {
@@ -253,7 +254,7 @@ class ServerDrivenEngineInputComponentTest {
                 },
                 {
                   "type": "rating", "id": "$SERVICE_RATING_ID", "title": "Service",
-                  "currentValue": 3, "defaultValue": 0, "factoryValue": 0
+                  "currentValue": $INITIAL_RATING, "defaultValue": 0, "factoryValue": 0
                 },
                 { "type": "label", "id": "$THANKS_LABEL_ID", "text": "Thanks" }
               ],
