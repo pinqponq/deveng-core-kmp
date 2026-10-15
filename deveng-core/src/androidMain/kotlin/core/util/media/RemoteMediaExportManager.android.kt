@@ -36,6 +36,7 @@ actual class RemoteMediaExportManager(
         private const val JPEG_MIME_TYPE = "image/jpeg"
         private const val CAPTURE_EXIF_TEMP_FILE_PREFIX = "export_capture_exif"
         private const val JPEG_FILE_SUFFIX = ".jpg"
+        private const val LAT_LONG_VALUE_COUNT = 2
     }
 
     actual suspend fun shareSingleFileFromUrl(
@@ -398,12 +399,14 @@ actual class RemoteMediaExportManager(
                 exif.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, dateTimeTags.dateTime)
                 exif.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, dateTimeTags.offset)
             }
-            val location = request.location
-            if (location != null && exif.latLong == null) {
-                exif.setLatLong(location.latitude, location.longitude)
-            }
             exif.saveAttributes()
-            return tempFile.readBytes()
+            val photoBytesWithDate = tempFile.readBytes()
+            val location = request.location
+            val isLocationMissing = !exif.getLatLong(FloatArray(LAT_LONG_VALUE_COUNT))
+            if (location == null || !isLocationMissing) {
+                return photoBytesWithDate
+            }
+            return PhotoSaveUtils.addLocationExif(photoBytesWithDate, location.latitude, location.longitude)
         } finally {
             tempFile.delete()
         }

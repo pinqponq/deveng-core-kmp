@@ -200,6 +200,7 @@ actual class RemoteMediaExportManager {
      * Photos copies the file into its library during `performChanges`, so the temp copy is deleted
      * afterwards; otherwise every saved item would stay in the temp folder and take its size twice.
      */
+    @OptIn(ExperimentalForeignApi::class)
     private suspend fun saveToPhotosAndDeleteFile(
         fileUrl: NSURL,
         mimeType: String,
