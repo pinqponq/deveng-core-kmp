@@ -28,6 +28,14 @@ import platform.Foundation.timeIntervalSince1970
 import platform.Photos.PHAssetChangeRequest
 import platform.Photos.PHPhotoLibrary
 
+private sealed interface TempFileDownload {
+    data class Downloaded(val file: NSURL) : TempFileDownload
+
+    data class HttpFailure(val statusCode: Int) : TempFileDownload
+
+    data class Failed(val reason: String) : TempFileDownload
+}
+
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 actual class RemoteMediaExportManager {
     private companion object {
@@ -35,6 +43,7 @@ actual class RemoteMediaExportManager {
         // on the total duration, so a large video on a slow connection still completes.
         private const val REQUEST_TIMEOUT_SECONDS = 120.0
         private const val MILLIS_PER_SECOND = 1000.0
+        private const val VIDEO_MIME_TYPE_PREFIX = "video/"
     }
 
     private val downloadSession: NSURLSession by lazy {
@@ -199,7 +208,7 @@ actual class RemoteMediaExportManager {
         }
 
     private fun downloadFailureReason(error: NSError?): String =
-        error?.localizedDescription ?: "Download finished without a file"
+        error?.let { "${it.domain} ${it.code}: ${it.localizedDescription}" } ?: "Download finished without a file"
 
     /**
      * Photos copies the file into its library during `performChanges`, so the temp copy is deleted
@@ -232,7 +241,7 @@ actual class RemoteMediaExportManager {
         captureLocation: CLLocation?,
     ): Boolean = suspendCancellableCoroutine { continuation ->
         PHPhotoLibrary.sharedPhotoLibrary().performChanges({
-            val creationRequest = if (mimeType.startsWith("video/")) {
+            val creationRequest = if (mimeType.startsWith(VIDEO_MIME_TYPE_PREFIX)) {
                 PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(fileUrl)
             } else {
                 PHAssetChangeRequest.creationRequestForAssetFromImageAtFileURL(fileUrl)
@@ -246,12 +255,4 @@ actual class RemoteMediaExportManager {
             continuation.resume(success)
         }
     }
-}
-
-private sealed interface TempFileDownload {
-    data class Downloaded(val file: NSURL) : TempFileDownload
-
-    data class HttpFailure(val statusCode: Int) : TempFileDownload
-
-    data class Failed(val reason: String) : TempFileDownload
 }
