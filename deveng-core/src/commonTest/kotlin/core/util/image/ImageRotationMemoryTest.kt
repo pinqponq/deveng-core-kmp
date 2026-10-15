@@ -52,8 +52,9 @@ class ImageRotationMemoryTest {
 
     @Test
     fun isPixelRotationWithinMemory_withUnknownDimensions_returnsFalse() {
-        assertFalse(isPixelRotationWithinMemory(width = -1, height = TWELVE_MEGAPIXEL_HEIGHT, freeHeapBytes = Long.MAX_VALUE))
+        assertFalse(isPixelRotationWithinMemory(width = 0, height = TWELVE_MEGAPIXEL_HEIGHT, freeHeapBytes = Long.MAX_VALUE))
         assertFalse(isPixelRotationWithinMemory(width = TWELVE_MEGAPIXEL_WIDTH, height = 0, freeHeapBytes = Long.MAX_VALUE))
+        assertFalse(isPixelRotationWithinMemory(width = -1, height = -1, freeHeapBytes = Long.MAX_VALUE))
     }
 
     private companion object {
