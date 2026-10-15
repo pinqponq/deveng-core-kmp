@@ -68,6 +68,15 @@ class ComponentResponseSerializerTest {
     }
 
     @Test
+    fun decode_withDateWithoutValues_hasNoDates() {
+        val date = layoutJson.decodeFromString<List<ComponentResponse>>(
+            """[{"type":"date","id":"$COMPONENT_ID","title":"Title"}]"""
+        ).single() as ComponentResponse.DateResponse
+
+        assertEquals(listOf(null, null, null), listOf(date.currentValue, date.defaultValue, date.factoryValue))
+    }
+
+    @Test
     fun decode_withUnknownOrMissingType_returnsUnknownResponse() {
         val components = layoutJson.decodeFromString<List<ComponentResponse>>(
             """[{"type":"$UNKNOWN_TYPE","id":"$COMPONENT_ID"},{"id":"$COMPONENT_ID"}]"""

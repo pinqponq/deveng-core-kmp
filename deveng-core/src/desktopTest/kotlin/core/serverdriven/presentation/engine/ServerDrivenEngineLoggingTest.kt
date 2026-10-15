@@ -96,15 +96,21 @@ class ServerDrivenEngineLoggingTest {
     }
 
     @Test
-    fun setLayout_withDateValueThatIsNotIsoAndUnknownTargetDates_logsBoth() {
+    fun setLayout_withDateValueThatIsNotIso_logsTheValue() {
         val engine = ServerDrivenEngine()
 
-        engine.setLayout(layout = LayoutResponse(components = listOf(dateResponse(NOT_ISO_DATE, UNKNOWN_TARGET_DATES))))
+        engine.setLayout(layout = LayoutResponse(components = listOf(dateResponse(NOT_ISO_DATE, targetDates = null))))
 
-        assertEquals(
-            listOf(NOT_ISO_DATE, UNKNOWN_TARGET_DATES),
-            loggedLines().map { line -> listOf(NOT_ISO_DATE, UNKNOWN_TARGET_DATES).first { value -> line.contains("'$value'") } }
-        )
+        assertTrue(loggedLines().single().contains("'$NOT_ISO_DATE'"))
+    }
+
+    @Test
+    fun setLayout_withUnknownTargetDates_logsTheValue() {
+        val engine = ServerDrivenEngine()
+
+        engine.setLayout(layout = LayoutResponse(components = listOf(dateResponse("2026-10-15", UNKNOWN_TARGET_DATES))))
+
+        assertTrue(loggedLines().single().contains("'$UNKNOWN_TARGET_DATES'"))
     }
 
     @Test

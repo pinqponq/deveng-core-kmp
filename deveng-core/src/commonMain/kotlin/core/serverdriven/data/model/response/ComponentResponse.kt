@@ -128,9 +128,9 @@ sealed class ComponentResponse {
         override val id: String,
         val title: String,
         val description: String? = null,
-        val currentValue: String,
-        val defaultValue: String,
-        val factoryValue: String,
+        val currentValue: String? = null,
+        val defaultValue: String? = null,
+        val factoryValue: String? = null,
         val targetDates: String? = null
     ) : ComponentResponse()
 

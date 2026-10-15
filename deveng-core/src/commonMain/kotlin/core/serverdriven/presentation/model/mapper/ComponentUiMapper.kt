@@ -202,9 +202,9 @@ internal class ComponentUiMapper(
 
     private fun mapToDate(
         componentId: String,
-        dateValue: String
+        dateValue: String?
     ): LocalDate? {
-        if (dateValue.isEmpty()) return null
+        if (dateValue.isNullOrEmpty()) return null
 
         return try {
             LocalDate.parse(dateValue)

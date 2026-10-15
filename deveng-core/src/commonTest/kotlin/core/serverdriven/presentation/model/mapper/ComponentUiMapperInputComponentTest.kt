@@ -22,8 +22,8 @@ class ComponentUiMapperInputComponentTest {
     }
 
     @Test
-    fun mapToUiModels_withSegmentedAndRadio_keepsEveryFieldAndOptionOrder() {
-        val components = componentUiMapper.mapToUiModels(
+    fun mapToUiModels_withSegmented_keepsEveryFieldAndOptionOrder() {
+        val segmented = componentUiMapper.mapToUiModels(
             listOf(
                 ComponentResponse.SegmentedResponse(
                     id = SEGMENTED_ID,
@@ -33,7 +33,20 @@ class ComponentUiMapperInputComponentTest {
                     defaultValue = DEFAULT_VALUE,
                     factoryValue = FACTORY_VALUE,
                     options = OPTIONS
-                ),
+                )
+            )
+        ).single() as ComponentUiModel.Segmented
+
+        assertEquals(
+            listOf<Any?>(SEGMENTED_ID, TITLE, DESCRIPTION, CURRENT_VALUE, DEFAULT_VALUE, FACTORY_VALUE, OPTIONS),
+            with(segmented) { listOf(id, title, description, currentValue, defaultValue, factoryValue, options) }
+        )
+    }
+
+    @Test
+    fun mapToUiModels_withRadio_keepsEveryFieldAndOptionOrder() {
+        val radio = componentUiMapper.mapToUiModels(
+            listOf(
                 ComponentResponse.RadioResponse(
                     id = RADIO_ID,
                     title = TITLE,
@@ -44,14 +57,8 @@ class ComponentUiMapperInputComponentTest {
                     options = OPTIONS
                 )
             )
-        )
+        ).single() as ComponentUiModel.Radio
 
-        val segmented = components[0] as ComponentUiModel.Segmented
-        val radio = components[1] as ComponentUiModel.Radio
-        assertEquals(
-            listOf<Any?>(SEGMENTED_ID, TITLE, DESCRIPTION, CURRENT_VALUE, DEFAULT_VALUE, FACTORY_VALUE, OPTIONS),
-            with(segmented) { listOf(id, title, description, currentValue, defaultValue, factoryValue, options) }
-        )
         assertEquals(
             listOf<Any?>(RADIO_ID, TITLE, DESCRIPTION, CURRENT_VALUE, DEFAULT_VALUE, FACTORY_VALUE, OPTIONS),
             with(radio) { listOf(id, title, description, currentValue, defaultValue, factoryValue, options) }
@@ -115,7 +122,7 @@ class ComponentUiMapperInputComponentTest {
                 DESCRIPTION,
                 LocalDate.parse(DATE_VALUE),
                 LocalDate.parse(DEFAULT_DATE_VALUE),
-                null,
+                LocalDate.parse(FACTORY_DATE_VALUE),
                 TargetDates.FUTURE
             ),
             with(date) { listOf(id, title, description, currentValue, defaultValue, factoryValue, targetDates) }
@@ -138,11 +145,16 @@ class ComponentUiMapperInputComponentTest {
     }
 
     @Test
+    fun mapToUiModels_withMissingDateValue_selectsNoDate() {
+        assertNull(mapDate(currentValue = null, targetDates = null).currentValue)
+    }
+
+    @Test
     fun mapToUiModels_withDateValueThatIsNotIso_selectsNoDate() {
         assertNull(mapDate(currentValue = "15.10.2026", targetDates = null).currentValue)
     }
 
-    private fun mapDate(currentValue: String, targetDates: String?): ComponentUiModel.Date {
+    private fun mapDate(currentValue: String?, targetDates: String?): ComponentUiModel.Date {
         return componentUiMapper.mapToUiModels(
             listOf(
                 ComponentResponse.DateResponse(
@@ -151,7 +163,7 @@ class ComponentUiMapperInputComponentTest {
                     description = DESCRIPTION,
                     currentValue = currentValue,
                     defaultValue = DEFAULT_DATE_VALUE,
-                    factoryValue = "",
+                    factoryValue = FACTORY_DATE_VALUE,
                     targetDates = targetDates
                 )
             )
@@ -176,6 +188,7 @@ class ComponentUiMapperInputComponentTest {
         const val FACTORY_VALUE = "factory"
         const val DATE_VALUE = "2026-10-15"
         const val DEFAULT_DATE_VALUE = "2026-01-01"
+        const val FACTORY_DATE_VALUE = "2025-06-30"
         val OPTIONS = listOf("Low", "High")
     }
 }
