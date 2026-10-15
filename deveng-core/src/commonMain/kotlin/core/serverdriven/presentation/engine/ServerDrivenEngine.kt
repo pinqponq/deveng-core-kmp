@@ -5,6 +5,7 @@ import core.serverdriven.presentation.model.ComponentEvent
 import core.serverdriven.presentation.model.ComponentProperty
 import core.serverdriven.presentation.model.ComponentUiModel
 import core.serverdriven.presentation.model.DependencyUiModel
+import core.serverdriven.presentation.model.SkippedLayoutElement
 import core.serverdriven.presentation.model.mapper.ComponentUiMapper
 import core.serverdriven.presentation.model.mapper.DependencyUiMapper
 import core.util.CustomLogger
@@ -27,12 +28,16 @@ import kotlinx.serialization.json.Json
  *
  * @param shutterContentLoader Loads a shutter's extra content the first time it expands; its
  * components are appended to the shutter's own and its dependencies join the layout's.
+ * @param onLayoutElementSkip Receives each component type, operator or effect the engine skips because
+ * it does not know it, once per [setLayout] (shutter content included), so the app can report it. A layout
+ * or shutter content that fails validation reports nothing.
  */
 class ServerDrivenEngine(
-    private val shutterContentLoader: ShutterContentLoader? = null
+    private val shutterContentLoader: ShutterContentLoader? = null,
+    private val onLayoutElementSkip: (SkippedLayoutElement) -> Unit = {}
 ) {
-    private val componentUiMapper = ComponentUiMapper()
-    private val dependencyUiMapper = DependencyUiMapper()
+    private val componentUiMapper = ComponentUiMapper(onElementSkip = ::collectSkippedElement)
+    private val dependencyUiMapper = DependencyUiMapper(onElementSkip = ::collectSkippedElement)
     private val dependencyResolver = DependencyResolver()
     private val layoutJson = Json { ignoreUnknownKeys = true }
 
@@ -42,6 +47,8 @@ class ServerDrivenEngine(
     private val _visibleComponents = MutableStateFlow<List<ComponentUiModel>>(emptyList())
     private val dependencies = MutableStateFlow<List<DependencyUiModel>>(emptyList())
     private val loadedShutterKeys = MutableStateFlow<Set<String>>(emptySet())
+    private val pendingSkippedElements = MutableStateFlow<List<SkippedLayoutElement>>(emptyList())
+    private val reportedSkippedElements = MutableStateFlow<Set<SkippedLayoutElement>>(emptySet())
     private val layoutVersion = MutableStateFlow(0)
 
     val components: StateFlow<List<ComponentUiModel>> = _components.asStateFlow()
@@ -55,6 +62,7 @@ class ServerDrivenEngine(
     }
 
     fun setLayout(layout: LayoutResponse) {
+        pendingSkippedElements.value = emptyList()
         val components = componentUiMapper.mapToUiModels(layout.components)
         val scopedComponentIds = collectScopedComponentIds(components, scopeKeys = emptyList())
         validateUniqueKeys(scopedComponentIds)
@@ -66,6 +74,7 @@ class ServerDrivenEngine(
 
         layoutVersion.update { version -> version + 1 }
         loadedShutterKeys.value = emptySet()
+        reportedSkippedElements.value = emptySet()
         dependencies.value = layoutDependencies
         _components.value = components
         _componentValues.value = componentValues
@@ -76,6 +85,7 @@ class ServerDrivenEngine(
         )
 
         publishVisibleComponents()
+        reportPendingSkippedElements()
     }
 
     suspend fun handleEvent(event: ComponentEvent) {
@@ -159,6 +169,7 @@ class ServerDrivenEngine(
         val shutterScopeKeys = collectScopedComponentIds(_components.value, scopeKeys = emptyList())
             .first { scopedId -> scopedId.key == shutterKey }
             .scopeKeys
+        pendingSkippedElements.value = emptyList()
         val loadedComponents = componentUiMapper.mapToUiModels(shutterContent.components)
         val loadedScopedIds = collectScopedComponentIds(loadedComponents, shutterScopeKeys)
         val updatedComponents = appendToShutter(_components.value, shutterKey, loadedComponents, scopeKey = null)
@@ -181,6 +192,7 @@ class ServerDrivenEngine(
         logDependenciesWithMissingIds(loadedDependencies, scopedComponentIds)
         dependencies.update { layoutDependencies -> layoutDependencies + loadedDependencies }
         resolveDependencies()
+        reportPendingSkippedElements()
     }
 
     private fun resolveDependencies() {
@@ -198,6 +210,20 @@ class ServerDrivenEngine(
         }
 
         publishVisibleComponents()
+    }
+
+    private fun collectSkippedElement(skippedElement: SkippedLayoutElement) {
+        pendingSkippedElements.update { skippedElements -> skippedElements + skippedElement }
+    }
+
+    private fun reportPendingSkippedElements() {
+        pendingSkippedElements.getAndUpdate { emptyList() }.forEach { skippedElement ->
+            val isAlreadyReported = reportedSkippedElements
+                .getAndUpdate { skippedElements -> skippedElements + skippedElement }
+                .contains(skippedElement)
+
+            if (!isAlreadyReported) onLayoutElementSkip(skippedElement)
+        }
     }
 
     private fun logDependenciesWithMissingIds(

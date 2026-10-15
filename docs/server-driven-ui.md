@@ -17,7 +17,8 @@ class ConfigurationViewModel(
 ) : BaseViewModel<State, Event, Effect>(State()) {
 
     val engine = ServerDrivenEngine(
-        shutterContentLoader = { shutterId -> fetchShutterContentUseCase(shutterId) }
+        shutterContentLoader = { shutterId -> fetchShutterContentUseCase(shutterId) },
+        onLayoutElementSkip = { skippedElement -> analytics.logSkippedLayoutElement(skippedElement) }
     )
 
     private fun loadLayout() {
@@ -324,6 +325,20 @@ Each dependency reads the value of `sourceId` and sets one property of `targetId
   hide the same slider in every tab. In the example above `schedule_switch` in the day tab locks only the day
   tab's time fields.
 
+### Version
+
+`version` is an optional integer at the top of the layout (`{ "version": 2, "components": [...] }`);
+without it the layout is version 1 (`LayoutResponse.INITIAL_VERSION`). Shutter content uses the same
+`LayoutResponse`; its `version` is not used.
+
+Compatibility rule: a layout of a newer version only adds. New optional fields, new component types, new
+operators and new effects are additive; an older app ignores unknown fields and skips unknown types,
+operators and effects (see Rules). Renaming or removing a field, or changing what an existing value means, is
+not allowed under a version bump either: add a new field or type instead.
+
+**Every new component type or operator (and every new effect) is announced with a version bump**, so the
+backend can tell from an app's skip reports which layout version it is behind.
+
 ## Rules
 
 - **Ids are unique inside one tab.** Two tabs may use the same ids and keep separate values and properties.
@@ -336,6 +351,13 @@ Each dependency reads the value of `sourceId` and sets one property of `targetId
   unknown `format` to no mask. A dependency whose `sourceId` or `targetId` is not in the layout waits until
   that id is loaded (for example by a shutter). Each case is logged through `CustomLogger`, so an older app
   keeps working when the backend adds something new.
+- **Skipped types are reported.** `onLayoutElementSkip` receives a `SkippedLayoutElement(kind, name,
+  componentId)` for each skipped component type (`COMPONENT_TYPE`, `componentId` = the component's id, `name`
+  is `null` when the component has no `type`), operator (`OPERATOR`) or effect (`EFFECT`; for both,
+  `componentId` = the dependency's `targetId`). A dependency with an unknown operator and an unknown effect
+  reports both. The same element is reported once per `setLayout`, including content shutters load later;
+  the next `setLayout` reports again. Reports are sent after the layout (or the loaded content) is applied; a
+  layout or content rejected for duplicate ids reports nothing. Send it to analytics so the backend learns which apps miss what.
 - **Lazy shutter content:** with a `ShutterContentLoader`, the first expand of a shutter calls the loader with
   the shutter id (not its key). The returned components are appended after the shutter's own components and the returned
   dependencies join the layout's. Each shutter loads once per `setLayout`; when the loader throws, the shutter

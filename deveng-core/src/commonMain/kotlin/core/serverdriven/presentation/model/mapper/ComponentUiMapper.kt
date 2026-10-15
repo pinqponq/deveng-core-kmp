@@ -3,13 +3,17 @@ package core.serverdriven.presentation.model.mapper
 import core.serverdriven.data.model.response.ComponentResponse
 import core.serverdriven.data.model.response.TabResponse
 import core.serverdriven.presentation.model.ComponentUiModel
+import core.serverdriven.presentation.model.SkippedElementKind
+import core.serverdriven.presentation.model.SkippedLayoutElement
 import core.serverdriven.presentation.model.TabUiModel
 import core.serverdriven.presentation.model.TextFieldKeyboardType
 import core.serverdriven.presentation.model.TextFieldMaskType
 import core.util.CustomLogger
 import core.util.EMPTY
 
-internal class ComponentUiMapper {
+internal class ComponentUiMapper(
+    private val onElementSkip: (SkippedLayoutElement) -> Unit = {}
+) {
 
     fun mapToUiModels(
         responses: List<ComponentResponse>
@@ -86,6 +90,14 @@ internal class ComponentUiMapper {
             is ComponentResponse.UnknownResponse -> {
                 CustomLogger.log(
                     "Server-driven UI: skipped component '${response.id}' with unknown type '${response.type}'"
+                )
+
+                onElementSkip(
+                    SkippedLayoutElement(
+                        kind = SkippedElementKind.COMPONENT_TYPE,
+                        name = response.type,
+                        componentId = response.id
+                    )
                 )
 
                 null
