@@ -1,0 +1,10 @@
+iOS AFTER (task build), app data tmp, run 11:10:00-11:15:06 UTC
+pre: files=610 rindle_*=4 (left by BEFORE run) size=13436 KB
+post: files=630 rindle_*=0 size=12060 KB
+added (excluding coil3_disk_cache):
+./instrument/crash_lib_data_AA3F53289F9A4EF0AFCECF9150284C60.json
+removed rindle_*:
+./rindle_4223.jpg
+./rindle_4224.jpg
+./rindle_4225.jpg
+./rindle_4226.jpg

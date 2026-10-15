@@ -1,0 +1,8 @@
+iOS BEFORE (base build), app data tmp, run 11:04:18-11:09:26 UTC
+pre: files=604 rindle_*=0 size=11888 KB
+post: files=610 rindle_*=4 size=13436 KB
+added (excluding coil3_disk_cache):
+./rindle_4223.jpg
+./rindle_4224.jpg
+./rindle_4225.jpg
+./rindle_4226.jpg
