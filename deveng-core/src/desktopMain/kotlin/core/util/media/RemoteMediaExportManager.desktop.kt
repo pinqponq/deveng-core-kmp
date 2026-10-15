@@ -29,4 +29,10 @@ actual class RemoteMediaExportManager {
     ): Int {
         return 0
     }
+
+    actual suspend fun saveMediaToGallery(
+        request: RemoteMediaSaveRequest,
+    ): RemoteMediaSaveResult {
+        return RemoteMediaSaveResult.Failed(UnsupportedOperationException("No device gallery on desktop"))
+    }
 }

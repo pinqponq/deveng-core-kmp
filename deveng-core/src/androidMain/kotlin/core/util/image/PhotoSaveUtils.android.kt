@@ -59,6 +59,21 @@ actual object PhotoSaveUtils {
                 )
                 return imageBytes
             }
+            val imageBounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(tempFile.absolutePath, imageBounds)
+            val isRotationWithinMemory = isPixelRotationWithinMemory(
+                width = imageBounds.outWidth,
+                height = imageBounds.outHeight,
+                freeHeapBytes = freeHeapBytes(),
+            )
+            if (!isRotationWithinMemory) {
+                Log.w(
+                    ExifExportDiagnostics.LOG_TAG,
+                    "orientationNormalize SKIP lowMemory orientation=$orientation " +
+                        "size=${imageBounds.outWidth}x${imageBounds.outHeight}",
+                )
+                return imageBytes
+            }
             Log.d(
                 ExifExportDiagnostics.LOG_TAG,
                 "orientationNormalize APPLY orientation=$orientation",
@@ -94,6 +109,11 @@ actual object PhotoSaveUtils {
             tempFile.delete()
         }
         return imageBytes
+    }
+
+    private fun freeHeapBytes(): Long {
+        val runtime = Runtime.getRuntime()
+        return runtime.maxMemory() - (runtime.totalMemory() - runtime.freeMemory())
     }
 
     actual fun savePhoto(imageBytes: ByteArray, targetPath: String): SavePhotoResult = try {

@@ -6,14 +6,17 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import platform.Foundation.NSCondition
+import platform.CoreLocation.CLLocation
 import platform.Foundation.NSDate
+import platform.Foundation.NSError
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHTTPURLResponse
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLSession
 import platform.Foundation.NSURLSessionConfiguration
+import platform.Foundation.NSLog
+import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.Foundation.downloadTaskWithURL
 import platform.Foundation.timeIntervalSince1970
 import platform.Photos.PHAssetChangeRequest
@@ -27,6 +30,7 @@ actual class RemoteMediaExportManager {
         private const val REQUEST_TIMEOUT_SECONDS = 120.0
         private const val SUCCESS_STATUS_CODES_START = 200L
         private const val SUCCESS_STATUS_CODES_END = 299L
+        private const val MILLIS_PER_SECOND = 1000.0
     }
 
     private val downloadSession: NSURLSession by lazy {
@@ -72,7 +76,7 @@ actual class RemoteMediaExportManager {
         return@withContext runCatching {
             val url = NSURL.URLWithString(fileUrl) ?: return@runCatching false
             val tempFile = downloadToTempFile(url, fileName) ?: return@runCatching false
-            saveToPhotos(tempFile, mimeType)
+            saveToPhotosAndDeleteFile(tempFile, mimeType)
         }.getOrDefault(false)
     }
 
@@ -85,31 +89,85 @@ actual class RemoteMediaExportManager {
                 if (remoteFile.fileUrl.isBlank()) return@forEach
                 val url = NSURL.URLWithString(remoteFile.fileUrl) ?: return@forEach
                 val tempFile = downloadToTempFile(url, remoteFile.fileName) ?: return@forEach
-                if (saveToPhotos(tempFile, remoteFile.mimeType)) count++
+                if (saveToPhotosAndDeleteFile(tempFile, remoteFile.mimeType)) count++
             }
             count
         }.getOrDefault(0)
     }
 
+    actual suspend fun saveMediaToGallery(request: RemoteMediaSaveRequest): RemoteMediaSaveResult =
+        withContext(Dispatchers.Default) {
+            val url = NSURL.URLWithString(request.fileUrl)
+                ?: return@withContext RemoteMediaSaveResult.Failed(
+                    IllegalArgumentException("fileUrl is not a valid URL"),
+                )
+            when (val download = downloadToTempFileWithStatus(url, request.fileName)) {
+                is TempFileDownload.HttpFailure -> {
+                    NSLog("RemoteMediaExportManager: saveMediaToGallery HTTP %ld", download.statusCode)
+                    RemoteMediaSaveResult.HttpFailure(download.statusCode.toInt())
+                }
+                is TempFileDownload.Failed -> {
+                    NSLog("RemoteMediaExportManager: saveMediaToGallery download failed: %@", download.reason)
+                    RemoteMediaSaveResult.Failed(IllegalStateException(download.reason))
+                }
+                is TempFileDownload.Downloaded -> saveDownloadedMedia(download.file, request)
+            }
+        }
+
+    private suspend fun saveDownloadedMedia(
+        tempFile: NSURL,
+        request: RemoteMediaSaveRequest,
+    ): RemoteMediaSaveResult {
+        val creationDate = request.capturedAtEpochMillis?.let { epochMillis ->
+            NSDate.dateWithTimeIntervalSince1970(epochMillis / MILLIS_PER_SECOND)
+        }
+        val captureLocation = request.location?.let { location ->
+            CLLocation(latitude = location.latitude, longitude = location.longitude)
+        }
+        val isSaved = saveToPhotosAndDeleteFile(
+            fileUrl = tempFile,
+            mimeType = request.mimeType,
+            creationDate = creationDate,
+            captureLocation = captureLocation,
+        )
+        return if (isSaved) {
+            RemoteMediaSaveResult.Saved
+        } else {
+            RemoteMediaSaveResult.Failed(IllegalStateException("Photos rejected fileName=${request.fileName}"))
+        }
+    }
+
+    private suspend fun downloadToTempFile(url: NSURL, fileName: String): NSURL? =
+        (downloadToTempFileWithStatus(url, fileName) as? TempFileDownload.Downloaded)?.file
+
     /**
      * Downloads straight to a file in the temporary directory. The previous
      * `NSData.dataWithContentsOfURL` held the whole file in memory (a large video could get the app
      * killed) and, being a blocking call, could not be interrupted by a coroutine timeout.
-     * Returns null when the request fails or the server answers with a non-2xx status.
      */
-    private suspend fun downloadToTempFile(url: NSURL, fileName: String): NSURL? =
+    private suspend fun downloadToTempFileWithStatus(url: NSURL, fileName: String): TempFileDownload =
         suspendCancellableCoroutine { continuation ->
             val task = downloadSession.downloadTaskWithURL(url) { location, response, error ->
                 val statusCode = (response as? NSHTTPURLResponse)?.statusCode
                 val isSuccessStatus = statusCode == null ||
                     statusCode in SUCCESS_STATUS_CODES_START..SUCCESS_STATUS_CODES_END
-                if (error != null || location == null || !isSuccessStatus) {
-                    continuation.resume(null)
+                if (statusCode != null && !isSuccessStatus) {
+                    continuation.resume(TempFileDownload.HttpFailure(statusCode))
+                    return@downloadTaskWithURL
+                }
+                if (error != null || location == null) {
+                    continuation.resume(TempFileDownload.Failed(downloadFailureReason(error)))
                     return@downloadTaskWithURL
                 }
 
                 // The system deletes `location` as soon as this handler returns, so it is moved now.
-                continuation.resume(moveToTempFile(location, fileName))
+                val movedFile = moveToTempFile(location, fileName)
+                val download = if (movedFile != null) {
+                    TempFileDownload.Downloaded(movedFile)
+                } else {
+                    TempFileDownload.Failed("Moving the downloaded file failed")
+                }
+                continuation.resume(download)
             }
             continuation.invokeOnCancellation { task.cancel() }
             task.resume()
@@ -135,29 +193,51 @@ actual class RemoteMediaExportManager {
             IosShareSheetPresenter.present(activityItems = fileUrls)
         }
 
-    private fun saveToPhotos(fileUrl: NSURL, mimeType: String): Boolean {
-        var result = false
-        val condition = NSCondition()
-        var completed = false
+    private fun downloadFailureReason(error: NSError?): String =
+        error?.localizedDescription ?: "Download finished without a file"
 
+    /**
+     * Photos copies the file into its library during `performChanges`, so the temp copy is deleted
+     * afterwards; otherwise every saved item would stay in the temp folder and take its size twice.
+     */
+    private suspend fun saveToPhotosAndDeleteFile(
+        fileUrl: NSURL,
+        mimeType: String,
+        creationDate: NSDate? = null,
+        captureLocation: CLLocation? = null,
+    ): Boolean = try {
+        saveToPhotos(fileUrl, mimeType, creationDate, captureLocation)
+    } finally {
+        NSFileManager.defaultManager.removeItemAtURL(fileUrl, error = null)
+    }
+
+    private suspend fun saveToPhotos(
+        fileUrl: NSURL,
+        mimeType: String,
+        creationDate: NSDate?,
+        captureLocation: CLLocation?,
+    ): Boolean = suspendCancellableCoroutine { continuation ->
         PHPhotoLibrary.sharedPhotoLibrary().performChanges({
-            if (mimeType.startsWith("video/")) {
+            val creationRequest = if (mimeType.startsWith("video/")) {
                 PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(fileUrl)
             } else {
                 PHAssetChangeRequest.creationRequestForAssetFromImageAtFileURL(fileUrl)
             }
-        }) { success, _ ->
-            condition.lock()
-            result = success
-            completed = true
-            condition.signal()
-            condition.unlock()
+            creationDate?.let { creationRequest?.creationDate = it }
+            captureLocation?.let { creationRequest?.location = it }
+        }) { success, error ->
+            if (!success) {
+                NSLog("RemoteMediaExportManager: saving to Photos failed: %@", error?.localizedDescription)
+            }
+            continuation.resume(success)
         }
-
-        condition.lock()
-        while (!completed) condition.wait()
-        condition.unlock()
-
-        return result
     }
+}
+
+private sealed interface TempFileDownload {
+    data class Downloaded(val file: NSURL) : TempFileDownload
+
+    data class HttpFailure(val statusCode: Long) : TempFileDownload
+
+    data class Failed(val reason: String) : TempFileDownload
 }

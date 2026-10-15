@@ -3,6 +3,7 @@ package core.util.media
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -12,12 +13,15 @@ import androidx.core.content.FileProvider
 import core.util.image.ExifExportDiagnostics
 import core.util.image.JpegDebugProbe
 import core.util.image.PhotoSaveUtils
+import core.util.image.buildExifDateTimeTags
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
 actual class RemoteMediaExportManager(
@@ -29,6 +33,9 @@ actual class RemoteMediaExportManager(
         private const val CONNECT_TIMEOUT_MS = 30_000
         private const val READ_TIMEOUT_MS = 120_000
         private const val SHARED_MEDIA_DIR_NAME = "shared_media"
+        private const val JPEG_MIME_TYPE = "image/jpeg"
+        private const val CAPTURE_EXIF_TEMP_FILE_PREFIX = "export_capture_exif"
+        private const val JPEG_FILE_SUFFIX = ".jpg"
     }
 
     actual suspend fun shareSingleFileFromUrl(
@@ -183,6 +190,32 @@ actual class RemoteMediaExportManager(
         }.getOrDefault(0)
     }
 
+    actual suspend fun saveMediaToGallery(
+        request: RemoteMediaSaveRequest,
+    ): RemoteMediaSaveResult = withContext(Dispatchers.IO) {
+        if (request.fileUrl.isBlank()) {
+            return@withContext RemoteMediaSaveResult.Failed(IllegalArgumentException("fileUrl is blank"))
+        }
+        try {
+            val connection = openConnectionWithTimeout(request.fileUrl)
+            try {
+                val statusCode = connection.responseCode
+                val isSuccessStatus = statusCode in HttpURLConnection.HTTP_OK until HttpURLConnection.HTTP_MULT_CHOICE
+                if (!isSuccessStatus) {
+                    Log.w(TAG, "saveMediaToGallery HTTP $statusCode fileName=${request.fileName}")
+                    return@withContext RemoteMediaSaveResult.HttpFailure(statusCode)
+                }
+                connection.inputStream.use { networkStream -> writeToGallery(networkStream, request) }
+                RemoteMediaSaveResult.Saved
+            } finally {
+                connection.disconnect()
+            }
+        } catch (exception: Exception) {
+            Log.e(TAG, "saveMediaToGallery failed fileName=${request.fileName} url=${urlForLog(request.fileUrl)}", exception)
+            RemoteMediaSaveResult.Failed(exception)
+        }
+    }
+
     private fun shareFileInternal(
         sharedFile: File,
         mimeType: String,
@@ -240,11 +273,140 @@ actual class RemoteMediaExportManager(
     }
 
     private fun openStreamWithTimeout(fileUrl: String): InputStream {
+        val connection = openConnectionWithTimeout(fileUrl)
+        connection.connect()
+        return connection.inputStream
+    }
+
+    private fun openConnectionWithTimeout(fileUrl: String): HttpURLConnection {
         val connection = URL(fileUrl).openConnection() as HttpURLConnection
         connection.connectTimeout = CONNECT_TIMEOUT_MS
         connection.readTimeout = READ_TIMEOUT_MS
-        connection.connect()
-        return connection.inputStream
+        return connection
+    }
+
+    private fun writeToGallery(
+        networkStream: InputStream,
+        request: RemoteMediaSaveRequest,
+    ) {
+        val isVideo = request.mimeType.startsWith("video/")
+        val resolver = context.contentResolver
+        val itemUri = insertPendingGalleryItem(request = request, isVideo = isVideo)
+        try {
+            val outputStream = resolver.openOutputStream(itemUri)
+                ?: throw IOException("MediaStore output stream unavailable uri=$itemUri")
+            val writtenByteCount = outputStream.use { galleryStream ->
+                if (isVideo) {
+                    networkStream.copyTo(galleryStream)
+                } else {
+                    val photoBytes = photoBytesWithCaptureMetadata(networkStream.readBytes(), request)
+                    galleryStream.write(photoBytes)
+                    photoBytes.size.toLong()
+                }
+            }
+            if (writtenByteCount == 0L) {
+                throw IOException("Downloaded file is empty fileName=${request.fileName}")
+            }
+            publishGalleryItem(itemUri = itemUri, capturedAtEpochMillis = request.capturedAtEpochMillis)
+        } catch (exception: Exception) {
+            resolver.delete(itemUri, null, null)
+            throw exception
+        }
+    }
+
+    private fun insertPendingGalleryItem(
+        request: RemoteMediaSaveRequest,
+        isVideo: Boolean,
+    ): Uri {
+        val fileName = request.fileName.ifBlank { "media_${System.currentTimeMillis()}" }
+        val publicDirectoryName = if (isVideo) Environment.DIRECTORY_MOVIES else Environment.DIRECTORY_PICTURES
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+            put(MediaStore.MediaColumns.MIME_TYPE, request.mimeType)
+            request.capturedAtEpochMillis?.let { put(MediaStore.MediaColumns.DATE_TAKEN, it) }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.MediaColumns.RELATIVE_PATH, galleryRelativePath(publicDirectoryName, request.albumName))
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            } else {
+                put(MediaStore.MediaColumns.DATA, legacyGalleryFile(publicDirectoryName, request.albumName, fileName).absolutePath)
+            }
+        }
+        val targetCollection = if (isVideo) {
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        } else {
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        }
+        return context.contentResolver.insert(targetCollection, contentValues)
+            ?: throw IOException("MediaStore insert failed fileName=$fileName")
+    }
+
+    private fun galleryRelativePath(
+        publicDirectoryName: String,
+        albumName: String?,
+    ): String = if (albumName.isNullOrBlank()) publicDirectoryName else "$publicDirectoryName/$albumName"
+
+    @Suppress("DEPRECATION")
+    private fun legacyGalleryFile(
+        publicDirectoryName: String,
+        albumName: String?,
+        fileName: String,
+    ): File {
+        val publicDirectory = Environment.getExternalStoragePublicDirectory(publicDirectoryName)
+        val albumDirectory = if (albumName.isNullOrBlank()) publicDirectory else File(publicDirectory, albumName)
+        albumDirectory.mkdirs()
+        return File(albumDirectory, fileName)
+    }
+
+    private fun publishGalleryItem(
+        itemUri: Uri,
+        capturedAtEpochMillis: Long?,
+    ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        // MediaProvider rescans the file when IS_PENDING is cleared and can overwrite DATE_TAKEN from
+        // the file's own metadata (a re-encoded video carries the upload time), so it is set again here.
+        val publishedValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.IS_PENDING, 0)
+            capturedAtEpochMillis?.let { put(MediaStore.MediaColumns.DATE_TAKEN, it) }
+        }
+        context.contentResolver.update(itemUri, publishedValues, null, null)
+    }
+
+    private fun photoBytesWithCaptureMetadata(
+        downloadedBytes: ByteArray,
+        request: RemoteMediaSaveRequest,
+    ): ByteArray {
+        val exportBytes = normalizeImageBytesForExport(downloadedBytes, request.mimeType, request.fileName)
+        val hasCaptureMetadata = request.capturedAtEpochMillis != null || request.location != null
+        if (request.mimeType != JPEG_MIME_TYPE || !hasCaptureMetadata) {
+            return exportBytes
+        }
+        return writeMissingCaptureExif(photoBytes = exportBytes, request = request)
+    }
+
+    private fun writeMissingCaptureExif(
+        photoBytes: ByteArray,
+        request: RemoteMediaSaveRequest,
+    ): ByteArray {
+        val tempFile = File.createTempFile(CAPTURE_EXIF_TEMP_FILE_PREFIX, JPEG_FILE_SUFFIX, context.cacheDir)
+        try {
+            tempFile.writeBytes(photoBytes)
+            val exif = ExifInterface(tempFile.absolutePath)
+            val capturedAtEpochMillis = request.capturedAtEpochMillis
+            val isCaptureDateMissing = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL) == null
+            if (capturedAtEpochMillis != null && isCaptureDateMissing) {
+                val dateTimeTags = buildExifDateTimeTags(capturedAtEpochMillis, TimeZone.currentSystemDefault())
+                exif.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, dateTimeTags.dateTime)
+                exif.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, dateTimeTags.offset)
+            }
+            val location = request.location
+            if (location != null && exif.latLong == null) {
+                exif.setLatLong(location.latitude, location.longitude)
+            }
+            exif.saveAttributes()
+            return tempFile.readBytes()
+        } finally {
+            tempFile.delete()
+        }
     }
 
     /**

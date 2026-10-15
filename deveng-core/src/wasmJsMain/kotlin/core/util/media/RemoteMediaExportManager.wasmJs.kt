@@ -63,6 +63,21 @@ actual class RemoteMediaExportManager {
         }
         return count
     }
+
+    actual suspend fun saveMediaToGallery(
+        request: RemoteMediaSaveRequest,
+    ): RemoteMediaSaveResult {
+        val isSaved = saveSingleFileFromUrl(
+            fileUrl = request.fileUrl,
+            fileName = request.fileName,
+            mimeType = request.mimeType,
+        )
+        return if (isSaved) {
+            RemoteMediaSaveResult.Saved
+        } else {
+            RemoteMediaSaveResult.Failed(IllegalStateException("Browser download failed fileName=${request.fileName}"))
+        }
+    }
 }
 
 private external interface WasmPromiseLike : JsAny {
