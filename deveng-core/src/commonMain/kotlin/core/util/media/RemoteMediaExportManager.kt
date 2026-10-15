@@ -29,6 +29,9 @@ data class RemoteMediaSaveRequest(
     val albumName: String? = null,
 )
 
+/**
+ * Capture location in decimal degrees (WGS84).
+ */
 data class MediaCaptureLocation(
     val latitude: Double,
     val longitude: Double,
@@ -45,6 +48,10 @@ sealed interface RemoteMediaSaveResult {
 
     data class Failed(val exception: Throwable) : RemoteMediaSaveResult
 }
+
+private val SUCCESS_HTTP_STATUS_RANGE = 200..299
+
+internal fun isSuccessHttpStatus(statusCode: Int): Boolean = statusCode in SUCCESS_HTTP_STATUS_RANGE
 
 /**
  * Downloads media from remote URLs and exports it: share to other apps or save to the device

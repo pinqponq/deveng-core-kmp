@@ -10,6 +10,10 @@ import kotlinx.datetime.format.char
 import kotlinx.datetime.offsetAt
 import kotlinx.datetime.toLocalDateTime
 
+private const val SECONDS_PER_MINUTE = 60
+private const val MINUTES_PER_HOUR = 60
+private const val OFFSET_PART_DIGITS = 2
+
 /**
  * EXIF `DateTimeOriginal` (`"yyyy:MM:dd HH:mm:ss"`, local wall-clock) and `OffsetTimeOriginal`
  * (`"+03:00"`) values for one capture instant. The reverse of [parseExifDateTime].
@@ -50,7 +54,3 @@ private fun formatExifOffset(offsetMinutes: Int): String {
     val minutes = (absoluteMinutes % MINUTES_PER_HOUR).toString().padStart(OFFSET_PART_DIGITS, '0')
     return "$sign$hours:$minutes"
 }
-
-private const val SECONDS_PER_MINUTE = 60
-private const val MINUTES_PER_HOUR = 60
-private const val OFFSET_PART_DIGITS = 2

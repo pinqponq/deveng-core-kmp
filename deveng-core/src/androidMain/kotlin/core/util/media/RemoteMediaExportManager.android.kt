@@ -3,7 +3,6 @@ package core.util.media
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -13,7 +12,6 @@ import androidx.core.content.FileProvider
 import core.util.image.ExifExportDiagnostics
 import core.util.image.JpegDebugProbe
 import core.util.image.PhotoSaveUtils
-import core.util.image.buildExifDateTimeTags
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
@@ -34,9 +32,7 @@ actual class RemoteMediaExportManager(
         private const val READ_TIMEOUT_MS = 120_000
         private const val SHARED_MEDIA_DIR_NAME = "shared_media"
         private const val JPEG_MIME_TYPE = "image/jpeg"
-        private const val CAPTURE_EXIF_TEMP_FILE_PREFIX = "export_capture_exif"
-        private const val JPEG_FILE_SUFFIX = ".jpg"
-        private const val LAT_LONG_VALUE_COUNT = 2
+        private const val VIDEO_MIME_TYPE_PREFIX = "video/"
     }
 
     actual suspend fun shareSingleFileFromUrl(
@@ -201,8 +197,7 @@ actual class RemoteMediaExportManager(
             val connection = openConnectionWithTimeout(request.fileUrl)
             try {
                 val statusCode = connection.responseCode
-                val isSuccessStatus = statusCode in HttpURLConnection.HTTP_OK until HttpURLConnection.HTTP_MULT_CHOICE
-                if (!isSuccessStatus) {
+                if (!isSuccessHttpStatus(statusCode)) {
                     Log.w(TAG, "saveMediaToGallery HTTP $statusCode fileName=${request.fileName}")
                     return@withContext RemoteMediaSaveResult.HttpFailure(statusCode)
                 }
@@ -290,7 +285,7 @@ actual class RemoteMediaExportManager(
         networkStream: InputStream,
         request: RemoteMediaSaveRequest,
     ) {
-        val isVideo = request.mimeType.startsWith("video/")
+        val isVideo = request.mimeType.startsWith(VIDEO_MIME_TYPE_PREFIX)
         val resolver = context.contentResolver
         val itemUri = insertPendingGalleryItem(request = request, isVideo = isVideo)
         try {
@@ -305,9 +300,11 @@ actual class RemoteMediaExportManager(
                     photoBytes.size.toLong()
                 }
             }
+
             if (writtenByteCount == 0L) {
                 throw IOException("Downloaded file is empty fileName=${request.fileName}")
             }
+
             publishGalleryItem(itemUri = itemUri, capturedAtEpochMillis = request.capturedAtEpochMillis)
         } catch (exception: Exception) {
             resolver.delete(itemUri, null, null)
@@ -381,35 +378,31 @@ actual class RemoteMediaExportManager(
         if (request.mimeType != JPEG_MIME_TYPE || !hasCaptureMetadata) {
             return exportBytes
         }
-        return writeMissingCaptureExif(photoBytes = exportBytes, request = request)
+        return writeMissingCaptureMetadata(photoBytes = exportBytes, request = request)
     }
 
-    private fun writeMissingCaptureExif(
+    private fun writeMissingCaptureMetadata(
         photoBytes: ByteArray,
         request: RemoteMediaSaveRequest,
     ): ByteArray {
-        val tempFile = File.createTempFile(CAPTURE_EXIF_TEMP_FILE_PREFIX, JPEG_FILE_SUFFIX, context.cacheDir)
-        try {
-            tempFile.writeBytes(photoBytes)
-            val exif = ExifInterface(tempFile.absolutePath)
-            val capturedAtEpochMillis = request.capturedAtEpochMillis
-            val isCaptureDateMissing = exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL) == null
-            if (capturedAtEpochMillis != null && isCaptureDateMissing) {
-                val dateTimeTags = buildExifDateTimeTags(capturedAtEpochMillis, TimeZone.currentSystemDefault())
-                exif.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, dateTimeTags.dateTime)
-                exif.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, dateTimeTags.offset)
-            }
-            exif.saveAttributes()
-            val photoBytesWithDate = tempFile.readBytes()
-            val location = request.location
-            val isLocationMissing = !exif.getLatLong(FloatArray(LAT_LONG_VALUE_COUNT))
-            if (location == null || !isLocationMissing) {
-                return photoBytesWithDate
-            }
-            return PhotoSaveUtils.addLocationExif(photoBytesWithDate, location.latitude, location.longitude)
-        } finally {
-            tempFile.delete()
+        val capturedAtEpochMillis = request.capturedAtEpochMillis
+        val photoBytesWithDate = if (capturedAtEpochMillis != null) {
+            PhotoSaveUtils.addMissingCaptureDateTimeExif(
+                imageBytes = photoBytes,
+                capturedAtEpochMillis = capturedAtEpochMillis,
+                timeZone = TimeZone.currentSystemDefault(),
+            )
+        } else {
+            photoBytes
         }
+
+        val location = request.location
+        val isLocationMissing = PhotoSaveUtils.readLocationFromExif(photoBytesWithDate) == null
+        if (location == null || !isLocationMissing) {
+            return photoBytesWithDate
+        }
+
+        return PhotoSaveUtils.addLocationExif(photoBytesWithDate, location.latitude, location.longitude)
     }
 
     /**

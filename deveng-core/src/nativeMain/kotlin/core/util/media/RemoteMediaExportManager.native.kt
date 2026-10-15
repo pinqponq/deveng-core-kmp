@@ -2,7 +2,13 @@ package core.util.media
 
 import core.util.multiplatform.IosShareSheetPresenter
 import kotlin.coroutines.resume
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCObjectVar
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -28,8 +34,6 @@ actual class RemoteMediaExportManager {
         // Idle timeout between received packets, matching the Android read timeout. There is no cap
         // on the total duration, so a large video on a slow connection still completes.
         private const val REQUEST_TIMEOUT_SECONDS = 120.0
-        private const val SUCCESS_STATUS_CODES_START = 200L
-        private const val SUCCESS_STATUS_CODES_END = 299L
         private const val MILLIS_PER_SECOND = 1000.0
     }
 
@@ -103,8 +107,8 @@ actual class RemoteMediaExportManager {
                 )
             when (val download = downloadToTempFileWithStatus(url, request.fileName)) {
                 is TempFileDownload.HttpFailure -> {
-                    NSLog("RemoteMediaExportManager: saveMediaToGallery HTTP %ld", download.statusCode)
-                    RemoteMediaSaveResult.HttpFailure(download.statusCode.toInt())
+                    NSLog("RemoteMediaExportManager: saveMediaToGallery HTTP %d", download.statusCode)
+                    RemoteMediaSaveResult.HttpFailure(download.statusCode)
                 }
                 is TempFileDownload.Failed -> {
                     NSLog("RemoteMediaExportManager: saveMediaToGallery download failed: %@", download.reason)
@@ -121,9 +125,11 @@ actual class RemoteMediaExportManager {
         val creationDate = request.capturedAtEpochMillis?.let { epochMillis ->
             NSDate.dateWithTimeIntervalSince1970(epochMillis / MILLIS_PER_SECOND)
         }
+
         val captureLocation = request.location?.let { location ->
             CLLocation(latitude = location.latitude, longitude = location.longitude)
         }
+
         val isSaved = saveToPhotosAndDeleteFile(
             fileUrl = tempFile,
             mimeType = request.mimeType,
@@ -148,13 +154,12 @@ actual class RemoteMediaExportManager {
     private suspend fun downloadToTempFileWithStatus(url: NSURL, fileName: String): TempFileDownload =
         suspendCancellableCoroutine { continuation ->
             val task = downloadSession.downloadTaskWithURL(url) { location, response, error ->
-                val statusCode = (response as? NSHTTPURLResponse)?.statusCode
-                val isSuccessStatus = statusCode == null ||
-                    statusCode in SUCCESS_STATUS_CODES_START..SUCCESS_STATUS_CODES_END
-                if (statusCode != null && !isSuccessStatus) {
+                val statusCode = (response as? NSHTTPURLResponse)?.statusCode?.toInt()
+                if (statusCode != null && !isSuccessHttpStatus(statusCode)) {
                     continuation.resume(TempFileDownload.HttpFailure(statusCode))
                     return@downloadTaskWithURL
                 }
+
                 if (error != null || location == null) {
                     continuation.resume(TempFileDownload.Failed(downloadFailureReason(error)))
                     return@downloadTaskWithURL
@@ -200,7 +205,6 @@ actual class RemoteMediaExportManager {
      * Photos copies the file into its library during `performChanges`, so the temp copy is deleted
      * afterwards; otherwise every saved item would stay in the temp folder and take its size twice.
      */
-    @OptIn(ExperimentalForeignApi::class)
     private suspend fun saveToPhotosAndDeleteFile(
         fileUrl: NSURL,
         mimeType: String,
@@ -209,7 +213,16 @@ actual class RemoteMediaExportManager {
     ): Boolean = try {
         saveToPhotos(fileUrl, mimeType, creationDate, captureLocation)
     } finally {
-        NSFileManager.defaultManager.removeItemAtURL(fileUrl, error = null)
+        deleteTempFile(fileUrl)
+    }
+
+    @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
+    private fun deleteTempFile(fileUrl: NSURL) = memScoped {
+        val deleteError = alloc<ObjCObjectVar<NSError?>>()
+        val isDeleted = NSFileManager.defaultManager.removeItemAtURL(fileUrl, error = deleteError.ptr)
+        if (!isDeleted) {
+            NSLog("RemoteMediaExportManager: deleting temp file failed: %@", deleteError.value?.localizedDescription)
+        }
     }
 
     private suspend fun saveToPhotos(
@@ -238,7 +251,7 @@ actual class RemoteMediaExportManager {
 private sealed interface TempFileDownload {
     data class Downloaded(val file: NSURL) : TempFileDownload
 
-    data class HttpFailure(val statusCode: Long) : TempFileDownload
+    data class HttpFailure(val statusCode: Int) : TempFileDownload
 
     data class Failed(val reason: String) : TempFileDownload
 }

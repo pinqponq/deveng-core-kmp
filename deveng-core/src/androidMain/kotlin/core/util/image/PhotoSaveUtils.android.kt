@@ -7,10 +7,12 @@ import android.graphics.Matrix
 import android.media.ExifInterface
 import android.media.MediaScannerConnection
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import java.io.ByteArrayOutputStream
 import java.io.File
+import kotlinx.datetime.TimeZone
 
 actual object PhotoSaveUtils {
 
@@ -61,6 +63,7 @@ actual object PhotoSaveUtils {
             }
             val imageBounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(tempFile.absolutePath, imageBounds)
+
             val isRotationWithinMemory = isPixelRotationWithinMemory(
                 width = imageBounds.outWidth,
                 height = imageBounds.outHeight,
@@ -74,6 +77,7 @@ actual object PhotoSaveUtils {
                 )
                 return imageBytes
             }
+
             Log.d(
                 ExifExportDiagnostics.LOG_TAG,
                 "orientationNormalize APPLY orientation=$orientation",
@@ -109,11 +113,6 @@ actual object PhotoSaveUtils {
             tempFile.delete()
         }
         return imageBytes
-    }
-
-    private fun freeHeapBytes(): Long {
-        val runtime = Runtime.getRuntime()
-        return runtime.maxMemory() - (runtime.totalMemory() - runtime.freeMemory())
     }
 
     actual fun savePhoto(imageBytes: ByteArray, targetPath: String): SavePhotoResult = try {
@@ -153,6 +152,36 @@ actual object PhotoSaveUtils {
         }
     } catch (e: Exception) {
         imageBytes
+    }
+
+    /**
+     * Writes `DateTimeOriginal` (and `OffsetTimeOriginal` where the platform supports it) for
+     * [capturedAtEpochMillis] in [timeZone] when [imageBytes] has no capture date yet; an existing
+     * capture date is kept.
+     */
+    internal fun addMissingCaptureDateTimeExif(
+        imageBytes: ByteArray,
+        capturedAtEpochMillis: Long,
+        timeZone: TimeZone,
+    ): ByteArray {
+        val tempFile = File.createTempFile("exif_capture_datetime", ".jpg")
+        try {
+            tempFile.writeBytes(imageBytes)
+            val exif = ExifInterface(tempFile.absolutePath)
+            if (exif.getAttribute(ExifInterface.TAG_DATETIME_ORIGINAL) != null) {
+                return imageBytes
+            }
+
+            val dateTimeTags = buildExifDateTimeTags(capturedAtEpochMillis, timeZone)
+            exif.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, dateTimeTags.dateTime)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                exif.setAttribute(ExifInterface.TAG_OFFSET_TIME_ORIGINAL, dateTimeTags.offset)
+            }
+            exif.saveAttributes()
+            return tempFile.readBytes()
+        } finally {
+            tempFile.delete()
+        }
     }
 
     actual fun readLocationFromExif(imageBytes: ByteArray): Pair<Double, Double>? = try {
@@ -220,6 +249,11 @@ actual object PhotoSaveUtils {
 
     private fun android.database.Cursor.columnIndexOrNull(columnName: String): Int? =
         getColumnIndex(columnName).takeIf { it >= 0 }
+
+    private fun freeHeapBytes(): Long {
+        val runtime = Runtime.getRuntime()
+        return runtime.maxMemory() - (runtime.totalMemory() - runtime.freeMemory())
+    }
 
     private fun applyExifOrientationToBitmap(bitmap: Bitmap, orientation: Int): Bitmap {
         val matrix = Matrix()
