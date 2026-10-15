@@ -40,7 +40,7 @@ class ServerDrivenScreenRecompositionTest {
                 ),
                 ComponentEvent.EnterTextField(componentId = ServerDrivenScreenTestLayout.TEXT_FIELD_ID, value = ENTERED_TEXT),
                 ComponentEvent.ChangeSliderValue(
-                    componentId = ServerDrivenScreenTestLayout.SLIDER_ID,
+                    componentId = ServerDrivenScreenTestLayout.SLIDER_KEY,
                     value = SLIDER_TARGET_VALUE
                 ),
                 ComponentEvent.ClickTabItem(

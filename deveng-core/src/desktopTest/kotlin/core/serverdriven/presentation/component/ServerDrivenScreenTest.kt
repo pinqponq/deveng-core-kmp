@@ -67,7 +67,7 @@ class ServerDrivenScreenTest {
             .assertSentEvents(
                 listOf(
                     ComponentEvent.ChangeSliderValue(
-                        componentId = ServerDrivenScreenTestLayout.SLIDER_ID,
+                        componentId = ServerDrivenScreenTestLayout.SLIDER_KEY,
                         value = SLIDER_TARGET_VALUE
                     )
                 )

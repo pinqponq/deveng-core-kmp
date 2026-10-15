@@ -18,6 +18,7 @@ internal fun ServerDrivenComponentList(
     components: List<ComponentUiModel>,
     componentValues: Map<String, Any>,
     componentProperties: Map<String, ComponentProperty>,
+    scopeKey: String?,
     containerType: ContainerType,
     onComponentEvent: (ComponentEvent) -> Unit
 ) {
@@ -34,6 +35,7 @@ internal fun ServerDrivenComponentList(
                     component = component,
                     componentValues = componentValues,
                     componentProperties = componentProperties,
+                    scopeKey = scopeKey,
                     onComponentEvent = onComponentEvent
                 )
             }
@@ -50,6 +52,7 @@ internal fun ServerDrivenComponentList(
                     component = component,
                     componentValues = componentValues,
                     componentProperties = componentProperties,
+                    scopeKey = scopeKey,
                     onComponentEvent = onComponentEvent
                 )
             }

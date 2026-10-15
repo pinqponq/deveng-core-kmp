@@ -11,6 +11,7 @@ import core.presentation.component.Shutter
 import core.presentation.component.tabrow.TabRow
 import core.presentation.component.textfield.CustomTextField
 import core.presentation.theme.LocalComponentTheme
+import core.serverdriven.presentation.engine.scopedComponentKey
 import core.serverdriven.presentation.model.ComponentEvent
 import core.serverdriven.presentation.model.ComponentProperty
 import core.serverdriven.presentation.model.ComponentUiModel
@@ -21,9 +22,11 @@ internal fun ServerDrivenComponent(
     component: ComponentUiModel,
     componentValues: Map<String, Any>,
     componentProperties: Map<String, ComponentProperty>,
+    scopeKey: String?,
     onComponentEvent: (ComponentEvent) -> Unit
 ) {
-    val componentProperty = componentProperties[component.id] ?: ComponentProperty()
+    val componentKey = scopedComponentKey(scopeKey, component.id)
+    val componentProperty = componentProperties[componentKey] ?: ComponentProperty()
 
     when (component) {
         is ComponentUiModel.Shutter -> Shutter(
@@ -31,13 +34,14 @@ internal fun ServerDrivenComponent(
             title = component.title,
             description = component.description,
             isShutterExpanded = componentProperty.isExpanded,
-            onClickShutter = { onComponentEvent(ComponentEvent.ClickShutter(componentId = component.id)) },
+            onClickShutter = { onComponentEvent(ComponentEvent.ClickShutter(componentId = componentKey)) },
             content = {
                 ServerDrivenComponentList(
                     modifier = Modifier.fillMaxWidth(),
                     components = component.components,
                     componentValues = componentValues,
                     componentProperties = componentProperties,
+                    scopeKey = scopeKey,
                     containerType = ContainerType.COLUMN,
                     onComponentEvent = onComponentEvent
                 )
@@ -45,7 +49,7 @@ internal fun ServerDrivenComponent(
         )
 
         is ComponentUiModel.Tabs -> {
-            val selectedTabId = componentValues[component.id] as? String ?: return
+            val selectedTabId = componentValues[componentKey] as? String ?: return
             val selectedTab = component.tabs.first { tab -> tab.id == selectedTabId }
 
             TabRow(
@@ -54,7 +58,7 @@ internal fun ServerDrivenComponent(
                 selectedTab = selectedTab,
                 tabTitle = { tab -> tab.title },
                 onClickTabItem = { tab ->
-                    onComponentEvent(ComponentEvent.ClickTabItem(componentId = component.id, tabId = tab.id))
+                    onComponentEvent(ComponentEvent.ClickTabItem(componentId = componentKey, tabId = tab.id))
                 },
                 content = { tab ->
                     ServerDrivenComponentList(
@@ -62,6 +66,7 @@ internal fun ServerDrivenComponent(
                         components = tab.components,
                         componentValues = componentValues,
                         componentProperties = componentProperties,
+                        scopeKey = scopedComponentKey(scopeKey, tab.id),
                         containerType = ContainerType.COLUMN,
                         onComponentEvent = onComponentEvent
                     )
@@ -74,34 +79,34 @@ internal fun ServerDrivenComponent(
             title = component.title,
             minValue = component.minValue,
             maxValue = component.maxValue,
-            value = componentValues.getValue(component.id) as Float,
+            value = componentValues.getValue(componentKey) as Float,
             isEnabled = componentProperty.isEditable,
             onValueChange = {},
             onValueChangeFinished = { value ->
-                onComponentEvent(ComponentEvent.ChangeSliderValue(componentId = component.id, value = value))
+                onComponentEvent(ComponentEvent.ChangeSliderValue(componentId = componentKey, value = value))
             }
         )
 
         is ComponentUiModel.TextField -> CustomTextField(
             containerModifier = modifier,
             title = component.title,
-            value = componentValues.getValue(component.id) as String,
+            value = componentValues.getValue(componentKey) as String,
             hint = component.hintMessage,
             errorMessage = component.errorMessage,
             keyboardType = component.keyboardType.toComposeKeyboardType(),
             enabled = componentProperty.isEditable,
             onValueChange = { value ->
-                onComponentEvent(ComponentEvent.EnterTextField(componentId = component.id, value = value))
+                onComponentEvent(ComponentEvent.EnterTextField(componentId = componentKey, value = value))
             }
         )
 
         is ComponentUiModel.Switch -> LabeledSwitch(
             modifier = modifier,
             label = component.title,
-            isChecked = componentValues.getValue(component.id) as Boolean,
+            isChecked = componentValues.getValue(componentKey) as Boolean,
             isEnabled = componentProperty.isEditable,
             onSwitchClick = { isChecked ->
-                onComponentEvent(ComponentEvent.ClickSwitch(componentId = component.id, isChecked = isChecked))
+                onComponentEvent(ComponentEvent.ClickSwitch(componentId = componentKey, isChecked = isChecked))
             }
         )
 
@@ -109,10 +114,10 @@ internal fun ServerDrivenComponent(
             modifier = modifier,
             title = component.title,
             items = component.options,
-            selectedItem = componentValues.getValue(component.id) as String,
+            selectedItem = componentValues.getValue(componentKey) as String,
             isEnabled = componentProperty.isEditable,
             onItemSelected = { option ->
-                onComponentEvent(ComponentEvent.ClickDropdownOption(componentId = component.id, option = option))
+                onComponentEvent(ComponentEvent.ClickDropdownOption(componentId = componentKey, option = option))
             }
         )
 
@@ -131,6 +136,7 @@ internal fun ServerDrivenComponent(
             components = component.components,
             componentValues = componentValues,
             componentProperties = componentProperties,
+            scopeKey = scopeKey,
             containerType = ContainerType.ROW,
             onComponentEvent = onComponentEvent
         )

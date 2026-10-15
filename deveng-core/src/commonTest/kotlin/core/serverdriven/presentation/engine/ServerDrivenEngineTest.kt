@@ -37,7 +37,7 @@ class ServerDrivenEngineTest {
                 RECORD_SWITCH_ID to true,
                 RESOLUTION_DROPDOWN_ID to "1080p",
                 MAIN_TABS_ID to IMAGE_TAB_ID,
-                BRIGHTNESS_SLIDER_ID to 85f
+                "$IMAGE_TAB_ID/$BRIGHTNESS_SLIDER_ID" to 85f
             ),
             engine.componentValues.value
         )
@@ -117,14 +117,21 @@ class ServerDrivenEngineTest {
     }
 
     @Test
-    fun setLayout_withDuplicateIdsInTwoTabs_failsNamingTheId() {
+    fun setLayout_withDuplicateIdInsideOneTab_failsNamingTheId() {
         val engine = ServerDrivenEngine()
         val layout = LayoutResponse(
             components = listOf(
                 ComponentResponse.TabsResponse(
                     id = MAIN_TABS_ID,
                     tabs = listOf(
-                        TabResponse(id = IMAGE_TAB_ID, title = TAB_TITLE, components = listOf(sliderResponse())),
+                        TabResponse(
+                            id = IMAGE_TAB_ID,
+                            title = TAB_TITLE,
+                            components = listOf(
+                                sliderResponse(),
+                                ComponentResponse.RowResponse(id = ROW_ID, components = listOf(sliderResponse()))
+                            )
+                        ),
                         TabResponse(id = NETWORK_TAB_ID, title = TAB_TITLE, components = listOf(sliderResponse()))
                     )
                 )
@@ -133,7 +140,140 @@ class ServerDrivenEngineTest {
 
         val exception = assertFailsWith<IllegalArgumentException> { engine.setLayout(layout = layout) }
 
-        assertTrue(exception.message.orEmpty().contains(BRIGHTNESS_SLIDER_ID))
+        assertEquals(true, exception.message?.endsWith(": $IMAGE_TAB_ID/$BRIGHTNESS_SLIDER_ID"))
+    }
+
+    @Test
+    fun setLayout_withDocumentDayNightExample_keysValuesByTab() {
+        val engine = ServerDrivenEngine()
+
+        engine.setLayout(json = DayNightTestLayout.json())
+
+        assertEquals(DayNightTestLayout.DAY_TAB_ID, engine.componentValues.value[DayNightTestLayout.TABS_ID])
+        assertEquals(
+            listOf(DayNightTestLayout.DAY_START_TIME, DayNightTestLayout.NIGHT_START_TIME),
+            listOf(DayNightTestLayout.DAY_TAB_ID, DayNightTestLayout.NIGHT_TAB_ID).map { tabId ->
+                engine.componentValues.value[dayNightKey(tabId, DayNightTestLayout.START_TIME_TEXT_FIELD_ID)]
+            }
+        )
+        assertFalse(engine.componentValues.value.containsKey(DayNightTestLayout.SCHEDULE_SWITCH_ID))
+        assertTrue(isEditable(engine, dayNightKey(DayNightTestLayout.NIGHT_TAB_ID, DayNightTestLayout.END_TIME_TEXT_FIELD_ID)))
+    }
+
+    @Test
+    fun setLayout_withDeprecatedTabType_loadsTabs() {
+        val engine = ServerDrivenEngine()
+
+        engine.setLayout(json = DayNightTestLayout.json(tabsType = "tab"))
+
+        val tabs = engine.components.value.single() as ComponentUiModel.Tabs
+        assertEquals(listOf(DayNightTestLayout.DAY_TAB_ID, DayNightTestLayout.NIGHT_TAB_ID), tabs.tabs.map { tab -> tab.id })
+    }
+
+    @Test
+    fun clickSwitch_inDayTab_locksOnlyDayTabFields() = runTest {
+        val engine = ServerDrivenEngine()
+        engine.setLayout(json = DayNightTestLayout.json())
+
+        engine.handleEvent(
+            ComponentEvent.ClickSwitch(
+                componentId = dayNightKey(DayNightTestLayout.DAY_TAB_ID, DayNightTestLayout.SCHEDULE_SWITCH_ID),
+                isChecked = false
+            )
+        )
+
+        assertEquals(
+            listOf(false, false, true, true),
+            listOf(DayNightTestLayout.DAY_TAB_ID, DayNightTestLayout.NIGHT_TAB_ID).flatMap { tabId ->
+                listOf(DayNightTestLayout.START_TIME_TEXT_FIELD_ID, DayNightTestLayout.END_TIME_TEXT_FIELD_ID)
+                    .map { componentId -> isEditable(engine, dayNightKey(tabId, componentId)) }
+            }
+        )
+        assertEquals(
+            true,
+            engine.componentValues.value[dayNightKey(DayNightTestLayout.NIGHT_TAB_ID, DayNightTestLayout.SCHEDULE_SWITCH_ID)]
+        )
+    }
+
+    @Test
+    fun enterTextField_inNightTab_keepsDayTabValue() = runTest {
+        val engine = ServerDrivenEngine()
+        engine.setLayout(json = DayNightTestLayout.json())
+
+        engine.handleEvent(
+            ComponentEvent.EnterTextField(
+                componentId = dayNightKey(DayNightTestLayout.NIGHT_TAB_ID, DayNightTestLayout.START_TIME_TEXT_FIELD_ID),
+                value = ENTERED_TIME
+            )
+        )
+
+        assertEquals(
+            listOf(DayNightTestLayout.DAY_START_TIME, ENTERED_TIME),
+            listOf(DayNightTestLayout.DAY_TAB_ID, DayNightTestLayout.NIGHT_TAB_ID).map { tabId ->
+                engine.componentValues.value[dayNightKey(tabId, DayNightTestLayout.START_TIME_TEXT_FIELD_ID)]
+            }
+        )
+    }
+
+    @Test
+    fun clickSwitch_outsideTabs_appliesToSameIdInEveryTab() = runTest {
+        val engine = ServerDrivenEngine()
+        engine.setLayout(
+            layout = LayoutResponse(
+                components = listOf(
+                    switchResponse(),
+                    ComponentResponse.TabsResponse(
+                        id = MAIN_TABS_ID,
+                        tabs = listOf(
+                            TabResponse(id = IMAGE_TAB_ID, title = TAB_TITLE, components = listOf(sliderResponse())),
+                            TabResponse(id = NETWORK_TAB_ID, title = TAB_TITLE, components = listOf(sliderResponse()))
+                        )
+                    )
+                ),
+                dependencies = listOf(visibilityDependency(triggerValue = "false", effectValue = false))
+            )
+        )
+
+        engine.handleEvent(ComponentEvent.ClickSwitch(componentId = RECORD_SWITCH_ID, isChecked = false))
+
+        assertEquals(
+            listOf(false, false),
+            listOf(IMAGE_TAB_ID, NETWORK_TAB_ID).map { tabId -> isVisible(engine, "$tabId/$BRIGHTNESS_SLIDER_ID") }
+        )
+    }
+
+    @Test
+    fun changeSliderValue_inTab_appliesToTargetOutsideTabs() = runTest {
+        val engine = ServerDrivenEngine()
+        engine.setLayout(
+            layout = LayoutResponse(
+                components = listOf(
+                    switchResponse(),
+                    ComponentResponse.TabsResponse(
+                        id = MAIN_TABS_ID,
+                        tabs = listOf(
+                            TabResponse(id = IMAGE_TAB_ID, title = TAB_TITLE, components = listOf(sliderResponse()))
+                        )
+                    )
+                ),
+                dependencies = listOf(
+                    DependencyResponse(
+                        sourceId = BRIGHTNESS_SLIDER_ID,
+                        targetId = RECORD_SWITCH_ID,
+                        operator = GREATER_THAN,
+                        triggerValue = UPPER_TRIGGER,
+                        effectType = "EDITABLE",
+                        effectValue = false
+                    )
+                )
+            )
+        )
+
+        engine.handleEvent(
+            ComponentEvent.ChangeSliderValue(componentId = "$IMAGE_TAB_ID/$BRIGHTNESS_SLIDER_ID", value = 95f)
+        )
+
+        assertFalse(isEditable(engine, RECORD_SWITCH_ID))
     }
 
     @Test
@@ -440,12 +580,47 @@ class ServerDrivenEngineTest {
             )
         )
 
-        engine.handleEvent(ComponentEvent.ClickShutter(componentId = CAMERA_SHUTTER_ID))
+        engine.handleEvent(ComponentEvent.ClickShutter(componentId = "$IMAGE_TAB_ID/$CAMERA_SHUTTER_ID"))
 
         val tabs = engine.components.value.single() as ComponentUiModel.Tabs
         val row = tabs.tabs.single().components.single() as ComponentUiModel.Row
         val shutter = row.components.single() as ComponentUiModel.Shutter
         assertEquals(listOf(RECORD_SWITCH_ID), shutter.components.map { component -> component.id })
+        assertEquals(listOf(CAMERA_SHUTTER_ID), loader.requestedShutterIds)
+        assertEquals(true, engine.componentValues.value["$IMAGE_TAB_ID/$RECORD_SWITCH_ID"])
+        assertTrue(isExpanded(engine, "$IMAGE_TAB_ID/$CAMERA_SHUTTER_ID"))
+    }
+
+    @Test
+    fun clickShutter_inTab_withLoadedIdAlreadyInThatTab_failsAndKeepsLayout() = runTest {
+        val loader = RecordingShutterContentLoader(content = LayoutResponse(components = listOf(sliderResponse())))
+        val engine = ServerDrivenEngine(shutterContentLoader = loader)
+        val shutterInTabLayout = LayoutResponse(
+            components = listOf(
+                ComponentResponse.TabsResponse(
+                    id = MAIN_TABS_ID,
+                    tabs = listOf(
+                        TabResponse(
+                            id = IMAGE_TAB_ID,
+                            title = TAB_TITLE,
+                            components = listOf(
+                                sliderResponse(),
+                                ComponentResponse.ShutterResponse(id = CAMERA_SHUTTER_ID, title = TAB_TITLE)
+                            )
+                        ),
+                        TabResponse(id = NETWORK_TAB_ID, title = TAB_TITLE, components = listOf(switchResponse()))
+                    )
+                )
+            )
+        )
+        engine.setLayout(layout = shutterInTabLayout)
+        val componentsBeforeLoad = engine.components.value
+
+        assertFailsWith<IllegalArgumentException> {
+            engine.handleEvent(ComponentEvent.ClickShutter(componentId = "$IMAGE_TAB_ID/$CAMERA_SHUTTER_ID"))
+        }
+
+        assertEquals(componentsBeforeLoad, engine.components.value)
     }
 
     @Test
@@ -525,6 +700,8 @@ class ServerDrivenEngineTest {
 
         assertEquals(listOf(RECORD_SWITCH_ID, MAIN_TABS_ID), visibleComponentIds(engine))
     }
+
+    private fun dayNightKey(tabId: String, componentId: String): String = "$tabId/$componentId"
 
     private fun visibleComponentIds(engine: ServerDrivenEngine): List<String> =
         componentIds(engine.visibleComponents.value)
@@ -658,6 +835,7 @@ class ServerDrivenEngineTest {
         const val CHART_ID = "usage_chart"
         const val TAB_TITLE = "Title"
         const val LOADER_FAILURE_MESSAGE = "shutter content unavailable"
+        const val ENTERED_TIME = "19:00:00"
 
         const val SWITCH_JSON =
             """{"type":"switch","id":"$RECORD_SWITCH_ID","title":"Record","currentValue":true}"""

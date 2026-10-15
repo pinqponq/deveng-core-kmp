@@ -29,6 +29,7 @@ fun ServerDrivenScreen(
         components = components,
         componentValues = componentValues,
         componentProperties = componentProperties,
+        scopeKey = null,
         containerType = ContainerType.COLUMN,
         onComponentEvent = onComponentEvent
     )

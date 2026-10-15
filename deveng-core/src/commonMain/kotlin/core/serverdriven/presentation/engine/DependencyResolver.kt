@@ -7,6 +7,28 @@ import core.serverdriven.presentation.model.DependencyUiModel
 
 internal class DependencyResolver {
 
+    /**
+     * Turns each dependency's ids into component keys. Every component carrying `sourceId` is a source;
+     * its target is the `targetId` in the nearest scope around it (its own tab first, then the enclosing
+     * tabs, then outside every tab), or every component carrying `targetId` when none of those scopes
+     * has one, which keeps a dependency from outside the tabs reaching components inside them.
+     */
+    fun scopeDependencies(
+        dependencies: List<DependencyUiModel>,
+        scopedComponentIds: List<ScopedComponentId>
+    ): List<DependencyUiModel> {
+        return dependencies.flatMap { dependency ->
+            val sources = scopedComponentIds.filter { scopedId -> scopedId.componentId == dependency.sourceId }
+            val targets = scopedComponentIds.filter { scopedId -> scopedId.componentId == dependency.targetId }
+
+            sources.flatMap { source ->
+                findTargetsOf(source, targets).map { target ->
+                    dependency.copy(sourceId = source.key, targetId = target.key)
+                }
+            }
+        }
+    }
+
     fun resolveProperties(
         dependencies: List<DependencyUiModel>,
         componentValues: Map<String, Any>,
@@ -28,6 +50,17 @@ internal class DependencyResolver {
         }
 
         return resolvedProperties
+    }
+
+    private fun findTargetsOf(
+        source: ScopedComponentId,
+        targets: List<ScopedComponentId>
+    ): List<ScopedComponentId> {
+        val nearestTarget = targets
+            .filter { target -> source.scopeKeys.take(target.scopeKeys.size) == target.scopeKeys }
+            .maxByOrNull { target -> target.scopeKeys.size }
+
+        return nearestTarget?.let { target -> listOf(target) } ?: targets
     }
 
     private fun applyEffect(

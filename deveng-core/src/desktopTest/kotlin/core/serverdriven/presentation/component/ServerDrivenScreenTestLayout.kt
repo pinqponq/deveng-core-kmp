@@ -5,6 +5,7 @@ internal object ServerDrivenScreenTestLayout {
     const val SHUTTER_TITLE = "Camera settings"
     const val SWITCH_ID = "record_switch"
     const val TABS_ID = "main_tabs"
+    const val IMAGE_TAB_ID = "image_tab"
     const val NETWORK_TAB_ID = "network_tab"
     const val NETWORK_TAB_TITLE = "Network"
     const val TEXT_FIELD_ID = "camera_name_text_field"
@@ -15,6 +16,7 @@ internal object ServerDrivenScreenTestLayout {
     const val DROPDOWN_OTHER_OPTION = "4K"
     const val SLIDER_ID = "brightness_slider"
     const val SLIDER_TITLE = "Brightness"
+    const val SLIDER_KEY = "$IMAGE_TAB_ID/$SLIDER_ID"
 
     const val JSON = """
         {
@@ -44,7 +46,7 @@ internal object ServerDrivenScreenTestLayout {
               "type": "tabs", "id": "$TABS_ID",
               "tabs": [
                 {
-                  "type": "tab", "id": "image_tab", "title": "Image",
+                  "type": "tab", "id": "$IMAGE_TAB_ID", "title": "Image",
                   "components": [
                     {
                       "type": "slider", "id": "$SLIDER_ID", "title": "$SLIDER_TITLE",
