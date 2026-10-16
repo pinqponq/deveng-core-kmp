@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,9 +55,9 @@ private const val MOTION_DEMO_SHIMMER_ROW_COUNT = 3
  */
 @Composable
 internal fun MotionDemoScreen(onBack: () -> Unit) {
-    val systemReduceMotion = LocalReduceMotion.current
+    val isSystemReduceMotionEnabled = LocalReduceMotion.current
     var isReduceMotionOverridden by remember { mutableStateOf(false) }
-    val isReduceMotionEnabled = systemReduceMotion || isReduceMotionOverridden
+    val isReduceMotionEnabled = isSystemReduceMotionEnabled || isReduceMotionOverridden
 
     CompositionLocalProvider(LocalReduceMotion provides isReduceMotionEnabled) {
         Column(
@@ -77,7 +76,7 @@ internal fun MotionDemoScreen(onBack: () -> Unit) {
             )
 
             Text(
-                text = "System reduce motion: ${if (systemReduceMotion) "on" else "off"}",
+                text = "System reduce motion: ${if (isSystemReduceMotionEnabled) "on" else "off"}",
                 style = CoreMediumTextStyle().copy(fontSize = 16.sp),
             )
 

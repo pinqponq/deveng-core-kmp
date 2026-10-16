@@ -66,5 +66,5 @@ object NavTransitions {
     )
 }
 
-internal fun navigationSlideOffset(fullWidth: Int): Int =
+private fun navigationSlideOffset(fullWidth: Int): Int =
     (fullWidth * MotionTokens.NAVIGATION_SLIDE_FRACTION).roundToInt()

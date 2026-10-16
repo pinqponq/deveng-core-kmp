@@ -28,8 +28,8 @@ class PressScaleTest {
 
         pressAndSettle()
 
-        assertEquals(PRESSED_SIZE_PX, pressableWidthPx(), absoluteTolerance = SIZE_TOLERANCE_PX)
-        assertEquals(PRESSED_SIZE_PX, pressableHeightPx(), absoluteTolerance = SIZE_TOLERANCE_PX)
+        assertEquals(PRESSED_SIZE_DP_VALUE, pressableWidthDp(), absoluteTolerance = SIZE_TOLERANCE_DP)
+        assertEquals(PRESSED_SIZE_DP_VALUE, pressableHeightDp(), absoluteTolerance = SIZE_TOLERANCE_DP)
     }
 
     @Test
@@ -40,7 +40,7 @@ class PressScaleTest {
         onNodeWithTag(PRESSABLE_TAG).performTouchInput { up() }
         mainClock.advanceTimeBy(SETTLE_TIME_MILLIS)
 
-        assertEquals(FULL_SIZE_PX, pressableWidthPx(), absoluteTolerance = SIZE_TOLERANCE_PX)
+        assertEquals(FULL_SIZE_DP_VALUE, pressableWidthDp(), absoluteTolerance = SIZE_TOLERANCE_DP)
     }
 
     @Test
@@ -49,7 +49,7 @@ class PressScaleTest {
 
         pressAndSettle()
 
-        assertEquals(FULL_SIZE_PX, pressableWidthPx(), absoluteTolerance = SIZE_TOLERANCE_PX)
+        assertEquals(FULL_SIZE_DP_VALUE, pressableWidthDp(), absoluteTolerance = SIZE_TOLERANCE_DP)
     }
 
     private fun ComposeUiTest.setPressableContent(isReduceMotionEnabled: Boolean) {
@@ -72,19 +72,19 @@ class PressScaleTest {
         mainClock.advanceTimeBy(SETTLE_TIME_MILLIS)
     }
 
-    private fun ComposeUiTest.pressableWidthPx(): Float =
+    private fun ComposeUiTest.pressableWidthDp(): Float =
         onNodeWithTag(PRESSABLE_TAG, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.width / density.density
 
-    private fun ComposeUiTest.pressableHeightPx(): Float =
+    private fun ComposeUiTest.pressableHeightDp(): Float =
         onNodeWithTag(PRESSABLE_TAG, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.height / density.density
 
     private companion object {
         const val PRESSABLE_TAG = "pressable"
         const val FULL_SIZE_DP = 100
-        const val FULL_SIZE_PX = 100f
+        const val FULL_SIZE_DP_VALUE = 100f
         const val PRESSED_SCALE = 0.8f
-        const val PRESSED_SIZE_PX = 80f
-        const val SIZE_TOLERANCE_PX = 0.5f
+        const val PRESSED_SIZE_DP_VALUE = 80f
+        const val SIZE_TOLERANCE_DP = 0.5f
         const val SETTLE_TIME_MILLIS = 1_000L
     }
 }

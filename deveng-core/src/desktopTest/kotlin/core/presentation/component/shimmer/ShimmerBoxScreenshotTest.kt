@@ -9,7 +9,6 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.runDesktopComposeUiTest
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import core.presentation.motion.LocalReduceMotion
 import core.presentation.motion.MotionTokens
 import core.presentation.theme.AppTheme
 import core.testing.SCREENSHOT_DENSITY

@@ -41,7 +41,7 @@ class ShimmerBoxTest {
     fun shimmerBox_atSweepStart_showsOnlyBaseColor() = runDesktopComposeUiTest {
         setShimmerBox(isReduceMotionEnabled = false, baseColor = BASE_COLOR, highlightColor = HIGHLIGHT_COLOR)
 
-        advanceShimmerTo(fraction = 0f)
+        advanceShimmerTo(fraction = START)
 
         assertColorClose(expected = BASE_COLOR, actual = pixelAt(xFraction = CENTER, yFraction = CENTER), tolerance = EDGE_TOLERANCE)
     }
@@ -73,7 +73,7 @@ class ShimmerBoxTest {
         }
 
         assertColorClose(expected = BASE_COLOR, actual = pixelAt(xFraction = CENTER, yFraction = CENTER))
-        assertEquals(0f, pixelAt(xFraction = 0f, yFraction = 0f).alpha, absoluteTolerance = ALPHA_TOLERANCE)
+        assertEquals(TRANSPARENT_ALPHA, pixelAt(xFraction = START, yFraction = START).alpha, absoluteTolerance = ALPHA_TOLERANCE)
     }
 
     private fun ComposeUiTest.setShimmerBox(isReduceMotionEnabled: Boolean, baseColor: Color, highlightColor: Color) {
@@ -126,5 +126,6 @@ class ShimmerBoxTest {
         const val COLOR_TOLERANCE = 0.08f
         const val EDGE_TOLERANCE = 0.2f
         const val ALPHA_TOLERANCE = 0.01f
+        const val TRANSPARENT_ALPHA = 0f
     }
 }

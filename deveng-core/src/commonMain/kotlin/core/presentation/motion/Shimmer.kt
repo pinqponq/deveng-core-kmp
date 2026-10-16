@@ -59,5 +59,5 @@ fun Modifier.shimmer(
     }
 }
 
-internal fun shimmerHighlightStartX(progress: Float, width: Float): Float =
+private fun shimmerHighlightStartX(progress: Float, width: Float): Float =
     width * (2 * progress - 1)

@@ -10,21 +10,21 @@ class AppHapticsTest {
     private val appHaptics = AppHaptics(hapticFeedback = hapticFeedback)
 
     @Test
-    fun tap_performsVirtualKeyFeedback() {
+    fun tap_withHapticFeedbackAvailable_performsVirtualKeyFeedback() {
         appHaptics.tap()
 
         assertEquals(listOf(HapticFeedbackType.VirtualKey), hapticFeedback.performedTypes)
     }
 
     @Test
-    fun success_performsConfirmFeedback() {
+    fun success_withHapticFeedbackAvailable_performsConfirmFeedback() {
         appHaptics.success()
 
         assertEquals(listOf(HapticFeedbackType.Confirm), hapticFeedback.performedTypes)
     }
 
     @Test
-    fun warning_performsRejectFeedback() {
+    fun warning_withHapticFeedbackAvailable_performsRejectFeedback() {
         appHaptics.warning()
 
         assertEquals(listOf(HapticFeedbackType.Reject), hapticFeedback.performedTypes)

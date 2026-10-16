@@ -39,7 +39,7 @@ fun Modifier.pressScale(
     }
 }
 
-internal fun pressScaleTarget(
+private fun pressScaleTarget(
     isPressed: Boolean,
     isReduceMotionEnabled: Boolean,
     pressedScale: Float
