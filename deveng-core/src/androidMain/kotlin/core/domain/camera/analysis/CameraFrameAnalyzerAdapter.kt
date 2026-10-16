@@ -7,13 +7,15 @@ import kotlinx.coroutines.runBlocking
 import java.util.concurrent.Executor
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Bridges the suspend-based analyzer contract to CameraX's callback-based analyzer API.
  *
- * The adapter keeps at most one generic analysis in flight. Incoming frames are released when the
- * analyzer is busy, while CameraX itself is configured with KEEP_ONLY_LATEST by the controller.
+ * By default the adapter keeps at most one generic analysis in flight. Opted-in analyzers may
+ * release their source frame after copying all required pixels; the next frame can then start while
+ * post-frame work such as model inference is still running.
  */
 internal class CameraFrameAnalyzerAdapter<R>(
     private val analyzer: CameraFrameAnalyzer<R>,
@@ -22,10 +24,13 @@ internal class CameraFrameAnalyzerAdapter<R>(
     private val onError: (Throwable) -> Unit,
     private val analyzeEveryNthFrame: Int = 1,
     private val minAnalysisIntervalMs: Long = 0,
+    private val allowConcurrentAfterFrameRelease: Boolean = false,
     private val diagnostics: FrameAnalysisDiagnostics? = null,
+    private val onClosed: (() -> Unit)? = null,
     private val nanoTime: () -> Long = System::nanoTime,
 ) : ImageAnalysis.Analyzer {
-    private val busy = AtomicBoolean(false)
+    private val frameReadBusy = AtomicBoolean(false)
+    private val activeAnalysisCount = AtomicInteger(0)
     private val stopRequested = AtomicBoolean(false)
     private val closed = AtomicBoolean(false)
     private val receivedFrameCount = AtomicLong(0)
@@ -55,7 +60,7 @@ internal class CameraFrameAnalyzerAdapter<R>(
 
     fun close() {
         stop()
-        if (!busy.get()) {
+        if (activeAnalysisCount.get() == 0) {
             closeAnalyzer()
         }
     }
@@ -82,7 +87,7 @@ internal class CameraFrameAnalyzerAdapter<R>(
             imageProxy.close()
             return
         }
-        if (!busy.compareAndSet(false, true)) {
+        if (!frameReadBusy.compareAndSet(false, true)) {
             if (diagnostics != null) droppedBusyCount.incrementAndGet()
             imageProxy.close()
             return
@@ -90,6 +95,17 @@ internal class CameraFrameAnalyzerAdapter<R>(
 
         val analysisSequence = diagnostics?.let { analysisCount.incrementAndGet() }
         val analysisStartedNanos = candidateStartNanos
+        val readLeaseReleased = AtomicBoolean(false)
+        fun releaseReadLease() {
+            if (readLeaseReleased.compareAndSet(false, true)) {
+                frameReadBusy.set(false)
+            }
+        }
+        val frame = AndroidCameraFrame(
+            imageProxy = imageProxy,
+            onReleased = if (allowConcurrentAfterFrameRelease) ::releaseReadLease else null,
+        )
+        activeAnalysisCount.incrementAndGet()
         lastAnalysisStartNanos.set(analysisStartedNanos)
         if (diagnostics != null && analysisSequence != null) {
             val previousStart = previousAnalysisStartNanos.getAndSet(analysisStartedNanos)
@@ -117,8 +133,10 @@ internal class CameraFrameAnalyzerAdapter<R>(
                 var outcome = "no_result"
                 try {
                     if (!stopRequested.get() && !closed.get()) {
-                        val result = runBlocking {
-                            analyzer.analyze(AndroidCameraFrame(imageProxy))
+                        val result = try {
+                            runBlocking { analyzer.analyze(frame) }
+                        } finally {
+                            frame.releaseAfterRead()
                         }
                         if (!stopRequested.get() && !closed.get()) {
                             result?.let {
@@ -145,9 +163,9 @@ internal class CameraFrameAnalyzerAdapter<R>(
                             ),
                         )
                     }
-                    imageProxy.close()
-                    busy.set(false)
-                    if (stopRequested.get()) {
+                    frame.releaseAfterRead()
+                    releaseReadLease()
+                    if (activeAnalysisCount.decrementAndGet() == 0 && stopRequested.get()) {
                         closeAnalyzer()
                     }
                 }
@@ -164,11 +182,11 @@ internal class CameraFrameAnalyzerAdapter<R>(
                     ),
                 )
             }
-            imageProxy.close()
-            busy.set(false)
-            if (stopRequested.get()) {
+            frame.releaseAfterRead()
+            releaseReadLease()
+            if (activeAnalysisCount.decrementAndGet() == 0 && stopRequested.get()) {
                 closeAnalyzer()
-            } else if (!closed.get()) {
+            } else if (!stopRequested.get() && !closed.get()) {
                 onError(error)
             }
         }
@@ -176,7 +194,11 @@ internal class CameraFrameAnalyzerAdapter<R>(
 
     private fun closeAnalyzer() {
         if (closed.compareAndSet(false, true)) {
-            analyzer.close()
+            try {
+                analyzer.close()
+            } finally {
+                onClosed?.invoke()
+            }
         }
     }
 

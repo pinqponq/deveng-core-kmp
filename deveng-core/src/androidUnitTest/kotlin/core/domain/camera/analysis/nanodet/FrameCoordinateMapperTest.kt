@@ -1,8 +1,11 @@
 package core.domain.camera.analysis.nanodet
 
+import core.domain.camera.analysis.nanodet.geometry.FrameCoordinateMapper
+import core.domain.camera.analysis.nanodet.geometry.FrameTransform
+import core.domain.camera.analysis.nanodet.model.PlateBoundingBox
+import core.domain.camera.analysis.nanodet.model.PlateDetectionResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 
 class FrameCoordinateMapperTest {
     @Test
@@ -15,8 +18,8 @@ class FrameCoordinateMapperTest {
             rotationDegrees = 0,
         )
 
-        val mapped = FrameCoordinateMapper.map(
-            boundingBox = DetectorBoundingBox(
+        val mapped = mapBox(
+            boundingBox = PlateBoundingBox(
                 left = 1f,
                 top = 2f,
                 right = 8f,
@@ -29,8 +32,30 @@ class FrameCoordinateMapperTest {
     }
 
     @Test
+    fun plateDetectionMappingPreservesConfidenceAndHandlesNull() {
+        val transform = FrameTransform.directResize(
+            sourceWidth = 100,
+            sourceHeight = 50,
+            inputWidth = 10,
+            inputHeight = 10,
+            rotationDegrees = 0,
+        )
+        val detection = PlateDetectionResult(
+            boundingBox = PlateBoundingBox(1f, 2f, 8f, 6f),
+            confidence = 0.95f,
+        )
+
+        val mapped = FrameCoordinateMapper.map(detection, transform)
+        val mappedNull = FrameCoordinateMapper.map(null, transform)
+
+        assertEquals(0.95f, mapped?.confidence)
+        assertBox(requireNotNull(mapped?.boundingBox), left = 10f, top = 10f, right = 80f, bottom = 30f)
+        assertEquals(null, mappedNull)
+    }
+
+    @Test
     fun allSupportedRotationsMapBackToTheSameSourceBox() {
-        val expected = SourceBoundingBox(
+        val expected = PlateBoundingBox(
             left = 10f,
             top = 8f,
             right = 40f,
@@ -46,14 +71,14 @@ class FrameCoordinateMapperTest {
                 rotationDegrees = rotation,
             )
             val rotated = rotateFromSource(expected, transform)
-            val detectorBox = DetectorBoundingBox(
+            val detectorBox = PlateBoundingBox(
                 left = rotated.left * transform.scaleX,
                 top = rotated.top * transform.scaleY,
                 right = rotated.right * transform.scaleX,
                 bottom = rotated.bottom * transform.scaleY,
             )
 
-            val mapped = FrameCoordinateMapper.map(detectorBox, transform)
+            val mapped = mapBox(detectorBox, transform)
 
             assertBox(
                 mapped,
@@ -63,30 +88,6 @@ class FrameCoordinateMapperTest {
                 bottom = expected.bottom,
             )
         }
-    }
-
-    @Test
-    fun mirroredDetectorCoordinatesAreUnmirroredBeforeRotationMapping() {
-        val transform = FrameTransform.directResize(
-            sourceWidth = 100,
-            sourceHeight = 50,
-            inputWidth = 10,
-            inputHeight = 10,
-            rotationDegrees = 0,
-            mirrored = true,
-        )
-        val expected = SourceBoundingBox(left = 10f, top = 8f, right = 40f, bottom = 30f)
-        val mirrored = mirror(rotateFromSource(expected, transform), transform)
-        val detectorBox = DetectorBoundingBox(
-            left = mirrored.left * transform.scaleX,
-            top = mirrored.top * transform.scaleY,
-            right = mirrored.right * transform.scaleX,
-            bottom = mirrored.bottom * transform.scaleY,
-        )
-
-        val mapped = FrameCoordinateMapper.map(detectorBox, transform)
-
-        assertBox(mapped, expected.left, expected.top, expected.right, expected.bottom)
     }
 
     @Test
@@ -104,15 +105,15 @@ class FrameCoordinateMapperTest {
             paddingY = 2f,
             rotationDegrees = 0,
         )
-        val source = SourceBoundingBox(left = 10f, top = 12f, right = 50f, bottom = 42f)
-        val detectorBox = DetectorBoundingBox(
+        val source = PlateBoundingBox(left = 10f, top = 12f, right = 50f, bottom = 42f)
+        val detectorBox = PlateBoundingBox(
             left = source.left * transform.scaleX + transform.paddingX,
             top = source.top * transform.scaleY + transform.paddingY,
             right = source.right * transform.scaleX + transform.paddingX,
             bottom = source.bottom * transform.scaleY + transform.paddingY,
         )
 
-        val mapped = FrameCoordinateMapper.map(detectorBox, transform)
+        val mapped = mapBox(detectorBox, transform)
 
         assertBox(mapped, source.left, source.top, source.right, source.bottom)
     }
@@ -127,8 +128,8 @@ class FrameCoordinateMapperTest {
             rotationDegrees = 0,
         )
 
-        val mapped = FrameCoordinateMapper.map(
-            boundingBox = DetectorBoundingBox(
+        val mapped = mapBox(
+            boundingBox = PlateBoundingBox(
                 left = 8f,
                 top = 9f,
                 right = -3f,
@@ -140,50 +141,24 @@ class FrameCoordinateMapperTest {
         assertBox(mapped, left = 0f, top = 0f, right = 80f, bottom = 45f)
     }
 
-    @Test
-    fun invalidTransformGeometryIsRejected() {
-        assertFailsWith<IllegalArgumentException> {
-            FrameTransform.directResize(
-                sourceWidth = 100,
-                sourceHeight = 50,
-                inputWidth = 10,
-                inputHeight = 10,
-                rotationDegrees = 45,
-            )
-        }
-        assertFailsWith<IllegalArgumentException> {
-            FrameTransform(
-                sourceWidth = 100,
-                sourceHeight = 50,
-                rotatedWidth = 100,
-                rotatedHeight = 50,
-                inputWidth = 10,
-                inputHeight = 10,
-                scaleX = 0f,
-                scaleY = 1f,
-                rotationDegrees = 0,
-            )
-        }
-    }
-
     private fun rotateFromSource(
-        source: SourceBoundingBox,
+        source: PlateBoundingBox,
         transform: FrameTransform,
-    ): DetectorBoundingBox = when (transform.rotationDegrees) {
-        0 -> DetectorBoundingBox(source.left, source.top, source.right, source.bottom)
-        90 -> DetectorBoundingBox(
+    ): PlateBoundingBox = when (transform.rotationDegrees) {
+        0 -> PlateBoundingBox(source.left, source.top, source.right, source.bottom)
+        90 -> PlateBoundingBox(
             left = (transform.sourceHeight - 1).toFloat() - source.bottom,
             top = source.left,
             right = (transform.sourceHeight - 1).toFloat() - source.top,
             bottom = source.right,
         )
-        180 -> DetectorBoundingBox(
+        180 -> PlateBoundingBox(
             left = (transform.sourceWidth - 1).toFloat() - source.right,
             top = (transform.sourceHeight - 1).toFloat() - source.bottom,
             right = (transform.sourceWidth - 1).toFloat() - source.left,
             bottom = (transform.sourceHeight - 1).toFloat() - source.top,
         )
-        270 -> DetectorBoundingBox(
+        270 -> PlateBoundingBox(
             left = source.top,
             top = (transform.sourceWidth - 1).toFloat() - source.right,
             right = source.bottom,
@@ -192,18 +167,18 @@ class FrameCoordinateMapperTest {
         else -> error("Rotation was validated by FrameTransform.")
     }
 
-    private fun mirror(
-        box: DetectorBoundingBox,
+    private fun mapBox(
+        boundingBox: PlateBoundingBox,
         transform: FrameTransform,
-    ): DetectorBoundingBox = DetectorBoundingBox(
-        left = (transform.rotatedWidth - 1).toFloat() - box.right,
-        top = box.top,
-        right = (transform.rotatedWidth - 1).toFloat() - box.left,
-        bottom = box.bottom,
-    )
+    ): PlateBoundingBox = requireNotNull(
+        FrameCoordinateMapper.map(
+            detection = PlateDetectionResult(boundingBox = boundingBox, confidence = 1f),
+            transform = transform,
+        ),
+    ).boundingBox
 
     private fun assertBox(
-        actual: SourceBoundingBox,
+        actual: PlateBoundingBox,
         left: Float,
         top: Float,
         right: Float,

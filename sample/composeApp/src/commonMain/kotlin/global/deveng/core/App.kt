@@ -171,8 +171,9 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Preview
 @Composable
 internal fun App(
-    onOpenNanoDetValidation: (() -> Unit)? = null,
-    nanoDetValidationContent: (@Composable () -> Unit)? = null,
+    onOpenPlateRecognitionModelPreparation: (() -> Unit)? = null,
+    plateRecognitionModelPreparationContent: (@Composable () -> Unit)? = null,
+    plateRecognitionValidationContent: (@Composable () -> Unit)? = null,
 ) {
     val customTheme = ComponentTheme(
         // Custom font family (using system font as example)
@@ -358,8 +359,12 @@ internal fun App(
 
     // Step 2: Apply theme using library's AppTheme
     AppTheme(componentTheme = customTheme) {
-        if (nanoDetValidationContent != null) {
-            nanoDetValidationContent()
+        if (plateRecognitionModelPreparationContent != null) {
+            plateRecognitionModelPreparationContent()
+            return@AppTheme
+        }
+        if (plateRecognitionValidationContent != null) {
+            plateRecognitionValidationContent()
             return@AppTheme
         }
         var showCameraScreen by remember { mutableStateOf(false) }
@@ -376,7 +381,7 @@ internal fun App(
                 onOpenQrGenerator = { showQrGeneratorScreen = true },
                 onOpenQrScanner = { showQrScannerScreen = true },
                 onOpenScrollToEdge = { showScrollToEdgeScreen = true },
-                onOpenNanoDetValidation = onOpenNanoDetValidation,
+                onOpenPlateRecognitionModelPreparation = onOpenPlateRecognitionModelPreparation,
             )
         }
     }
@@ -638,7 +643,7 @@ private fun ThemingDemo(
     onOpenQrGenerator: () -> Unit = {},
     onOpenQrScanner: () -> Unit = {},
     onOpenScrollToEdge: () -> Unit = {},
-    onOpenNanoDetValidation: (() -> Unit)? = null,
+    onOpenPlateRecognitionModelPreparation: (() -> Unit)? = null,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1006,11 +1011,11 @@ private fun ThemingDemo(
                             onClick = onOpenCamera
                         )
 
-                        onOpenNanoDetValidation?.let { openValidation ->
+                        onOpenPlateRecognitionModelPreparation?.let { openPreparation ->
                             CustomButton(
-                                text = "NanoDet Validation",
-                                containerColor = Color(0xFFFF7043),
-                                onClick = openValidation,
+                                text = "Prepare Plate OCR Models",
+                                containerColor = Color(0xFF00897B),
+                                onClick = openPreparation,
                             )
                         }
 

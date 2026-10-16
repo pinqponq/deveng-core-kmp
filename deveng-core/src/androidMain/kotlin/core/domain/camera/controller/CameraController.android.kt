@@ -954,7 +954,9 @@ actual class CameraController(
      *
      * The result and error callbacks are invoked on the controller's analysis executor. The
      * analyzer is started immediately and is stopped/closed when it is unregistered or the
-     * controller is cleaned up.
+     * controller is cleaned up. [allowConcurrentAfterFrameRelease] lets an analyzer accept its
+     * next frame after it has copied and released the current frame, while post-frame work from the
+     * current analysis is still running.
      */
     fun <R> registerFrameAnalyzer(
         analyzer: CameraFrameAnalyzer<R>,
@@ -963,8 +965,10 @@ actual class CameraController(
         debugLogTag: String? = null,
         analyzeEveryNthFrame: Int = 1,
         minAnalysisIntervalMs: Long = 0,
+        allowConcurrentAfterFrameRelease: Boolean = false,
         outputImageFormat: FrameAnalysisOutputFormat = FrameAnalysisOutputFormat.YUV_420_888,
         targetResolution: Size? = null,
+        onClosed: (() -> Unit)? = null,
     ) {
         val adapter = CameraFrameAnalyzerAdapter(
             analyzer = analyzer,
@@ -973,7 +977,9 @@ actual class CameraController(
             onError = onError,
             analyzeEveryNthFrame = analyzeEveryNthFrame,
             minAnalysisIntervalMs = minAnalysisIntervalMs,
+            allowConcurrentAfterFrameRelease = allowConcurrentAfterFrameRelease,
             diagnostics = debugLogTag?.let(::LogcatFrameAnalysisDiagnostics),
+            onClosed = onClosed,
         )
         val registration = RegisteredFrameAnalyzer(
             analyzer = analyzer,

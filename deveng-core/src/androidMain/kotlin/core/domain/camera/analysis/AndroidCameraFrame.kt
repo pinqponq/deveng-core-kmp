@@ -5,6 +5,7 @@ import android.media.Image
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Read-only view of an Android CameraX frame.
@@ -14,7 +15,10 @@ import androidx.camera.core.ImageProxy
  */
 class AndroidCameraFrame internal constructor(
     private val imageProxy: ImageProxy,
+    private val onReleased: (() -> Unit)? = null,
 ) {
+    private val released = AtomicBoolean(false)
+
     val width: Int
         get() = imageProxy.width
 
@@ -44,4 +48,20 @@ class AndroidCameraFrame internal constructor(
     @OptIn(ExperimentalGetImage::class)
     val image: Image?
         get() = imageProxy.image
+
+    /**
+     * Releases the underlying CameraX reference after all required pixels have been copied.
+     *
+     * This is an internal pipeline hook. Generic analyzers should continue to let the adapter
+     * release the frame in its finally block and must not read this frame after calling it.
+     */
+    internal fun releaseAfterRead() {
+        if (released.compareAndSet(false, true)) {
+            try {
+                imageProxy.close()
+            } finally {
+                onReleased?.invoke()
+            }
+        }
+    }
 }

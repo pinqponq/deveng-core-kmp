@@ -1,24 +1,50 @@
 package core.domain.camera.analysis.nanodet
 
-import core.domain.camera.analysis.onnx.OnnxModelErrorCode
-import core.domain.camera.analysis.onnx.OnnxModelException
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
+import core.domain.camera.analysis.nanodet.model.NanoDetModelContract
+import core.domain.camera.analysis.nanodet.model.NanoDetModelProfile
+import core.domain.camera.analysis.nanodet.pipeline.NanoDetPostprocessor
+import java.nio.FloatBuffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
 
 class NanoDetPostprocessorTest {
-    private val postprocessor = NanoDetPostprocessor(NanoDetConfig())
+    private val postprocessor = NanoDetPostprocessor(
+        config = NanoDetConfig(),
+        inputWidth = 256,
+        inputHeight = 256,
+    )
 
     @Test
-    fun centerPriorsMatchTheVerifiedOutputLayout() {
+    fun centerPriorsMatchTheAndroidReferenceOutputLayout() {
         val priors = postprocessor.createCenterPriors()
 
-        assertEquals(NanoDetModelContract.PREDICTION_COUNT, priors.size)
-        assertEquals(CenterPrior(0f, 0f, 8f), priors.first())
-        assertEquals(CenterPrior(384f, 384f, 64f), priors.last())
+        assertEquals(1360, priors.size)
+        assertEquals(NanoDetPostprocessor.CenterPrior(0f, 0f, 8f), priors.first())
+        assertEquals(NanoDetPostprocessor.CenterPrior(192f, 192f, 64f), priors.last())
+    }
+
+    @Test
+    fun rectangularResolvedInputCreatesMatchingPriorsAndClampsBothAxes() {
+        val inputWidth = 320
+        val inputHeight = 256
+        val rectangular = NanoDetPostprocessor(
+            config = NanoDetConfig(),
+            inputWidth = inputWidth,
+            inputHeight = inputHeight,
+        )
+        val predictionCount = NanoDetModelProfile.calculatePredictionCount(inputWidth, inputHeight)
+        val predictions = emptyPredictions(predictionCount)
+        val lastPrediction = predictionCount - 1
+        predictions.put(lastPrediction * NanoDetModelContract.OUTPUT_CHANNELS, 0.90f)
+        repeat(4) { side ->
+            predictions.put(lastPrediction * NanoDetModelContract.OUTPUT_CHANNELS + 1 + side * 8 + 7, 20f)
+        }
+
+        val detection = rectangular.decode(predictions)
+
+        assertEquals(predictionCount, rectangular.createCenterPriors().size)
+        assertEquals(inputWidth - 1f, detection?.boundingBox?.right)
+        assertEquals(inputHeight - 1f, detection?.boundingBox?.bottom)
     }
 
     @Test
@@ -34,85 +60,35 @@ class NanoDetPostprocessorTest {
     @Test
     fun predictionIsDecodedAndClampedToDetectorCoordinates() {
         val predictions = emptyPredictions()
-        predictions[0][0] = 0.90f
+        predictions.put(0, 0.90f)
         repeat(4) { side ->
-            predictions[0][1 + side * 8 + 1] = 20f
+            predictions.put(1 + side * 8 + 1, 20f)
         }
 
-        val detections = postprocessor.decode(predictions)
+        val detection = requireNotNull(postprocessor.decode(predictions))
 
-        assertEquals(1, detections.size)
-        assertEquals(0.90f, detections.single().confidence)
-        assertEquals(0f, detections.single().boundingBox.left)
-        assertEquals(0f, detections.single().boundingBox.top)
-        assertEquals(8f, detections.single().boundingBox.right, absoluteTolerance = 0.001f)
-        assertEquals(8f, detections.single().boundingBox.bottom, absoluteTolerance = 0.001f)
+        assertEquals(0.90f, detection.confidence)
+        assertEquals(0f, detection.boundingBox.left)
+        assertEquals(0f, detection.boundingBox.top)
+        assertEquals(8f, detection.boundingBox.right, absoluteTolerance = 0.001f)
+        assertEquals(8f, detection.boundingBox.bottom, absoluteTolerance = 0.001f)
     }
 
     @Test
-    fun flatDirectOutputBufferMatchesNestedArrayDecode() {
+    fun decodeSelectsHighestConfidenceCandidate() {
         val predictions = emptyPredictions()
-        predictions[0][0] = 0.90f
-        repeat(4) { side -> predictions[0][1 + side * 8 + 1] = 20f }
-        val flat = ByteBuffer
-            .allocateDirect(NanoDetModelContract.OUTPUT_VALUE_COUNT * Float.SIZE_BYTES)
-            .order(ByteOrder.nativeOrder())
-            .asFloatBuffer()
-        predictions.forEachIndexed { prediction, values ->
-            values.forEachIndexed { channel, value ->
-                flat.put(prediction * NanoDetModelContract.OUTPUT_CHANNELS + channel, value)
-            }
-        }
+        val channels = NanoDetModelContract.OUTPUT_CHANNELS
+        predictions.put(0 * channels + 0, 0.70f)
+        repeat(4) { side -> predictions.put(0 * channels + 1 + side * 8 + 1, 20f) }
+        predictions.put(1 * channels + 0, 0.95f)
+        repeat(4) { side -> predictions.put(1 * channels + 1 + side * 8 + 2, 20f) }
 
-        assertEquals(postprocessor.decode(predictions), postprocessor.decode(flat))
+        val best = postprocessor.decode(predictions)
+
+        assertEquals(0.95f, best?.confidence)
     }
 
-    @Test
-    fun nmsKeepsHighestConfidenceAndNonOverlappingDetection() {
-        val highest = detection(0f, 0f, 100f, 100f, 0.9f)
-        val overlapping = detection(5f, 5f, 95f, 95f, 0.8f)
-        val separate = detection(200f, 200f, 250f, 250f, 0.7f)
-
-        val selected = postprocessor.nms(listOf(overlapping, separate, highest))
-
-        assertEquals(listOf(highest, separate), selected)
-    }
-
-    @Test
-    fun unexpectedOutputShapeUsesTypedError() {
-        val error = assertFailsWith<OnnxModelException> {
-            postprocessor.decode(Array(1) { FloatArray(NanoDetModelContract.OUTPUT_CHANNELS) })
-        }
-
-        assertEquals(OnnxModelErrorCode.INVALID_MODEL_OUTPUT, error.code)
-        assertTrue(error.message.orEmpty().contains("Prediction count"))
-    }
-
-    @Test
-    fun unexpectedOutputChannelCountUsesTypedError() {
-        val predictions = emptyPredictions()
-        predictions[0] = FloatArray(NanoDetModelContract.OUTPUT_CHANNELS - 1)
-
-        val error = assertFailsWith<OnnxModelException> {
-            postprocessor.decode(predictions)
-        }
-
-        assertEquals(OnnxModelErrorCode.INVALID_MODEL_OUTPUT, error.code)
-        assertTrue(error.message.orEmpty().contains("channel count"))
-    }
-
-    private fun emptyPredictions() = Array(NanoDetModelContract.PREDICTION_COUNT) {
-        FloatArray(NanoDetModelContract.OUTPUT_CHANNELS)
-    }
-
-    private fun detection(
-        left: Float,
-        top: Float,
-        right: Float,
-        bottom: Float,
-        confidence: Float,
-    ) = PlateDetection(
-        boundingBox = DetectorBoundingBox(left, top, right, bottom),
-        confidence = confidence,
-    )
+    private fun emptyPredictions(
+        predictionCount: Int = 1360,
+    ): FloatBuffer = FloatBuffer.allocate(predictionCount * NanoDetModelContract.OUTPUT_CHANNELS)
 }

@@ -6,6 +6,7 @@ import androidx.camera.core.ImageInfo
 import androidx.camera.core.ImageProxy
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import core.domain.camera.analysis.AndroidCameraFrame
+import core.domain.camera.analysis.nanodet.pipeline.NanoDetPreprocessor
 import java.lang.reflect.Proxy
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -26,7 +27,7 @@ class NanoDetRgbaNativePreprocessorInstrumentedTest {
         )
 
         val tensor = preprocess(frame)
-        val planeSize = NanoDetModelContract.INPUT_SIZE * NanoDetModelContract.INPUT_SIZE
+        val planeSize = 256 * 256
 
         assertEquals(normalize(56f, channel = 0), tensor[0], 0.0001f)
         assertEquals(normalize(34f, channel = 1), tensor[planeSize], 0.0001f)
@@ -35,14 +36,13 @@ class NanoDetRgbaNativePreprocessorInstrumentedTest {
 
     private fun preprocess(frame: AndroidCameraFrame): FloatArray {
         val output = ByteBuffer
-            .allocateDirect(NanoDetModelContract.INPUT_VALUE_COUNT * Float.SIZE_BYTES)
+            .allocateDirect(3 * 256 * 256 * Float.SIZE_BYTES)
             .order(ByteOrder.nativeOrder())
             .asFloatBuffer()
-        NanoDetPreprocessor().use { preprocessor ->
+        NanoDetPreprocessor(inputWidth = 256, inputHeight = 256).use { preprocessor ->
             preprocessor.preprocessInto(
                 frame = frame,
                 destination = output,
-                includePreview = false,
             )
         }
         return FloatArray(output.capacity()) { output.get(it) }

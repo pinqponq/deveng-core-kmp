@@ -909,25 +909,23 @@ elde edilir.
 
 İlk OCR sonucu doğrudan final kabul edilmemelidir.
 
-Önerilen baseline:
+Önerilen baseline, yalnızca confidence eşiğini geçen OCR sonuçlarını son üç geçerli okumadan oluşan kayan pencerede değerlendirmektir:
 
 ```text
 requiredMatchingReads = 2
+validationWindowSize = 3
+ocrConfidenceThreshold = 0.90f
 ```
 
 Akış:
 
 ```text
-Frame A
-↓
-34ABC123
-
-Frame B
-↓
-34ABC123
-
-MATCH
-↓
+Geçerli okuma 1 → 34ABC123
+Geçerli okuma 2 → 34ABC124
+Geçerli okuma 3 → 34ABC123
+                       ↓
+             34ABC123 = 2/3
+                       ↓
 SUCCESS
 ```
 
@@ -982,7 +980,7 @@ state = SUCCESS
 acceptNewFrames = false
 ```
 
-Bu sayede kamera kapanırken ikinci sonuç callback'i gelmez.
+Bu sayede aynı başarı için ikinci sonuç callback'i gelmez.
 
 ---
 
@@ -991,20 +989,15 @@ Bu sayede kamera kapanırken ikinci sonuç callback'i gelmez.
 ```text
 SUCCESS
 ↓
-ImageAnalysis analyzer clear
+Yeni inference'ları kabul etmeme
 ↓
-pending frame varsa release
+onResult(PlateRecognitionResult)
 ↓
-result callback
-↓
-camera screen close
-↓
-consumer application plate field update
+Consumer application kararı
 ```
 
-İhtiyaca göre CameraX tamamen unbind edilebilir veya yalnızca analysis durdurulabilir.
-
-Park scanner kullanımında ekran kapanacağı için camera use-case'lerinin tamamen unbind edilmesi uygundur.
+Kütüphane, doğrulanmış sonucu `onResult` ile iletir. Kamera use-case'lerini unbind etme,
+analizi kapatma, ekran değiştirme ve sonucu kullanma kararı consumer application'a aittir.
 
 ---
 
@@ -1297,6 +1290,8 @@ data class PlateRecognitionConfig(
     val detectionConfidenceThreshold: Float,
     val nmsThreshold: Float,
     val requiredMatchingReads: Int = 2,
+    val validationWindowSize: Int = 3,
+    val ocrConfidenceThreshold: Float = 0.90f,
     val bboxPaddingHorizontal: Float,
     val bboxPaddingVertical: Float,
     val maxAnalysisFps: Int? = null
@@ -1440,7 +1435,6 @@ ONNX tensor dispose edildi mi?
 OrtSession result dispose edildi mi?
 Camera executor kapanması gerekiyor mu?
 Analyzer history temizlendi mi?
-Camera use-case unbind edildi mi?
 ```
 
 Uzun testte RAM sürekli artmamalıdır.
@@ -1497,7 +1491,7 @@ app foreground
 permission denied
 permission granted
 rapid open/close
-successful auto-close
+successful result callback
 ```
 
 senaryoları test edilmelidir.
@@ -1665,18 +1659,6 @@ tek `PlateRecognitionAnalyzer` altında birleştirilmeli.
 
 ---
 
-## Faz 7 — Auto Complete Camera Flow
-
-Yapılacaklar:
-
-- Final result lock.
-- Analyzer stop.
-- Camera unbind/close.
-- Result callback.
-- Consumer app navigation.
-
----
-
 ## Faz 8 — Performance Baseline
 
 Henüz optimizasyon yapmadan ölç:
@@ -1825,7 +1807,7 @@ Thread tuning
 - [ ] OCR tensor hazır olduğunda source frame erken release ediliyor.
 - [ ] OCR sonucu doğrulanıyor.
 - [ ] Başarılı sonuçta yeni frame kabul edilmiyor.
-- [ ] Kamera otomatik kapanabiliyor.
+- [ ] Başarılı sonuç `onResult` ile consumer application'a iletiliyor.
 - [ ] Preview'da gözle görülür FPS kaybı yok.
 - [ ] Uzun kullanım testinde memory leak yok.
 - [ ] Gerçek POS/Android cihazında benchmark tamamlandı.
@@ -1861,15 +1843,15 @@ CameraX ImageAnalysis
         ↓
  fast-plate-ocr
         ↓
- Result Validation
+Result Validation
         ↓
       SUCCESS
         ↓
- Stop New Analysis
+ Yeni inference'ları kabul etmeme
         ↓
-  Close Camera
+onResult(PlateRecognitionResult)
         ↓
- Return Plate Result
+Consumer Application Decision
 ```
 
 Bu akışın temel performans prensipleri:
@@ -1925,7 +1907,7 @@ OCR
         ↓
 Validation
         ↓
-Auto Close
+onResult
         ↓
 Benchmark
         ↓

@@ -988,37 +988,35 @@ gibi debugging alanları eklenebilir.
 
 ## 28. OCR Sonucu Doğrulama
 
-İlk başarılı OCR sonucu geldiği anda kamerayı kapatmak yerine kısa bir doğrulama mekanizması bulunması önerilir.
+İlk başarılı OCR sonucu geldiği anda kamera ekranından ayrılmak yerine 2/3 rolling consensus doğrulaması uygulanır. Yalnızca minimum OCR confidence eşiğini geçen, boş olmayan sonuçlar geçerli okuma sayılır.
 
 Örneğin:
 
 ```text
-Frame A
-↓
-34ABC123
-
-Frame B
-↓
-34ABC123
-
-MATCH
-↓
-SUCCESS
+Geçerli okuma 1 → 34ABC123 (%95)
+Geçerli okuma 2 → 34ABC124 (%93)
+Geçerli okuma 3 → 34ABC123 (%97)
+                       ↓
+             34ABC123 = 2/3
+                       ↓
+                    SUCCESS
 ```
 
-Alternatif olarak confidence yeterince yüksekse tek sonuç kabul edilebilir.
+Eşik altındaki OCR sonucu pencereye eklenmez ve mevcut pencereyi sıfırlamaz. İlk üç geçerli okumada consensus oluşmazsa yeni geçerli okuma geldiğinde en eski sonuç çıkarılır ve son üç sonuç yeniden değerlendirilir.
 
-Bu davranış configurable olmalıdır.
+Pencere, gerekli eşleşme sayısı ve OCR confidence eşiği configurable olmalıdır.
 
 Örneğin:
 
 ```text
 requiredMatchingReads = 2
+validationWindowSize = 3
+ocrConfidenceThreshold = 0.90f
 ```
 
 gibi.
 
-Ama kullanıcı deneyimi açısından doğrulama süresinin gereksiz yere uzamaması gerekir.
+Doğrulanan sonucun confidence değeri, consensus'u destekleyen okumaların ortalamasıdır. Kullanıcı deneyimi açısından doğrulama süresinin gereksiz yere uzamaması gerekir.
 
 ---
 
@@ -1629,19 +1627,21 @@ OCR inference source frame'e ihtiyaç duymadan devam edecektir.
 
 Bir veya birkaç OCR sonucu üzerinden final plaka belirlenecektir.
 
-### Adım 14 — Kamera otomatik tamamlanacak
+### Adım 14 — Doğrulanmış sonuç consumer application'a iletilecek
 
-Final sonuç geldiğinde:
+Final sonuç üretildiğinde `onResult(PlateRecognitionResult)` çağrılacaktır. Analyzer, başarı
+kilidi etkinse yeni inference kabul etmez; kamera use-case'lerini kapatma, analizi unregister
+etme, ekran değiştirme ve sonucu kullanma consumer application'ın kararındadır.
 
 ```text
-Analyzer stop
+SUCCESS
 ↓
-Camera close
+onResult(PlateRecognitionResult)
 ↓
-Result callback
+Consumer Application Decision
 ```
 
-uygulanacaktır.
+Bu aşamada library, sonuç-sonrası uygulama davranışını yönetmez.
 
 ### Adım 15 — Buffer reuse uygulanacak
 
@@ -1737,10 +1737,10 @@ Başlangıçta sistemi gereksiz yere karmaşıklaştırmamak gerekir.
                 │                       │
                 └───────────────────────┤
                                         ▼
-                                  Camera Close
+                    onResult(PlateRecognitionResult)
                                         │
                                         ▼
-                                Application Result
+                        Consumer Application Decision
 ```
 
 ---
@@ -1789,7 +1789,8 @@ Sorumlu:
 ```text
 Eğitilmiş modelleri sağlamak
 Camera'yı açmak
-Final sonucu kullanmak
+`onResult` sonrası sonucu kullanmak
+Kendi uygulama akışına göre analizi veya kamerayı yönetmek
 ```
 
 ---

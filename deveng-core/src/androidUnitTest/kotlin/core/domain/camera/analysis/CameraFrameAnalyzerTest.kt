@@ -63,6 +63,30 @@ class CameraFrameAnalyzerTest {
     }
 
     @Test
+    fun analyzerCanReleaseFrameBeforeInferenceAndAdapterDoesNotCloseTwice() {
+        val released = CountDownLatch(1)
+        val recordingProxy = RecordingImageProxy()
+        val adapter = CameraFrameAnalyzerAdapter(
+            analyzer = object : CameraFrameAnalyzer<Unit> {
+                override suspend fun analyze(frame: AndroidCameraFrame) {
+                    frame.releaseAfterRead()
+                    released.countDown()
+                }
+            },
+            executor = { command -> command.run() },
+            onResult = {},
+            onError = { throw it },
+        )
+
+        adapter.analyze(recordingProxy.proxy)
+
+        assertTrue(released.await(2, TimeUnit.SECONDS))
+        assertTrue(recordingProxy.awaitClosed())
+        assertEquals(1, recordingProxy.closeCount)
+        adapter.close()
+    }
+
+    @Test
     fun analyzerFailureReportsErrorAndClosesFrame() {
         val executor = Executors.newSingleThreadExecutor()
         try {
@@ -130,6 +154,67 @@ class CameraFrameAnalyzerTest {
             assertEquals(1, firstProxy.closeCount)
 
             adapter.close()
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    @Test
+    fun optedInAnalyzerAcceptsNextFrameAfterEarlyReleaseAndDefersClose() {
+        val executor = Executors.newFixedThreadPool(2)
+        try {
+            val firstProxy = RecordingImageProxy()
+            val secondProxy = RecordingImageProxy()
+            val firstReleased = CountDownLatch(1)
+            val releaseFirstAnalysis = CountDownLatch(1)
+            val secondFinished = CountDownLatch(1)
+            val analyzerClosed = CountDownLatch(1)
+            val adapterClosed = CountDownLatch(1)
+            val callCount = AtomicInteger(0)
+            val closeCount = AtomicInteger(0)
+            val adapter = CameraFrameAnalyzerAdapter(
+                analyzer = object : CameraFrameAnalyzer<Unit> {
+                    override suspend fun analyze(frame: AndroidCameraFrame) {
+                        when (callCount.incrementAndGet()) {
+                            1 -> {
+                                frame.releaseAfterRead()
+                                firstReleased.countDown()
+                                releaseFirstAnalysis.await(2, TimeUnit.SECONDS)
+                            }
+                            2 -> secondFinished.countDown()
+                        }
+                    }
+
+                    override fun close() {
+                        closeCount.incrementAndGet()
+                        analyzerClosed.countDown()
+                    }
+                },
+                executor = executor,
+                onResult = {},
+                onError = { throw it },
+                allowConcurrentAfterFrameRelease = true,
+                onClosed = { adapterClosed.countDown() },
+            )
+
+            adapter.start()
+            adapter.analyze(firstProxy.proxy)
+            assertTrue(firstReleased.await(2, TimeUnit.SECONDS))
+            assertEquals(1, firstProxy.closeCount)
+
+            adapter.analyze(secondProxy.proxy)
+            assertTrue(secondFinished.await(2, TimeUnit.SECONDS))
+            assertTrue(secondProxy.awaitClosed())
+            assertEquals(2, callCount.get())
+
+            adapter.close()
+            assertEquals(0, closeCount.get())
+            releaseFirstAnalysis.countDown()
+            assertTrue(analyzerClosed.await(2, TimeUnit.SECONDS))
+            assertTrue(adapterClosed.await(2, TimeUnit.SECONDS))
+            assertEquals(1, closeCount.get())
+            assertEquals(1, firstProxy.closeCount)
+            assertEquals(1, secondProxy.closeCount)
         } finally {
             executor.shutdownNow()
         }
