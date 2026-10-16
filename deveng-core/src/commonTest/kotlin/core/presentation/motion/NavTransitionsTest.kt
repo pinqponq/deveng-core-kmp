@@ -23,9 +23,4 @@ class NavTransitionsTest {
         assertNotEquals(EnterTransition.None, NavTransitions.popEnter(isReduceMotionEnabled = false))
         assertNotEquals(ExitTransition.None, NavTransitions.popExit(isReduceMotionEnabled = false))
     }
-
-    @Test
-    fun navigationSlideOffset_returnsQuarterOfWidth() {
-        assertEquals(250, navigationSlideOffset(fullWidth = 1000))
-    }
 }

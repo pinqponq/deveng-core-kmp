@@ -24,6 +24,7 @@ actual fun rememberSystemReduceMotion(): Boolean {
         ) { _ ->
             isReduceMotionEnabled = UIAccessibilityIsReduceMotionEnabled()
         }
+
         onDispose { notificationCenter.removeObserver(reduceMotionObserver) }
     }
 

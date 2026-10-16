@@ -136,6 +136,7 @@ private fun MotionDemoHapticButtons() {
             containerColor = Color(0xFF2E7D32),
             onClick = { appHaptics.success() },
         )
+
         CustomButton(
             modifier = Modifier.weight(1f),
             text = "Warning haptic",
@@ -212,6 +213,7 @@ private fun MotionDemoTransitions(isReduceMotionEnabled: Boolean) {
                     currentPage--
                 },
             )
+
             CustomButton(
                 modifier = Modifier.weight(1f),
                 text = "Next",

@@ -14,6 +14,7 @@ import androidx.compose.ui.test.down
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.runDesktopComposeUiTest
+import androidx.compose.ui.test.up
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -28,6 +29,18 @@ class PressScaleTest {
         pressAndSettle()
 
         assertEquals(PRESSED_SIZE_PX, pressableWidthPx(), absoluteTolerance = SIZE_TOLERANCE_PX)
+        assertEquals(PRESSED_SIZE_PX, pressableHeightPx(), absoluteTolerance = SIZE_TOLERANCE_PX)
+    }
+
+    @Test
+    fun release_afterPress_returnsToFullSize() = runDesktopComposeUiTest {
+        setPressableContent(isReduceMotionEnabled = false)
+        pressAndSettle()
+
+        onNodeWithTag(PRESSABLE_TAG).performTouchInput { up() }
+        mainClock.advanceTimeBy(SETTLE_TIME_MILLIS)
+
+        assertEquals(FULL_SIZE_PX, pressableWidthPx(), absoluteTolerance = SIZE_TOLERANCE_PX)
     }
 
     @Test
@@ -61,6 +74,9 @@ class PressScaleTest {
 
     private fun ComposeUiTest.pressableWidthPx(): Float =
         onNodeWithTag(PRESSABLE_TAG, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.width / density.density
+
+    private fun ComposeUiTest.pressableHeightPx(): Float =
+        onNodeWithTag(PRESSABLE_TAG, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot.height / density.density
 
     private companion object {
         const val PRESSABLE_TAG = "pressable"

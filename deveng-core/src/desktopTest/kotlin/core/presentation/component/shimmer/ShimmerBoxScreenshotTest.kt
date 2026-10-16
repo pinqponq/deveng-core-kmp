@@ -44,6 +44,7 @@ class ShimmerBoxScreenshotTest {
                 }
             }
         }
+
         mainClock.advanceTimeByFrame()
         mainClock.advanceTimeBy(MotionTokens.SHIMMER_DURATION_MILLIS / 2L)
 

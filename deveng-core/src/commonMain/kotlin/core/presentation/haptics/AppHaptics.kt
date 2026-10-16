@@ -13,19 +13,25 @@ import androidx.compose.ui.platform.LocalHapticFeedback
  */
 class AppHaptics(private val hapticFeedback: HapticFeedback) {
 
+    /** Light feedback for a button or card tap. */
     fun tap() {
         hapticFeedback.performHapticFeedback(HapticFeedbackType.VirtualKey)
     }
 
+    /** Feedback for a completed action, e.g. a saved item. */
     fun success() {
         hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
     }
 
+    /** Feedback for a rejected or failed action. */
     fun warning() {
         hapticFeedback.performHapticFeedback(HapticFeedbackType.Reject)
     }
 }
 
+/**
+ * Remembers an [AppHaptics] bound to the current [LocalHapticFeedback].
+ */
 @Composable
 fun rememberAppHaptics(): AppHaptics {
     val hapticFeedback = LocalHapticFeedback.current

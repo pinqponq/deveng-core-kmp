@@ -1,19 +1,14 @@
 package core.presentation.component.shimmer
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import core.presentation.motion.shimmer
-import core.presentation.theme.AppTheme
 import core.presentation.theme.LocalComponentTheme
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * A rounded loading placeholder with a shimmer. Size it with [modifier] to match the content it
@@ -41,14 +36,3 @@ fun ShimmerBox(
     )
 }
 
-@Preview
-@Composable
-fun ShimmerBoxPreview() {
-    AppTheme {
-        ShimmerBox(
-            modifier = Modifier
-                .width(200.dp)
-                .height(20.dp)
-        )
-    }
-}

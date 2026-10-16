@@ -33,6 +33,20 @@ class NavTransitionsAnimationTest {
     }
 
     @Test
+    fun navigateForward_firstFrame_newScreenStartsAQuarterWidthFromEnd() = runDesktopComposeUiTest {
+        val navigation = setNavigationContent(isReduceMotionEnabled = false)
+
+        navigation.navigateTo(screen = SECOND_SCREEN, isBack = false)
+        mainClock.advanceTimeByFrame()
+
+        val containerWidthPx = onNodeWithTag(FIRST_SCREEN).fetchSemanticsNode().size.width
+        val quarterWidthPx = containerWidthPx * MotionTokens.NAVIGATION_SLIDE_FRACTION
+        val secondScreenLeftPx = screenLeftPx(SECOND_SCREEN)
+        assertTrue(secondScreenLeftPx <= quarterWidthPx + 1f)
+        assertTrue(secondScreenLeftPx > quarterWidthPx / 2)
+    }
+
+    @Test
     fun navigateBack_midTransition_previousScreenComesFromStartAndCurrentLeavesToEnd() = runDesktopComposeUiTest {
         val navigation = setNavigationContent(isReduceMotionEnabled = false)
 
@@ -86,6 +100,7 @@ class NavTransitionsAnimationTest {
                 }
             }
         }
+
         mainClock.advanceTimeByFrame()
         return navigation
     }

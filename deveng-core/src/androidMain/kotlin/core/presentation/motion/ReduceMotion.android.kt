@@ -28,11 +28,13 @@ actual fun rememberSystemReduceMotion(): Boolean {
                 isReduceMotionEnabled = readIsAnimatorDisabled(contentResolver)
             }
         }
+
         contentResolver.registerContentObserver(
             Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE),
             false,
             animatorScaleObserver
         )
+
         onDispose { contentResolver.unregisterContentObserver(animatorScaleObserver) }
     }
 
