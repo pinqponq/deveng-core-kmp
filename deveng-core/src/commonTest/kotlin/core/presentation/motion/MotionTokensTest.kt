@@ -30,7 +30,7 @@ class MotionTokensTest {
 
     @Test
     fun tweenOrSnap_withDefaults_usesMediumDurationAndStandardEasing() {
-        val tweenSpec = assertIs<TweenSpec<Float>>(MotionTokens.tweenOrSnap(isReduceMotionEnabled = false))
+        val tweenSpec = assertIs<TweenSpec<Float>>(MotionTokens.tweenOrSnap<Float>(isReduceMotionEnabled = false))
 
         assertEquals(MotionTokens.DURATION_MEDIUM_MILLIS, tweenSpec.durationMillis)
         assertEquals(MotionTokens.StandardEasing, tweenSpec.easing)

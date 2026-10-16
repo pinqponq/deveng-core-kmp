@@ -96,7 +96,7 @@ class NavTransitionsAnimationTest {
     }
 
     private fun ComposeUiTest.screenLeftPx(screen: String): Float =
-        onNodeWithTag(screen).fetchSemanticsNode().boundsInRoot.left
+        onNodeWithTag(screen).fetchSemanticsNode().positionInRoot.x
 
     private companion object {
         const val FIRST_SCREEN = "first"
