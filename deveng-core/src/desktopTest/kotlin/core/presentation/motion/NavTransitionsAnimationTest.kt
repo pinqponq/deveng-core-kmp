@@ -42,7 +42,7 @@ class NavTransitionsAnimationTest {
         val containerWidthPx = onNodeWithTag(FIRST_SCREEN).fetchSemanticsNode().size.width
         val quarterWidthPx = containerWidthPx * MotionTokens.NAVIGATION_SLIDE_FRACTION
         val secondScreenLeftPx = screenLeftPx(SECOND_SCREEN)
-        assertTrue(secondScreenLeftPx <= quarterWidthPx + 1f)
+        assertTrue(secondScreenLeftPx <= quarterWidthPx + POSITION_TOLERANCE_PX)
         assertTrue(secondScreenLeftPx > quarterWidthPx / 2)
     }
 
@@ -117,5 +117,6 @@ class NavTransitionsAnimationTest {
         const val FIRST_SCREEN = "first"
         const val SECOND_SCREEN = "second"
         const val CONTAINER_SIZE_DP = 200
+        const val POSITION_TOLERANCE_PX = 1f
     }
 }

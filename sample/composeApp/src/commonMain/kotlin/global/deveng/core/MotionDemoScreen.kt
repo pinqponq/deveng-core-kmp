@@ -51,7 +51,7 @@ private const val MOTION_DEMO_SHIMMER_ROW_COUNT = 3
 
 /**
  * Playground for core motion: press feedback, shimmer placeholders, screen transitions and haptics.
- * The switch overrides the system reduce-motion setting for this screen.
+ * The switch forces reduce motion on for this screen, on top of the system setting.
  */
 @Composable
 internal fun MotionDemoScreen(onBack: () -> Unit) {

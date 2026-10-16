@@ -61,7 +61,7 @@ class ShimmerBoxTest {
     fun shimmerBox_withoutColors_usesThemeColorsAndCornerRadius() = runDesktopComposeUiTest {
         val shimmerTheme = ShimmerTheme(baseColor = BASE_COLOR, highlightColor = HIGHLIGHT_COLOR, cornerRadius = LARGE_CORNER_RADIUS)
         setContent {
-            CompositionLocalProvider(LocalDensity provides Density(density = 1f)) {
+            CompositionLocalProvider(LocalDensity provides Density(density = TEST_DENSITY)) {
                 AppTheme(
                     darkTheme = false,
                     componentTheme = ComponentTheme(shimmer = shimmerTheme),
@@ -80,7 +80,7 @@ class ShimmerBoxTest {
         mainClock.autoAdvance = false
         setContent {
             CompositionLocalProvider(
-                LocalDensity provides Density(density = 1f),
+                LocalDensity provides Density(density = TEST_DENSITY),
                 LocalReduceMotion provides isReduceMotionEnabled
             ) {
                 ShimmerBox(
@@ -127,5 +127,6 @@ class ShimmerBoxTest {
         const val EDGE_TOLERANCE = 0.2f
         const val ALPHA_TOLERANCE = 0.01f
         const val TRANSPARENT_ALPHA = 0f
+        const val TEST_DENSITY = 1f
     }
 }
