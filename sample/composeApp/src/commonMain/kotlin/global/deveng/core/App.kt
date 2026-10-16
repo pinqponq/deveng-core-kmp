@@ -362,7 +362,9 @@ internal fun App() {
         var showMediaViewerScreen by remember { mutableStateOf(false) }
         var showNavigationBarScreen by remember { mutableStateOf(false) }
         var showServerDrivenScreen by remember { mutableStateOf(false) }
+        var showMotionScreen by remember { mutableStateOf(false) }
         when {
+            showMotionScreen -> MotionDemoScreen(onBack = { showMotionScreen = false })
             showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
             showMediaViewerScreen -> MediaViewerDemoScreen(onBack = { showMediaViewerScreen = false })
             showNavigationBarScreen -> NavigationBarDemoScreen(onBack = { showNavigationBarScreen = false })
@@ -378,6 +380,7 @@ internal fun App() {
                 onOpenMediaViewer = { showMediaViewerScreen = true },
                 onOpenNavigationBar = { showNavigationBarScreen = true },
                 onOpenServerDriven = { showServerDrivenScreen = true },
+                onOpenMotion = { showMotionScreen = true },
             )
         }
     }
@@ -642,6 +645,7 @@ private fun ThemingDemo(
     onOpenMediaViewer: () -> Unit = {},
     onOpenNavigationBar: () -> Unit = {},
     onOpenServerDriven: () -> Unit = {},
+    onOpenMotion: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1044,6 +1048,12 @@ private fun ThemingDemo(
                             text = "Open Server-driven UI Demo",
                             containerColor = Color(0xFF00695C),
                             onClick = onOpenServerDriven
+                        )
+
+                        CustomButton(
+                            text = "Open Motion Demo",
+                            containerColor = Color(0xFFAD1457),
+                            onClick = onOpenMotion
                         )
 
                         RatingRow(
