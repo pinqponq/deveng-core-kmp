@@ -318,6 +318,35 @@ AppTheme(
 
 When you use `overlayContent`, prefer a backdrop sized to your logo's natural aspect ratio (a rounded pill or circle) rather than filling the whole overlay square — this hides only the QR pixels actually under the logo and reads cleaner. See the sample app's `QrGeneratorDemoScreen` for a worked example.
 
+### Motion, press feedback, shimmer and haptics
+
+Package `core.presentation.motion` (plus `core.presentation.haptics` and `core.presentation.component.shimmer`):
+
+| Need | Use |
+|------|-----|
+| Shared durations, easings, springs | `MotionTokens` (`DURATION_SHORT_MILLIS` / `MEDIUM` / `LONG`, `StandardEasing`, `EmphasizedDecelerateEasing`, `defaultSpring()`, `bouncySpring()`, `pressSpring()`, `tweenOrSnap(isReduceMotionEnabled)`) |
+| Scale down slightly while pressed | `Modifier.pressScale(interactionSource)`; pass the same `interactionSource` to `clickable` |
+| Loading placeholder | `ShimmerBox(modifier)` or `Modifier.shimmer()`; colors and corner radius from `ComponentTheme.shimmer` (`ShimmerTheme`) |
+| Screen transitions | `NavTransitions.enter` / `exit` / `popEnter` / `popExit(isReduceMotionEnabled)` for NavHost or `AnimatedContent` |
+| System reduce-motion setting | `LocalReduceMotion` (provided by `AppTheme`, override with `AppTheme(reduceMotion = …)`); Android: "Remove animations", iOS: Reduce Motion, desktop/web: false |
+| Haptics | `rememberAppHaptics()` → `tap()`, `success()`, `warning()` (Compose `VirtualKey` / `Confirm` / `Reject`) |
+
+Everything that animates respects `LocalReduceMotion`: `pressScale` stays at full size, `shimmer` shows the static base color, `NavTransitions` return no transition.
+
+```kotlin
+val isReduceMotionEnabled = LocalReduceMotion.current
+NavHost(
+    navController = navController,
+    startDestination = Home,
+    enterTransition = { NavTransitions.enter(isReduceMotionEnabled) },
+    exitTransition = { NavTransitions.exit(isReduceMotionEnabled) },
+    popEnterTransition = { NavTransitions.popEnter(isReduceMotionEnabled) },
+    popExitTransition = { NavTransitions.popExit(isReduceMotionEnabled) },
+) { /* … */ }
+```
+
+The sample app's **Motion Demo** screen shows all of them.
+
 ### Best Practices (UI)
 
 1. **Define theme once** — Create `ComponentTheme` at app level.
