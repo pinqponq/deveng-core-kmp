@@ -150,9 +150,9 @@ android {
 }
 
 dependencies {
-    androidTestImplementation("androidx.test:runner:1.6.2")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("junit:junit:4.13.2")
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(kotlin("test-junit"))
 }
 

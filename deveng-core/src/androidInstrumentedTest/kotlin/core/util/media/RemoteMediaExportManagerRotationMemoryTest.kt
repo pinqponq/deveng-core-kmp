@@ -18,7 +18,8 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlinx.coroutines.runBlocking
+import kotlin.test.assertSame
+import kotlinx.coroutines.test.runTest
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
@@ -27,6 +28,7 @@ class RemoteMediaExportManagerRotationMemoryTest {
     private val savedFileName = "rotation_memory_test_${System.currentTimeMillis()}.jpg"
     private lateinit var sourcePhoto: File
     private var heapBallast: List<ByteArray> = emptyList()
+    private var photoServer: ServerSocket? = null
 
     @BeforeTest
     fun setUp() {
@@ -37,25 +39,24 @@ class RemoteMediaExportManagerRotationMemoryTest {
     @AfterTest
     fun tearDown() {
         heapBallast = emptyList()
+        photoServer?.close()
         sourcePhoto.delete()
         findSavedPhotoUri()?.let { savedPhotoUri -> context.contentResolver.delete(savedPhotoUri, null, null) }
     }
 
     @Test
-    fun saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto() {
+    fun saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto() = runTest {
         heapBallast = fillHeapUntilFree(bytes = FREE_HEAP_BYTES)
 
-        val savedCount = runBlocking {
-            RemoteMediaExportManager(context).saveMultipleFilesFromUrls(
-                listOf(
-                    RemoteMediaFile(
-                        fileUrl = servePhotoOnce(sourcePhoto),
-                        fileName = savedFileName,
-                        mimeType = JPEG_MIME_TYPE,
-                    ),
+        val savedCount = RemoteMediaExportManager(context).saveMultipleFilesFromUrls(
+            listOf(
+                RemoteMediaFile(
+                    fileUrl = servePhotoOnce(sourcePhoto),
+                    fileName = savedFileName,
+                    mimeType = JPEG_MIME_TYPE,
                 ),
-            )
-        }
+            ),
+        )
 
         assertEquals(1, savedCount)
         val savedPhotoUri = checkNotNull(findSavedPhotoUri())
@@ -68,6 +69,16 @@ class RemoteMediaExportManagerRotationMemoryTest {
         }
         assertEquals(PHOTO_HEIGHT to PHOTO_WIDTH, savedPhotoBounds.outWidth to savedPhotoBounds.outHeight)
         assertEquals(ExifInterface.ORIENTATION_NORMAL, savedOrientation)
+    }
+
+    @Test
+    fun imageBytesWithNormalOrientation_whenRotatedPhotoDoesNotFitInHeap_returnsOriginalBytes() {
+        val rotatedPhotoBytes = sourcePhoto.readBytes()
+        heapBallast = fillHeapUntilFree(bytes = TOO_LITTLE_FREE_HEAP_BYTES)
+
+        val normalizedPhotoBytes = PhotoSaveUtils.imageBytesWithNormalOrientation(rotatedPhotoBytes)
+
+        assertSame(rotatedPhotoBytes, normalizedPhotoBytes)
     }
 
     private fun createRotatedJpeg(): File {
@@ -104,7 +115,7 @@ class RemoteMediaExportManagerRotationMemoryTest {
     }
 
     private fun servePhotoOnce(photo: File): String {
-        val server = ServerSocket(0)
+        val server = ServerSocket(0).also { photoServer = it }
         thread(name = "rotation-memory-test-server") {
             server.use {
                 server.accept().use { socket ->
@@ -147,5 +158,8 @@ class RemoteMediaExportManagerRotationMemoryTest {
         // Measured on a 192 MB heap (rindle-cmp#475): rotating this photo peaked at 133 MB above the
         // app's own heap before the fix and fits well under 110 MB after it.
         const val FREE_HEAP_BYTES = 110L * 1_048_576
+
+        // Less than the 44 MB the upright copy of this photo needs as one array.
+        const val TOO_LITTLE_FREE_HEAP_BYTES = 30L * 1_048_576
     }
 }
