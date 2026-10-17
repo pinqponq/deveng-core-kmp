@@ -9,7 +9,6 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Log
-import java.io.ByteArrayOutputStream
 import java.io.File
 
 actual object PhotoSaveUtils {
@@ -31,6 +30,9 @@ actual object PhotoSaveUtils {
             normalizeOrientationInternal(imageBytes)
         } catch (e: Exception) {
             Log.w(ExifExportDiagnostics.LOG_TAG, "orientationNormalize FAILED ${e.message}", e)
+            imageBytes
+        } catch (e: OutOfMemoryError) {
+            Log.w(ExifExportDiagnostics.LOG_TAG, "orientationNormalize SKIP outOfMemory ${e.message}", e)
             imageBytes
         }.also { result ->
             Log.d(
@@ -67,26 +69,25 @@ actual object PhotoSaveUtils {
             var bitmap = BitmapFactory.decodeFile(tempFile.absolutePath, null) ?: return imageBytes
             try {
                 bitmap = applyExifOrientationToBitmap(bitmap, orientation)
-                val out = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
-                var result = out.toByteArray()
                 val normalizedFile = File.createTempFile("exif_orient_out", ".jpg")
-                try {
-                    normalizedFile.writeBytes(result)
+                val normalizedBytes = try {
+                    normalizedFile.outputStream().use { outputStream ->
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+                    }
                     val outExif = ExifInterface(normalizedFile.absolutePath)
                     outExif.setAttribute(
                         ExifInterface.TAG_ORIENTATION,
                         ExifInterface.ORIENTATION_NORMAL.toString(),
                     )
                     outExif.saveAttributes()
-                    result = normalizedFile.readBytes()
+                    normalizedFile.readBytes()
                 } finally {
                     normalizedFile.delete()
                 }
                 if (gps != null) {
-                    result = addLocationExif(result, gps.first, gps.second)
+                    return addLocationExif(normalizedBytes, gps.first, gps.second)
                 }
-                return result
+                return normalizedBytes
             } finally {
                 if (!bitmap.isRecycled) bitmap.recycle()
             }
