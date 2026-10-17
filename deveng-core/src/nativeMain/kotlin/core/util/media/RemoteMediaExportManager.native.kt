@@ -10,6 +10,7 @@ import platform.Foundation.NSCondition
 import platform.Foundation.NSDate
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHTTPURLResponse
+import platform.Foundation.NSLog
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLSession
@@ -72,7 +73,7 @@ actual class RemoteMediaExportManager {
         return@withContext runCatching {
             val url = NSURL.URLWithString(fileUrl) ?: return@runCatching false
             val tempFile = downloadToTempFile(url, fileName) ?: return@runCatching false
-            saveToPhotos(tempFile, mimeType)
+            saveToPhotosAndDeleteTempFile(tempFile, mimeType)
         }.getOrDefault(false)
     }
 
@@ -85,7 +86,7 @@ actual class RemoteMediaExportManager {
                 if (remoteFile.fileUrl.isBlank()) return@forEach
                 val url = NSURL.URLWithString(remoteFile.fileUrl) ?: return@forEach
                 val tempFile = downloadToTempFile(url, remoteFile.fileName) ?: return@forEach
-                if (saveToPhotos(tempFile, remoteFile.mimeType)) count++
+                if (saveToPhotosAndDeleteTempFile(tempFile, remoteFile.mimeType)) count++
             }
             count
         }.getOrDefault(0)
@@ -133,6 +134,17 @@ actual class RemoteMediaExportManager {
     private suspend fun presentShareSheet(fileUrls: List<NSURL>): Boolean =
         withContext(Dispatchers.Main) {
             IosShareSheetPresenter.present(activityItems = fileUrls)
+        }
+
+    @OptIn(ExperimentalForeignApi::class)
+    private fun saveToPhotosAndDeleteTempFile(tempFile: NSURL, mimeType: String): Boolean =
+        try {
+            saveToPhotos(tempFile, mimeType)
+        } finally {
+            val isTempFileRemoved = NSFileManager.defaultManager.removeItemAtURL(tempFile, error = null)
+            if (!isTempFileRemoved) {
+                NSLog("RemoteMediaExportManager: could not remove temp file ${tempFile.lastPathComponent}")
+            }
         }
 
     private fun saveToPhotos(fileUrl: NSURL, mimeType: String): Boolean {
