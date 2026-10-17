@@ -1,0 +1,90 @@
+
+core.util.media.RemoteMediaExportManagerRotationMemoryTest:
+Error in saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(core.util.media.RemoteMediaExportManagerRotationMemoryTest):
+java.lang.AssertionError: expected:<1> but was:<0>
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:120)
+	at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+	at kotlin.test.AssertionsKt.assertEquals(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)
+	at kotlin.test.AssertionsKt.assertEquals$default(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at core.util.media.RemoteMediaExportManagerRotationMemoryTest$saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto$1.invokeSuspend(RemoteMediaExportManagerRotationMemoryTest.kt:61)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.test.TestDispatcher.processEvent$kotlinx_coroutines_test(TestDispatcher.kt:24)
+	at kotlinx.coroutines.test.TestCoroutineScheduler.tryRunNextTaskUnless$kotlinx_coroutines_test(TestCoroutineScheduler.kt:99)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$workRunner$1.invokeSuspend(TestBuilders.kt:326)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at kotlinx.coroutines.test.TestBuildersJvmKt.createTestResult(TestBuildersJvm.kt:10)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:309)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:167)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:159)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0$default(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at core.util.media.RemoteMediaExportManagerRotationMemoryTest.saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(RemoteMediaExportManagerRotationMemoryTest.kt:48)
+
+Error in imageBytesWithNormalOrientation_whenRotatedPhotoDoesNotFitInHeap_returnsOriginalBytes(core.util.media.RemoteMediaExportManagerRotationMemoryTest):
+java.lang.OutOfMemoryError: Failed to allocate a 16777232 byte allocation with 8388608 free bytes and 12MB until OOM, target footprint 197033568, growth limit 201326592
+	at java.util.Arrays.copyOf(Arrays.java:4276)
+	at java.io.ByteArrayOutputStream.toByteArray(ByteArrayOutputStream.java:211)
+	at core.util.image.PhotoSaveUtils.normalizeOrientationInternal(PhotoSaveUtils.android.kt:72)
+	at core.util.image.PhotoSaveUtils.imageBytesWithNormalOrientation(PhotoSaveUtils.android.kt:31)
+	at core.util.media.RemoteMediaExportManagerRotationMemoryTest.imageBytesWithNormalOrientation_whenRotatedPhotoDoesNotFitInHeap_returnsOriginalBytes(RemoteMediaExportManagerRotationMemoryTest.kt:79)
+
+
+Time: 4.669
+There were 2 failures:
+1) saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(core.util.media.RemoteMediaExportManagerRotationMemoryTest)
+java.lang.AssertionError: expected:<1> but was:<0>
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:120)
+	at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+	at kotlin.test.AssertionsKt.assertEquals(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)
+	at kotlin.test.AssertionsKt.assertEquals$default(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at core.util.media.RemoteMediaExportManagerRotationMemoryTest$saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto$1.invokeSuspend(RemoteMediaExportManagerRotationMemoryTest.kt:61)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.test.TestDispatcher.processEvent$kotlinx_coroutines_test(TestDispatcher.kt:24)
+	at kotlinx.coroutines.test.TestCoroutineScheduler.tryRunNextTaskUnless$kotlinx_coroutines_test(TestCoroutineScheduler.kt:99)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt$runTest$2$1$workRunner$1.invokeSuspend(TestBuilders.kt:326)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at kotlinx.coroutines.test.TestBuildersJvmKt.createTestResult(TestBuildersJvm.kt:10)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:309)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0(TestBuilders.kt:167)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at kotlinx.coroutines.test.TestBuildersKt__TestBuildersKt.runTest-8Mi8wO0$default(TestBuilders.kt:159)
+	at kotlinx.coroutines.test.TestBuildersKt.runTest-8Mi8wO0$default(dex-id-97449138a6f561fce791deffad2bba0d402ed776:1)
+	at core.util.media.RemoteMediaExportManagerRotationMemoryTest.saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(RemoteMediaExportManagerRotationMemoryTest.kt:48)
+2) imageBytesWithNormalOrientation_whenRotatedPhotoDoesNotFitInHeap_returnsOriginalBytes(core.util.media.RemoteMediaExportManagerRotationMemoryTest)
+java.lang.OutOfMemoryError: Failed to allocate a 16777232 byte allocation with 8388608 free bytes and 12MB until OOM, target footprint 197033568, growth limit 201326592
+	at java.util.Arrays.copyOf(Arrays.java:4276)
+	at java.io.ByteArrayOutputStream.toByteArray(ByteArrayOutputStream.java:211)
+	at core.util.image.PhotoSaveUtils.normalizeOrientationInternal(PhotoSaveUtils.android.kt:72)
+	at core.util.image.PhotoSaveUtils.imageBytesWithNormalOrientation(PhotoSaveUtils.android.kt:31)
+	at core.util.media.RemoteMediaExportManagerRotationMemoryTest.imageBytesWithNormalOrientation_whenRotatedPhotoDoesNotFitInHeap_returnsOriginalBytes(RemoteMediaExportManagerRotationMemoryTest.kt:79)
+
+FAILURES!!!
+Tests run: 2,  Failures: 2
+
+

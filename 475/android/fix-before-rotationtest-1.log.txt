@@ -1,0 +1,98 @@
+10-18 01:20:27.097   486   486 I adbd    : adbd service requested 'shell,v2,raw:am instrument -w -r -e class core.util.media.RemoteMediaExportManagerRotationMemoryTest global.deveng.test/androidx.test.runner.AndroidJUnitRunner'
+10-18 01:20:30.690  4187  4207 I TestRunner: run started: 1 tests
+10-18 01:20:30.691  4187  4207 I TestRunner: started: saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(core.util.media.RemoteMediaExportManagerRotationMemoryTest)
+10-18 01:20:30.692  4187  4207 W TraceRunListener: Span name exceeds limits: RemoteMediaExportManagerRotationMemoryTest#saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto
+10-18 01:20:31.032   290   290 I lowmemorykiller: Kill 'com.google.android.apps.photos' (2540), uid 10171, oom_score_adj 965 to free 49872kB rss, 16592kB anon rss, 56480kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached and swap is low (109808kB < 153152kB)
+10-18 01:20:31.115   290   290 I lowmemorykiller: Kill 'com.google.android.googlequicksearchbox:googleapp' (2088), uid 10158, oom_score_adj 965 to free 53232kB rss, 17104kB anon rss, 57328kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached and swap is low (116176kB < 153152kB)
+10-18 01:20:31.161   290   290 I lowmemorykiller: Kill 'com.google.android.rkpdapp' (3052), uid 10220, oom_score_adj 955 to free 48368kB rss, 16224kB anon rss, 41632kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached and swap is low (137776kB < 153152kB)
+10-18 01:20:31.179   290   290 I lowmemorykiller: Kill 'com.google.android.documentsui' (31121), uid 10109, oom_score_adj 955 to free 44800kB rss, 16016kB anon rss, 42352kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached and swap is low (141280kB < 153152kB)
+10-18 01:20:31.194   290   290 I lowmemorykiller: Kill 'com.android.keychain' (3005), uid 1000, oom_score_adj 945 to free 50592kB rss, 17040kB anon rss, 39792kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached and swap is low (144864kB < 153152kB)
+10-18 01:20:31.215   290   290 I lowmemorykiller: Kill 'android.process.media' (3067), uid 10110, oom_score_adj 945 to free 50288kB rss, 16384kB anon rss, 40704kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached and swap is low (149296kB < 153152kB)
+10-18 01:20:32.085  4187  4228 D RindleGalleryExport: saveBulk item fileName=rotation_memory_test_1792275630694.jpg mime=image/jpeg url=127.0.0.1/photo.jpg
+10-18 01:20:32.199  4187  4228 D RindleGalleryExport: saveBulk DOWNLOADED fileName=rotation_memory_test_1792275630694.jpg size=27703847 jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27703847 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 01:20:32.199  4187  4228 D RindleGalleryExport: normalize CALL imageBytesWithNormalOrientation fileName=rotation_memory_test_1792275630694.jpg
+10-18 01:20:32.210  4187  4228 D RindleGalleryExport: orientationNormalize START jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27703847 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 01:20:32.220  4187  4228 D RindleGalleryExport: orientationNormalize APPLY orientation=6
+10-18 01:20:32.385   290   290 I lowmemorykiller: Kill 'com.android.chrome' (16574), uid 10162, oom_score_adj 940 to free 44128kB rss, 15456kB anon rss, 64928kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached and swap is low (29936kB < 153152kB)
+10-18 01:20:32.514   290   290 I lowmemorykiller: Kill 'com.google.android.googlequicksearchbox:search' (3786), uid 10158, oom_score_adj 935 to free 65744kB rss, 17840kB anon rss, 59808kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached and swap is low (38160kB < 153152kB)
+10-18 01:20:32.531   290   290 I lowmemorykiller: Kill 'com.google.android.partnersetup' (3783), uid 10152, oom_score_adj 935 to free 59392kB rss, 17056kB anon rss, 43904kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached and swap is low (61136kB < 153152kB)
+10-18 01:20:32.555   290   296 W lowmemorykiller: Failed to open /proc/3786/task; errno=2: process pid(3786) might have died
+10-18 01:20:32.556   290   290 I lowmemorykiller: Kill 'io.deveng.core.androidApp' (8527), uid 10285, oom_score_adj 930 to free 36096kB rss, 11056kB anon rss, 118464kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached and swap is low (42688kB < 153152kB)
+10-18 01:20:32.660   290   290 I lowmemorykiller: Kill 'com.android.settings' (4005), uid 1000, oom_score_adj 925 to free 60448kB rss, 17168kB anon rss, 45344kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: min watermark is breached even after kill
+10-18 01:20:32.669   290   290 I lowmemorykiller: Kill 'android.process.acore' (3969), uid 10102, oom_score_adj 925 to free 60272kB rss, 17040kB anon rss, 45472kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: min watermark is breached even after kill
+10-18 01:20:32.700   290   296 W lowmemorykiller: Failed to open /proc/4005/task; errno=2: process pid(4005) might have died
+10-18 01:20:33.773  4187  4228 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 67108876 byte allocation with 8323072 free bytes and 51MB until OOM, target footprint 156170208, growth limit 201326592" (VmSize 17460736 kB)
+10-18 01:20:33.780  4187  4228 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 67108880 byte allocation with 8388608 free bytes and 51MB until OOM, target footprint 156170208, growth limit 201326592" (VmSize 17460736 kB)
+10-18 01:20:33.782  4187  4228 W System.err: java.lang.OutOfMemoryError: Failed to allocate a 67108880 byte allocation with 8388608 free bytes and 51MB until OOM, target footprint 156170208, growth limit 201326592
+10-18 01:20:33.785  4187  4228 W System.err: 	at core.util.media.RemoteMediaExportManager.normalizeImageBytesForExport(RemoteMediaExportManager.android.kt:311)
+10-18 01:20:33.785  4187  4228 W System.err: 	at core.util.media.RemoteMediaExportManager.access$normalizeImageBytesForExport(RemoteMediaExportManager.android.kt:22)
+10-18 01:20:33.785  4187  4228 W System.err: 	at core.util.media.RemoteMediaExportManager$saveMultipleFilesFromUrls$2.invokeSuspend(RemoteMediaExportManager.android.kt:164)
+10-18 01:20:33.793  4187  4228 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 33554444 byte allocation with 8388608 free bytes and 51MB until OOM, target footprint 156170208, growth limit 201326592" (VmSize 17320000 kB)
+10-18 01:20:34.077  4187  4228 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 33554552 byte allocation with 8388608 free bytes and 19MB until OOM, target footprint 189724640, growth limit 201326592" (VmSize 17320560 kB)
+10-18 01:20:34.108  4187  4228 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 33554552 byte allocation with 8388608 free bytes and 19MB until OOM, target footprint 189724640, growth limit 201326592" (VmSize 17320560 kB)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: saveMultipleFilesFromUrls failed count=1
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: java.lang.OutOfMemoryError: Failed to allocate a 33554552 byte allocation with 8388608 free bytes and 19MB until OOM, target footprint 189724640, growth limit 201326592
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at kotlin.io.FilesKt__FileReadWriteKt.readBytes(FileReadWrite.kt:78)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at core.util.image.PhotoSaveUtils.normalizeOrientationInternal(PhotoSaveUtils.android.kt:82)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at core.util.image.PhotoSaveUtils.imageBytesWithNormalOrientation(PhotoSaveUtils.android.kt:31)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at core.util.media.RemoteMediaExportManager.normalizeImageBytesForExport(RemoteMediaExportManager.android.kt:311)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at core.util.media.RemoteMediaExportManager.access$normalizeImageBytesForExport(RemoteMediaExportManager.android.kt:22)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at core.util.media.RemoteMediaExportManager$saveMultipleFilesFromUrls$2.invokeSuspend(RemoteMediaExportManager.android.kt:164)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+10-18 01:20:34.114  4187  4228 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+10-18 01:20:34.257  4187  4207 E TestRunner: failed: saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(core.util.media.RemoteMediaExportManagerRotationMemoryTest)
+10-18 01:20:34.258  4187  4207 E TestRunner: ----- begin exception -----
+10-18 01:20:34.258  4187  4207 E TestRunner: java.lang.AssertionError: expected:<1> but was:<0>
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.Assert.fail(Assert.java:89)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.Assert.failNotEquals(Assert.java:835)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.Assert.assertEquals(Assert.java:120)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at kotlin.test.AssertionsKt.assertEquals(dex-id-f1cc3fbe2f22438f3b303890a0fcc16b19fa9198:1)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at kotlin.test.AssertionsKt.assertEquals$default(dex-id-f1cc3fbe2f22438f3b303890a0fcc16b19fa9198:1)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at core.util.media.RemoteMediaExportManagerRotationMemoryTest.saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(RemoteMediaExportManagerRotationMemoryTest.kt:60)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at java.lang.reflect.Method.invoke(Native Method)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at androidx.test.internal.runner.junit4.statement.RunBefores.evaluate(RunBefores.java:80)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at androidx.test.internal.runner.junit4.statement.RunAfters.evaluate(RunAfters.java:61)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.Suite.runChild(Suite.java:128)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.Suite.runChild(Suite.java:27)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+10-18 01:20:34.258  4187  4207 E TestRunner: 	at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2637)
+10-18 01:20:34.258  4187  4207 E TestRunner: ----- end exception -----
+10-18 01:20:34.259  4187  4207 I TestRunner: finished: saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(core.util.media.RemoteMediaExportManagerRotationMemoryTest)
+10-18 01:20:34.264  4187  4207 I TestRunner: run finished: 1 tests, 1 failed, 0 ignored

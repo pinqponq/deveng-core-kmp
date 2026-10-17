@@ -1,0 +1,41 @@
+10-18 01:34:09.708  5384  7082 D RindleGalleryExport: saveBulk item fileName=rindle_4210.jpg mime=image/jpeg url=aa89827adfa7b3f1ddd4e85d9a5a5c1b.r2.cloudflarestorage.com/rindle-media/couples/6/photos/4210.jpg
+10-18 01:34:11.485  5384  7082 D RindleGalleryExport: saveBulk DOWNLOADED fileName=rindle_4210.jpg size=307722 jpeg SOF=0xc0 stored=828x1792 ~1.48MP bytes=307722 exif orientation=1 (NORMAL) stored=828x1792 display~=828x1792 aspect~=portrait~tallerThan9:16 hasGps=false
+10-18 01:34:11.485  5384  7082 D RindleGalleryExport: normalize CALL imageBytesWithNormalOrientation fileName=rindle_4210.jpg
+10-18 01:34:11.499  5384  7082 D RindleGalleryExport: orientationNormalize START jpeg SOF=0xc0 stored=828x1792 ~1.48MP bytes=307722 exif orientation=1 (NORMAL) stored=828x1792 display~=828x1792 aspect~=portrait~tallerThan9:16 hasGps=false
+10-18 01:34:11.504  5384  7082 D RindleGalleryExport: orientationNormalize SKIP alreadyNormal orientation=1
+10-18 01:34:11.507  5384  7082 D RindleGalleryExport: orientationNormalize END bytesChanged refSame=true contentSame=false before=307722 after=307722 jpeg SOF=0xc0 stored=828x1792 ~1.48MP bytes=307722 exif orientation=1 (NORMAL) stored=828x1792 display~=828x1792 aspect~=portrait~tallerThan9:16 hasGps=false
+10-18 01:34:11.508  5384  7082 D RindleGalleryExport: mediaStore INSERT fileName=rindle_4210.jpg mimeType=image/jpeg size=307722 jpeg SOF=0xc0 stored=828x1792 ~1.48MP bytes=307722 exif orientation=1 (NORMAL) stored=828x1792 display~=828x1792 aspect~=portrait~tallerThan9:16 hasGps=false
+10-18 01:34:11.572  5384  7082 D RindleGalleryExport: mediaStore OK uri=content://media/external/images/media/58 fileName=rindle_4210.jpg
+10-18 01:34:11.572  5384  7082 D RindleGalleryExport: saveBulk item DONE fileName=rindle_4210.jpg saved=true
+10-18 01:34:11.572  5384  7082 D RindleGalleryExport: saveBulk item fileName=rindle_4209.mp4 mime=video/mp4 url=aa89827adfa7b3f1ddd4e85d9a5a5c1b.r2.cloudflarestorage.com/rindle-media/couples/6/videos/4209.mp4
+10-18 01:34:11.584  5384  7082 D RindleGalleryExport: streamVideo START fileName=rindle_4209.mp4 url=aa89827adfa7b3f1ddd4e85d9a5a5c1b.r2.cloudflarestorage.com/rindle-media/couples/6/videos/4209.mp4
+10-18 01:34:11.740  5384  7082 D RindleGalleryExport: streamVideo DOWNLOADED totalBytes=38477 fileName=rindle_4209.mp4
+10-18 01:34:11.874  5384  7082 D RindleGalleryExport: streamVideo OK fileName=rindle_4209.mp4
+10-18 01:34:11.874  5384  7082 D RindleGalleryExport: saveBulk item DONE fileName=rindle_4209.mp4 saved=true
+10-18 01:34:11.874  5384  7082 D RindleGalleryExport: saveBulk item fileName=rindle_4208.jpg mime=image/jpeg url=aa89827adfa7b3f1ddd4e85d9a5a5c1b.r2.cloudflarestorage.com/rindle-media/couples/6/photos/4208.jpg
+10-18 01:34:12.788  5384  7082 D RindleGalleryExport: saveBulk DOWNLOADED fileName=rindle_4208.jpg size=5865280 jpeg SOF=0xc0 stored=2250x3000 ~6.75MP bytes=5865280 exif orientation=1 (NORMAL) stored=2250x3000 display~=2250x3000 aspect~=3:4 hasGps=false
+10-18 01:34:12.788  5384  7082 D RindleGalleryExport: normalize CALL imageBytesWithNormalOrientation fileName=rindle_4208.jpg
+10-18 01:34:12.826  5384  7082 D RindleGalleryExport: orientationNormalize START jpeg SOF=0xc0 stored=2250x3000 ~6.75MP bytes=5865280 exif orientation=1 (NORMAL) stored=2250x3000 display~=2250x3000 aspect~=3:4 hasGps=false
+10-18 01:34:12.830  5384  7082 D RindleGalleryExport: orientationNormalize SKIP alreadyNormal orientation=1
+10-18 01:34:12.853  5384  7082 D RindleGalleryExport: orientationNormalize END bytesChanged refSame=true contentSame=false before=5865280 after=5865280 jpeg SOF=0xc0 stored=2250x3000 ~6.75MP bytes=5865280 exif orientation=1 (NORMAL) stored=2250x3000 display~=2250x3000 aspect~=3:4 hasGps=false
+10-18 01:34:12.862  5384  7082 D RindleGalleryExport: mediaStore INSERT fileName=rindle_4208.jpg mimeType=image/jpeg size=5865280 jpeg SOF=0xc0 stored=2250x3000 ~6.75MP bytes=5865280 exif orientation=1 (NORMAL) stored=2250x3000 display~=2250x3000 aspect~=3:4 hasGps=false
+10-18 01:34:12.921  5384  7082 D RindleGalleryExport: mediaStore OK uri=content://media/external/images/media/60 fileName=rindle_4208.jpg
+10-18 01:34:12.921  5384  7082 D RindleGalleryExport: saveBulk item DONE fileName=rindle_4208.jpg saved=true
+10-18 01:34:12.921  5384  7082 D RindleGalleryExport: saveBulk item fileName=rindle_4207.jpg mime=image/jpeg url=aa89827adfa7b3f1ddd4e85d9a5a5c1b.r2.cloudflarestorage.com/rindle-media/couples/6/photos/4207.jpg
+10-18 01:34:13.006  5384  7082 D RindleGalleryExport: saveBulk DOWNLOADED fileName=rindle_4207.jpg size=18660 jpeg SOF=0xc0 stored=640x480 ~0.31MP bytes=18660 exif orientation=1 (NORMAL) stored=640x480 display~=640x480 aspect~=3:4 hasGps=false
+10-18 01:34:13.006  5384  7082 D RindleGalleryExport: normalize CALL imageBytesWithNormalOrientation fileName=rindle_4207.jpg
+10-18 01:34:13.006  5384  7082 D RindleGalleryExport: orientationNormalize START jpeg SOF=0xc0 stored=640x480 ~0.31MP bytes=18660 exif orientation=1 (NORMAL) stored=640x480 display~=640x480 aspect~=3:4 hasGps=false
+10-18 01:34:13.006  5384  7082 D RindleGalleryExport: orientationNormalize SKIP alreadyNormal orientation=1
+10-18 01:34:13.019  5384  7082 D RindleGalleryExport: orientationNormalize END bytesChanged refSame=true contentSame=false before=18660 after=18660 jpeg SOF=0xc0 stored=640x480 ~0.31MP bytes=18660 exif orientation=1 (NORMAL) stored=640x480 display~=640x480 aspect~=3:4 hasGps=false
+10-18 01:34:13.027  5384  7082 D RindleGalleryExport: mediaStore INSERT fileName=rindle_4207.jpg mimeType=image/jpeg size=18660 jpeg SOF=0xc0 stored=640x480 ~0.31MP bytes=18660 exif orientation=1 (NORMAL) stored=640x480 display~=640x480 aspect~=3:4 hasGps=false
+10-18 01:34:13.090  5384  7082 D RindleGalleryExport: mediaStore OK uri=content://media/external/images/media/61 fileName=rindle_4207.jpg
+10-18 01:34:13.090  5384  7082 D RindleGalleryExport: saveBulk item DONE fileName=rindle_4207.jpg saved=true
+10-18 01:34:13.090  5384  7082 D RindleGalleryExport: saveBulk item fileName=rindle_4206.jpg mime=image/jpeg url=aa89827adfa7b3f1ddd4e85d9a5a5c1b.r2.cloudflarestorage.com/rindle-media/couples/6/photos/4206.jpg
+10-18 01:34:13.184  5384  7082 D RindleGalleryExport: saveBulk DOWNLOADED fileName=rindle_4206.jpg size=18660 jpeg SOF=0xc0 stored=640x480 ~0.31MP bytes=18660 exif orientation=1 (NORMAL) stored=640x480 display~=640x480 aspect~=3:4 hasGps=false
+10-18 01:34:13.184  5384  7082 D RindleGalleryExport: normalize CALL imageBytesWithNormalOrientation fileName=rindle_4206.jpg
+10-18 01:34:13.196  5384  7082 D RindleGalleryExport: orientationNormalize START jpeg SOF=0xc0 stored=640x480 ~0.31MP bytes=18660 exif orientation=1 (NORMAL) stored=640x480 display~=640x480 aspect~=3:4 hasGps=false
+10-18 01:34:13.221  5384  7082 D RindleGalleryExport: orientationNormalize SKIP alreadyNormal orientation=1
+10-18 01:34:13.222  5384  7082 D RindleGalleryExport: orientationNormalize END bytesChanged refSame=true contentSame=false before=18660 after=18660 jpeg SOF=0xc0 stored=640x480 ~0.31MP bytes=18660 exif orientation=1 (NORMAL) stored=640x480 display~=640x480 aspect~=3:4 hasGps=false
+10-18 01:34:13.223  5384  7082 D RindleGalleryExport: mediaStore INSERT fileName=rindle_4206.jpg mimeType=image/jpeg size=18660 jpeg SOF=0xc0 stored=640x480 ~0.31MP bytes=18660 exif orientation=1 (NORMAL) stored=640x480 display~=640x480 aspect~=3:4 hasGps=false
+10-18 01:34:13.241  5384  7082 D RindleGalleryExport: mediaStore OK uri=content://media/external/images/media/62 fileName=rindle_4206.jpg
+10-18 01:34:13.241  5384  7082 D RindleGalleryExport: saveBulk item DONE fileName=rindle_4206.jpg saved=true

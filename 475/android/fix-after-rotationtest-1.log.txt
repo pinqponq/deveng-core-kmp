@@ -1,0 +1,18 @@
+10-18 01:21:08.736   486   486 I adbd    : adbd service requested 'shell,v2,raw:am instrument -w -r -e class core.util.media.RemoteMediaExportManagerRotationMemoryTest global.deveng.test/androidx.test.runner.AndroidJUnitRunner'
+10-18 01:21:09.273  4691  4704 I TestRunner: run started: 1 tests
+10-18 01:21:09.273  4691  4704 I TestRunner: started: saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(core.util.media.RemoteMediaExportManagerRotationMemoryTest)
+10-18 01:21:09.274  4691  4704 W TraceRunListener: Span name exceeds limits: RemoteMediaExportManagerRotationMemoryTest#saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto
+10-18 01:21:10.486  4691  4713 D RindleGalleryExport: saveBulk item fileName=rotation_memory_test_1792275669275.jpg mime=image/jpeg url=127.0.0.1/photo.jpg
+10-18 01:21:10.589  4691  4713 D RindleGalleryExport: saveBulk DOWNLOADED fileName=rotation_memory_test_1792275669275.jpg size=27703847 jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27703847 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 01:21:10.589  4691  4713 D RindleGalleryExport: normalize CALL imageBytesWithNormalOrientation fileName=rotation_memory_test_1792275669275.jpg
+10-18 01:21:10.600  4691  4713 D RindleGalleryExport: orientationNormalize START jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27703847 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 01:21:10.689  4691  4713 D RindleGalleryExport: orientationNormalize APPLY orientation=6
+10-18 01:21:10.832   290   290 I lowmemorykiller: Kill 'com.google.android.settings.intelligence' (2159), uid 10157, oom_score_adj 945 to free 45712kB rss, 16016kB anon rss, 44048kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached
+10-18 01:21:10.843   290   296 W lowmemorykiller: Failed to open /proc/2159/task; errno=2: process pid(2159) might have died
+10-18 01:21:11.045   290   290 I lowmemorykiller: Kill 'com.google.android.gms.unstable' (2028), uid 10221, oom_score_adj 935 to free 51424kB rss, 16800kB anon rss, 64848kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: min watermark is breached
+10-18 01:21:12.578  4691  4713 D RindleGalleryExport: orientationNormalize END bytesChanged refSame=false contentSame=false before=27703847 after=44746524 jpeg SOF=0xc0 stored=6000x8000 ~48.0MP bytes=44746524 exif orientation=1 (NORMAL) stored=6000x8000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 01:21:12.774  4691  4713 D RindleGalleryExport: mediaStore INSERT fileName=rotation_memory_test_1792275669275.jpg mimeType=image/jpeg size=44746524 jpeg SOF=0xc0 stored=6000x8000 ~48.0MP bytes=44746524 exif orientation=1 (NORMAL) stored=6000x8000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 01:21:25.195  4691  4713 D RindleGalleryExport: mediaStore OK uri=content://media/external/images/media/50 fileName=rotation_memory_test_1792275669275.jpg
+10-18 01:21:25.195  4691  4713 D RindleGalleryExport: saveBulk item DONE fileName=rotation_memory_test_1792275669275.jpg saved=true
+10-18 01:21:25.345  4691  4704 I TestRunner: finished: saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(core.util.media.RemoteMediaExportManagerRotationMemoryTest)
+10-18 01:21:25.349  4691  4704 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored

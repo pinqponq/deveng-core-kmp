@@ -1,0 +1,17 @@
+10-18 01:21:25.569   486   486 I adbd    : adbd service requested 'shell,v2,raw:am instrument -w -r -e class core.util.media.RemoteMediaExportManagerRotationMemoryTest global.deveng.test/androidx.test.runner.AndroidJUnitRunner'
+10-18 01:21:27.343  4787  4885 I TestRunner: run started: 1 tests
+10-18 01:21:27.344  4787  4885 I TestRunner: started: saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(core.util.media.RemoteMediaExportManagerRotationMemoryTest)
+10-18 01:21:27.345  4787  4885 W TraceRunListener: Span name exceeds limits: RemoteMediaExportManagerRotationMemoryTest#saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto
+10-18 01:21:28.478  4787  4891 D RindleGalleryExport: saveBulk item fileName=rotation_memory_test_1792275687346.jpg mime=image/jpeg url=127.0.0.1/photo.jpg
+10-18 01:21:28.596  4787  4891 D RindleGalleryExport: saveBulk DOWNLOADED fileName=rotation_memory_test_1792275687346.jpg size=27703847 jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27703847 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 01:21:28.596  4787  4891 D RindleGalleryExport: normalize CALL imageBytesWithNormalOrientation fileName=rotation_memory_test_1792275687346.jpg
+10-18 01:21:28.606  4787  4891 D RindleGalleryExport: orientationNormalize START jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27703847 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 01:21:28.615  4787  4891 D RindleGalleryExport: orientationNormalize APPLY orientation=6
+10-18 01:21:28.743   290   290 I lowmemorykiller: Kill 'com.google.android.webview:sandboxed_process0:org.chromium.content.app.SandboxedProcessService0:0' (24348), uid 99006, oom_score_adj 920 to free 39024kB rss, 14496kB anon rss, 42944kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached
+10-18 01:21:28.760   290   296 W lowmemorykiller: Failed to open /proc/24348/task; errno=2: process pid(24348) might have died
+10-18 01:21:30.011  4787  4891 D RindleGalleryExport: orientationNormalize END bytesChanged refSame=false contentSame=false before=27703847 after=44746524 jpeg SOF=0xc0 stored=6000x8000 ~48.0MP bytes=44746524 exif orientation=1 (NORMAL) stored=6000x8000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 01:21:30.085  4787  4891 D RindleGalleryExport: mediaStore INSERT fileName=rotation_memory_test_1792275687346.jpg mimeType=image/jpeg size=44746524 jpeg SOF=0xc0 stored=6000x8000 ~48.0MP bytes=44746524 exif orientation=1 (NORMAL) stored=6000x8000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 01:21:30.270  4787  4891 D RindleGalleryExport: mediaStore OK uri=content://media/external/images/media/51 fileName=rotation_memory_test_1792275687346.jpg
+10-18 01:21:30.270  4787  4891 D RindleGalleryExport: saveBulk item DONE fileName=rotation_memory_test_1792275687346.jpg saved=true
+10-18 01:21:30.321  4787  4885 I TestRunner: finished: saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(core.util.media.RemoteMediaExportManagerRotationMemoryTest)
+10-18 01:21:30.327  4787  4885 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored

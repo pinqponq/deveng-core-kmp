@@ -1,0 +1,26 @@
+INSTRUMENTATION_STATUS: class=core.util.media.SaveSelectedMemoryMeasurement
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stream=
+core.util.media.SaveSelectedMemoryMeasurement:
+INSTRUMENTATION_STATUS: test=rotated48mp
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: stream=RESULT label=8000x6000-o6 ballastMb=17 jpegBytes=27711670 savedCount=0 savedOrientation=not-saved error=null durationMs=1340 javaHeapLimitMb=192.0 memoryClassMb=192 deviceRamMb=1994.4 availRamMb=560.7 lowRam=false baseJavaMb=19.5 peakJavaMb=152.6 peakJavaDeltaMb=133.1 baseNativeMb=5.8 peakNativeMb=372.1 peakNativeDeltaMb=366.4
+
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=core.util.media.SaveSelectedMemoryMeasurement
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=rotated48mp
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 11.675
+
+OK (1 test)
+
+
+INSTRUMENTATION_CODE: -1

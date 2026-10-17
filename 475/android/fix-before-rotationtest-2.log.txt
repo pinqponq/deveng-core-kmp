@@ -1,0 +1,85 @@
+10-18 01:20:34.559   486   486 I adbd    : adbd service requested 'shell,v2,raw:am instrument -w -r -e class core.util.media.RemoteMediaExportManagerRotationMemoryTest global.deveng.test/androidx.test.runner.AndroidJUnitRunner'
+10-18 01:20:35.723  4259  4272 I TestRunner: run started: 1 tests
+10-18 01:20:35.723  4259  4272 I TestRunner: started: saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(core.util.media.RemoteMediaExportManagerRotationMemoryTest)
+10-18 01:20:35.724  4259  4272 W TraceRunListener: Span name exceeds limits: RemoteMediaExportManagerRotationMemoryTest#saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto
+10-18 01:20:35.953   290   290 I lowmemorykiller: Kill 'com.android.vending:background' (25224), uid 10153, oom_score_adj 940 to free 62624kB rss, 26608kB anon rss, 58768kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached
+10-18 01:20:36.761  4259  4276 D RindleGalleryExport: saveBulk item fileName=rotation_memory_test_1792275635725.jpg mime=image/jpeg url=127.0.0.1/photo.jpg
+10-18 01:20:36.861  4259  4276 D RindleGalleryExport: saveBulk DOWNLOADED fileName=rotation_memory_test_1792275635725.jpg size=27703847 jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27703847 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 01:20:36.861  4259  4276 D RindleGalleryExport: normalize CALL imageBytesWithNormalOrientation fileName=rotation_memory_test_1792275635725.jpg
+10-18 01:20:36.871  4259  4276 D RindleGalleryExport: orientationNormalize START jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27703847 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 01:20:36.880  4259  4276 D RindleGalleryExport: orientationNormalize APPLY orientation=6
+10-18 01:20:37.917  4259  4276 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 67108876 byte allocation with 8388608 free bytes and 51MB until OOM, target footprint 156170208, growth limit 201326592" (VmSize 17460736 kB)
+10-18 01:20:37.922  4259  4276 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 67108880 byte allocation with 8388608 free bytes and 51MB until OOM, target footprint 156170208, growth limit 201326592" (VmSize 17460736 kB)
+10-18 01:20:37.923  4259  4276 W System.err: java.lang.OutOfMemoryError: Failed to allocate a 67108880 byte allocation with 8388608 free bytes and 51MB until OOM, target footprint 156170208, growth limit 201326592
+10-18 01:20:37.925  4259  4276 W System.err: 	at core.util.media.RemoteMediaExportManager.normalizeImageBytesForExport(RemoteMediaExportManager.android.kt:311)
+10-18 01:20:37.925  4259  4276 W System.err: 	at core.util.media.RemoteMediaExportManager.access$normalizeImageBytesForExport(RemoteMediaExportManager.android.kt:22)
+10-18 01:20:37.925  4259  4276 W System.err: 	at core.util.media.RemoteMediaExportManager$saveMultipleFilesFromUrls$2.invokeSuspend(RemoteMediaExportManager.android.kt:164)
+10-18 01:20:37.931  4259  4276 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 33554444 byte allocation with 8388608 free bytes and 51MB until OOM, target footprint 156170208, growth limit 201326592" (VmSize 17320000 kB)
+10-18 01:20:38.069  4259  4276 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 33554552 byte allocation with 8388608 free bytes and 19MB until OOM, target footprint 189741024, growth limit 201326592" (VmSize 17320560 kB)
+10-18 01:20:38.097  4259  4276 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 33554552 byte allocation with 8388608 free bytes and 19MB until OOM, target footprint 189724640, growth limit 201326592" (VmSize 17320560 kB)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: saveMultipleFilesFromUrls failed count=1
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: java.lang.OutOfMemoryError: Failed to allocate a 33554552 byte allocation with 8388608 free bytes and 19MB until OOM, target footprint 189724640, growth limit 201326592
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at kotlin.io.FilesKt__FileReadWriteKt.readBytes(FileReadWrite.kt:78)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at core.util.image.PhotoSaveUtils.normalizeOrientationInternal(PhotoSaveUtils.android.kt:82)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at core.util.image.PhotoSaveUtils.imageBytesWithNormalOrientation(PhotoSaveUtils.android.kt:31)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at core.util.media.RemoteMediaExportManager.normalizeImageBytesForExport(RemoteMediaExportManager.android.kt:311)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at core.util.media.RemoteMediaExportManager.access$normalizeImageBytesForExport(RemoteMediaExportManager.android.kt:22)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at core.util.media.RemoteMediaExportManager$saveMultipleFilesFromUrls$2.invokeSuspend(RemoteMediaExportManager.android.kt:164)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+10-18 01:20:38.100  4259  4276 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+10-18 01:20:38.117  4259  4272 E TestRunner: failed: saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(core.util.media.RemoteMediaExportManagerRotationMemoryTest)
+10-18 01:20:38.118  4259  4272 E TestRunner: ----- begin exception -----
+10-18 01:20:38.118  4259  4272 E TestRunner: java.lang.AssertionError: expected:<1> but was:<0>
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.Assert.fail(Assert.java:89)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.Assert.failNotEquals(Assert.java:835)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.Assert.assertEquals(Assert.java:120)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at kotlin.test.junit.JUnitAsserter.assertEquals(JUnitSupport.kt:32)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals(Assertions.kt:63)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at kotlin.test.AssertionsKt.assertEquals(dex-id-f1cc3fbe2f22438f3b303890a0fcc16b19fa9198:1)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at kotlin.test.AssertionsKt__AssertionsKt.assertEquals$default(Assertions.kt:62)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at kotlin.test.AssertionsKt.assertEquals$default(dex-id-f1cc3fbe2f22438f3b303890a0fcc16b19fa9198:1)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at core.util.media.RemoteMediaExportManagerRotationMemoryTest.saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(RemoteMediaExportManagerRotationMemoryTest.kt:60)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at java.lang.reflect.Method.invoke(Native Method)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at androidx.test.internal.runner.junit4.statement.RunBefores.evaluate(RunBefores.java:80)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at androidx.test.internal.runner.junit4.statement.RunAfters.evaluate(RunAfters.java:61)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.Suite.runChild(Suite.java:128)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.Suite.runChild(Suite.java:27)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+10-18 01:20:38.118  4259  4272 E TestRunner: 	at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2637)
+10-18 01:20:38.118  4259  4272 E TestRunner: ----- end exception -----
+10-18 01:20:38.119  4259  4272 I TestRunner: finished: saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto(core.util.media.RemoteMediaExportManagerRotationMemoryTest)
+10-18 01:20:38.124  4259  4272 I TestRunner: run finished: 1 tests, 1 failed, 0 ignored

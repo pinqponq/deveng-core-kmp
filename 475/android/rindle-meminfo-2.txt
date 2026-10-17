@@ -1,0 +1,76 @@
+Applications Memory Usage (in Kilobytes):
+Uptime: 332988184 Realtime: 332988184
+
+** MEMINFO in pid 356 [com.deveng.rindle] **
+                   Pss  Private  Private  SwapPss      Rss     Heap     Heap     Heap
+                 Total    Dirty    Clean    Dirty    Total     Size    Alloc     Free
+                ------   ------   ------   ------   ------   ------   ------   ------
+  Native Heap    76163    74832     1312    25993    76816   125440   114510     5751
+  Dalvik Heap    21116    15184     5808      336    21808    33259    16630    16629
+ Dalvik Other    19481    15472      576      243    23072                           
+        Stack     6064     6000       64     1488     6064                           
+       Ashmem       17       16        0        0       48                           
+    Other dev       23        0       16        0      464                           
+     .so mmap     8266      304     4032      441    32272                           
+    .jar mmap     6320        0     2752        0    29744                           
+    .apk mmap    26763        0    26480      192    27184                           
+    .ttf mmap      112        0      112        0      112                           
+    .dex mmap       96        0        0        0     1056                           
+    .oat mmap       61        0       16        0     1200                           
+    .art mmap     8137     2112     5296     3769    18512                           
+   Other mmap     9877     9504       48        0    11072                           
+      Unknown      964      688      272      943     1152                           
+        TOTAL   216865   124112    46784    33405   250576   158699   131140    22380
+ 
+ App Summary
+                       Pss(KB)                        Rss(KB)
+                        ------                         ------
+           Java Heap:    22592                          40320
+         Native Heap:    74832                          76816
+                Code:    35280                          99984
+               Stack:     6000                           6064
+            Graphics:        0                              0
+       Private Other:    32192
+              System:    45969
+             Unknown:                                   27392
+ 
+           TOTAL PSS:   216865            TOTAL RSS:   250576       TOTAL SWAP PSS:    33405
+ 
+ Objects
+               Views:       17         ViewRootImpl:        1
+         AppContexts:       31           Activities:        1
+              Assets:       31        AssetManagers:        0
+       Local Binders:       41        Proxy Binders:       66
+       Parcel memory:       35         Parcel count:      140
+    Death Recipients:        4             WebViews:        0
+ 
+ Native Allocations
+                         Count                       Total(kB)
+                        ------                         ------
+    Other (malloced):     1264                            119
+ Other (nonmalloced):      136                             92
+   Bitmap (malloced):      230                           7913
+Bitmap (nonmalloced):       96                          28291
+ 
+ Mapped Bitmaps
+                         Count                       Size(KB)
+                        ------                         ------
+              Mapped:        0                              0
+              Unique:        0                              0
+ 
+ SQL
+         MEMORY_USED:      585
+  PAGECACHE_OVERFLOW:      198          MALLOC_SIZE:       46
+ 
+ DATABASES
+      pgsz     dbsz   Lookaside(b) cache hits cache misses cache size  Dbname
+PER CONNECTION STATS
+         4      104            110   171   190    25  /data/user/0/com.deveng.rindle/no_backup/androidx.work.workdb
+         4        8                    0     0     0    (attached) temp
+         4      104             43    22    18     3  /data/user/0/com.deveng.rindle/no_backup/androidx.work.workdb (3)
+         4       56            123   361   136    20  /data/user/0/com.deveng.rindle/databases/com.google.android.datatransport.events
+POOL STATS
+     cache hits  cache misses    cache size  Dbname
+            193           212            28  /data/user/0/com.deveng.rindle/no_backup/androidx.work.workdb
+            361           137            20  /data/user/0/com.deveng.rindle/databases/com.google.android.datatransport.events
+ 

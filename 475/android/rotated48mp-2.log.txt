@@ -1,0 +1,15 @@
+10-18 00:16:03.683  2738  2751 I TestRunner: run started: 1 tests
+10-18 00:16:03.684  2738  2751 I TestRunner: started: rotated48mp(core.util.media.SaveSelectedMemoryMeasurement)
+10-18 00:16:05.718  2738  2756 D RindleGalleryExport: saveBulk item fileName=measure475_8000x6000-o6_1792271765707.jpg mime=image/jpeg url=127.0.0.1/photo.jpg
+10-18 00:16:05.836  2738  2756 D RindleGalleryExport: saveBulk DOWNLOADED fileName=measure475_8000x6000-o6_1792271765707.jpg size=27711670 jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27711670 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 00:16:05.836  2738  2756 D RindleGalleryExport: normalize CALL imageBytesWithNormalOrientation fileName=measure475_8000x6000-o6_1792271765707.jpg
+10-18 00:16:05.849  2738  2756 D RindleGalleryExport: orientationNormalize START jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27711670 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 00:16:05.860  2738  2756 D RindleGalleryExport: orientationNormalize APPLY orientation=6
+10-18 00:16:07.398  2738  2756 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 44501299 byte allocation with 8388608 free bytes and 56MB until OOM, target footprint 150157264, growth limit 201326592" (VmSize 17337424 kB)
+10-18 00:16:07.573  2738  2756 D RindleGalleryExport: orientationNormalize END bytesChanged refSame=false contentSame=false before=27711670 after=44501287 jpeg SOF=0xc0 stored=6000x8000 ~48.0MP bytes=44501287 exif orientation=1 (NORMAL) stored=6000x8000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 00:16:07.734  2738  2756 D RindleGalleryExport: mediaStore INSERT fileName=measure475_8000x6000-o6_1792271765707.jpg mimeType=image/jpeg size=44501287 jpeg SOF=0xc0 stored=6000x8000 ~48.0MP bytes=44501287 exif orientation=1 (NORMAL) stored=6000x8000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 00:16:08.010  2738  2756 D RindleGalleryExport: mediaStore OK uri=content://media/external/images/media/39 fileName=measure475_8000x6000-o6_1792271765707.jpg
+10-18 00:16:08.010  2738  2756 D RindleGalleryExport: saveBulk item DONE fileName=measure475_8000x6000-o6_1792271765707.jpg saved=true
+10-18 00:16:08.348  2738  2751 I SaveSelectedMeasure: RESULT label=8000x6000-o6 jpegBytes=27711670 savedCount=1 savedOrientation=exif1-6000x8000 error=null durationMs=2303 javaHeapLimitMb=192.0 memoryClassMb=192 deviceRamMb=1994.4 availRamMb=477.3 lowRam=false baseJavaMb=2.2 peakJavaMb=177.8 peakJavaDeltaMb=175.6 baseNativeMb=5.7 peakNativeMb=372.1 peakNativeDeltaMb=366.4
+10-18 00:16:08.351  2738  2751 I TestRunner: finished: rotated48mp(core.util.media.SaveSelectedMemoryMeasurement)
+10-18 00:16:08.357  2738  2751 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored

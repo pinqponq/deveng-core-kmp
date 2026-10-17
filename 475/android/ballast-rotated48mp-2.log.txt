@@ -1,0 +1,28 @@
+10-18 00:20:25.772  3597  3610 I TestRunner: run started: 1 tests
+10-18 00:20:25.772  3597  3610 I TestRunner: started: rotated48mp(core.util.media.SaveSelectedMemoryMeasurement)
+10-18 00:20:27.752  3597  3614 D RindleGalleryExport: saveBulk item fileName=measure475_8000x6000-o6_1792272027737.jpg mime=image/jpeg url=127.0.0.1/photo.jpg
+10-18 00:20:27.864  3597  3614 D RindleGalleryExport: saveBulk DOWNLOADED fileName=measure475_8000x6000-o6_1792272027737.jpg size=27711670 jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27711670 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 00:20:27.864  3597  3614 D RindleGalleryExport: normalize CALL imageBytesWithNormalOrientation fileName=measure475_8000x6000-o6_1792272027737.jpg
+10-18 00:20:27.877  3597  3614 D RindleGalleryExport: orientationNormalize START jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27711670 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 00:20:27.888  3597  3614 D RindleGalleryExport: orientationNormalize APPLY orientation=6
+10-18 00:20:29.297  3597  3614 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 44501299 byte allocation with 8323072 free bytes and 39MB until OOM, target footprint 168245200, growth limit 201326592" (VmSize 17337392 kB)
+10-18 00:20:29.308  3597  3614 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 44501304 byte allocation with 8388608 free bytes and 39MB until OOM, target footprint 168261584, growth limit 201326592" (VmSize 17337392 kB)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: saveMultipleFilesFromUrls failed count=1
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: java.lang.OutOfMemoryError: Failed to allocate a 44501304 byte allocation with 8388608 free bytes and 39MB until OOM, target footprint 168261584, growth limit 201326592
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at kotlin.io.FilesKt__FileReadWriteKt.readBytes(FileReadWrite.kt:78)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at core.util.image.PhotoSaveUtils.normalizeOrientationInternal(PhotoSaveUtils.android.kt:82)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at core.util.image.PhotoSaveUtils.imageBytesWithNormalOrientation(PhotoSaveUtils.android.kt:31)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at core.util.media.RemoteMediaExportManager.normalizeImageBytesForExport(RemoteMediaExportManager.android.kt:311)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at core.util.media.RemoteMediaExportManager.access$normalizeImageBytesForExport(RemoteMediaExportManager.android.kt:22)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at core.util.media.RemoteMediaExportManager$saveMultipleFilesFromUrls$2.invokeSuspend(RemoteMediaExportManager.android.kt:164)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+10-18 00:20:29.318  3597  3614 E RemoteMediaExportManager: 	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+10-18 00:20:29.326  3597  3610 I SaveSelectedMeasure: RESULT label=8000x6000-o6 ballastMb=17 jpegBytes=27711670 savedCount=0 savedOrientation=not-saved error=null durationMs=1581 javaHeapLimitMb=192.0 memoryClassMb=192 deviceRamMb=1994.4 availRamMb=439.4 lowRam=false baseJavaMb=19.5 peakJavaMb=152.6 peakJavaDeltaMb=133.1 baseNativeMb=5.7 peakNativeMb=372.1 peakNativeDeltaMb=366.4
+10-18 00:20:29.329  3597  3610 I TestRunner: finished: rotated48mp(core.util.media.SaveSelectedMemoryMeasurement)
+10-18 00:20:29.337  3597  3610 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored

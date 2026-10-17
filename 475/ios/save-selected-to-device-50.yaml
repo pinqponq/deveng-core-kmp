@@ -1,0 +1,84 @@
+appId: ${APP_ID}
+name: Gallery save selected, up to PHOTO_COUNT items picked by grid position (#475 measurement)
+tags:
+  - gallery
+  - measurement
+# Temporary measurement copy of save-selected-to-device.yaml. The test couple's gallery ids are sparse
+# (4223-4226, then 4065, 4057...), so walking ids down from the newest one stops after a few items.
+# This copy selects grid cells in screen order instead: it reads the "<id>, Toggle selection" cells
+# below the selection bar, taps each one not selected yet, then scrolls down. Saving only downloads;
+# nothing is created or deleted on the server.
+env:
+  PHOTO_COUNT: 50
+  MAXIMUM_CELLS_PER_SCREEN: 24
+  MAXIMUM_EMPTY_SCREENS: 3
+---
+- launchApp:
+    stopApp: false
+    permissions:
+      photos: allow
+# A selection left over from an earlier run hides "Map View", which open-gallery waits for.
+- runFlow:
+    when:
+      visible: "Close selection"
+    commands:
+      - tapOn: "Close selection"
+- runFlow: ../subflows/open-gallery.yaml
+- runFlow: ../subflows/read-newest-visible-media-id.yaml
+- assertTrue: ${output.visibleNewestMediaId > 0}
+- startRecording: gallery-save-selected-50
+- longPressOn: ${String(output.visibleNewestMediaId)}
+- assertVisible: "1 selected"
+- evalScript: ${output.selectedIds = ',' + output.visibleNewestMediaId + ','}
+- evalScript: ${output.selectedMediaCount = 1}
+- evalScript: ${output.emptyScreenCount = 0}
+- repeat:
+    while:
+      true: ${output.selectedMediaCount < Number(PHOTO_COUNT) && output.emptyScreenCount < Number(MAXIMUM_EMPTY_SCREENS)}
+    commands:
+      - evalScript: ${output.countBeforeScreen = output.selectedMediaCount}
+      - evalScript: ${output.cellIndex = 0}
+      - evalScript: ${output.lastCopiedText = ''}
+      - repeat:
+          while:
+            true: ${output.cellIndex < Number(MAXIMUM_CELLS_PER_SCREEN) && output.selectedMediaCount < Number(PHOTO_COUNT)}
+          commands:
+            - copyTextFrom:
+                text: "\\d+, Toggle selection"
+                below: "Save selected"
+                above: "Bottom navigation icon"
+                index: ${output.cellIndex}
+                optional: true
+            # A missing cell leaves maestro.copiedText unchanged: this screen is done.
+            - evalScript: "${output.cellId = maestro.copiedText === output.lastCopiedText ? 0 : (parseInt(maestro.copiedText) || 0)}"
+            - evalScript: ${output.lastCopiedText = maestro.copiedText}
+            - runFlow:
+                when:
+                  true: ${output.cellId > 0 && output.selectedIds.indexOf(',' + output.cellId + ',') < 0}
+                commands:
+                  # Tap the cell's checkbox at its top-left corner, not the cell centre: `above` compares
+                  # centres, so the centre of a cell in the last visible row can lie on the bottom bar.
+                  - tapOn:
+                      text: "Toggle selection"
+                      childOf:
+                        text: "${output.cellId}, Toggle selection"
+                  - evalScript: ${output.selectedIds = output.selectedIds + output.cellId + ','}
+                  - evalScript: ${output.selectedMediaCount = output.selectedMediaCount + 1}
+            - evalScript: "${output.cellIndex = output.cellId > 0 ? output.cellIndex + 1 : Number(MAXIMUM_CELLS_PER_SCREEN)}"
+      - evalScript: "${output.emptyScreenCount = output.selectedMediaCount > output.countBeforeScreen ? 0 : output.emptyScreenCount + 1}"
+      - runFlow:
+          when:
+            true: ${output.selectedMediaCount < Number(PHOTO_COUNT)}
+          commands:
+            - swipe:
+                start: 50%, 75%
+                end: 50%, 40%
+                duration: 600
+- assertVisible: "${output.selectedMediaCount} selected"
+- takeScreenshot: gallery-save-selected-50-01-selected
+- tapOn: "Save selected"
+- extendedWaitUntil:
+    visible: "${output.selectedMediaCount} media saved"
+    timeout: 600000
+- takeScreenshot: gallery-save-selected-50-02-saved
+- stopRecording

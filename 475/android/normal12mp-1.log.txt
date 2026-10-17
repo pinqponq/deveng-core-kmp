@@ -1,0 +1,14 @@
+10-18 00:15:34.347  2374  2390 I TestRunner: run started: 1 tests
+10-18 00:15:34.347  2374  2390 I TestRunner: started: normal12mp(core.util.media.SaveSelectedMemoryMeasurement)
+10-18 00:15:35.566  2374  2394 D RindleGalleryExport: saveBulk item fileName=measure475_4000x3000-o1_1792271735554.jpg mime=image/jpeg url=127.0.0.1/photo.jpg
+10-18 00:15:35.619  2374  2394 D RindleGalleryExport: saveBulk DOWNLOADED fileName=measure475_4000x3000-o1_1792271735554.jpg size=6947519 jpeg SOF=0xc0 stored=4000x3000 ~12.0MP bytes=6947519 exif orientation=1 (NORMAL) stored=4000x3000 display~=4000x3000 aspect~=3:4 hasGps=false
+10-18 00:15:35.619  2374  2394 D RindleGalleryExport: normalize CALL imageBytesWithNormalOrientation fileName=measure475_4000x3000-o1_1792271735554.jpg
+10-18 00:15:35.627  2374  2394 D RindleGalleryExport: orientationNormalize START jpeg SOF=0xc0 stored=4000x3000 ~12.0MP bytes=6947519 exif orientation=1 (NORMAL) stored=4000x3000 display~=4000x3000 aspect~=3:4 hasGps=false
+10-18 00:15:35.633  2374  2394 D RindleGalleryExport: orientationNormalize SKIP alreadyNormal orientation=1
+10-18 00:15:35.638  2374  2394 D RindleGalleryExport: orientationNormalize END bytesChanged refSame=true contentSame=false before=6947519 after=6947519 jpeg SOF=0xc0 stored=4000x3000 ~12.0MP bytes=6947519 exif orientation=1 (NORMAL) stored=4000x3000 display~=4000x3000 aspect~=3:4 hasGps=false
+10-18 00:15:35.644  2374  2394 D RindleGalleryExport: mediaStore INSERT fileName=measure475_4000x3000-o1_1792271735554.jpg mimeType=image/jpeg size=6947519 jpeg SOF=0xc0 stored=4000x3000 ~12.0MP bytes=6947519 exif orientation=1 (NORMAL) stored=4000x3000 display~=4000x3000 aspect~=3:4 hasGps=false
+10-18 00:15:35.733  2374  2394 D RindleGalleryExport: mediaStore OK uri=content://media/external/images/media/32 fileName=measure475_4000x3000-o1_1792271735554.jpg
+10-18 00:15:35.733  2374  2394 D RindleGalleryExport: saveBulk item DONE fileName=measure475_4000x3000-o1_1792271735554.jpg saved=true
+10-18 00:15:35.796  2374  2390 I SaveSelectedMeasure: RESULT label=4000x3000-o1 jpegBytes=6947519 savedCount=1 savedOrientation=exif1-4000x3000 error=null durationMs=179 javaHeapLimitMb=192.0 memoryClassMb=192 deviceRamMb=1994.4 availRamMb=418.1 lowRam=false baseJavaMb=2.2 peakJavaMb=21.1 peakJavaDeltaMb=18.9 baseNativeMb=5.7 peakNativeMb=5.9 peakNativeDeltaMb=0.1
+10-18 00:15:35.797  2374  2390 I TestRunner: finished: normal12mp(core.util.media.SaveSelectedMemoryMeasurement)
+10-18 00:15:35.799  2374  2390 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored

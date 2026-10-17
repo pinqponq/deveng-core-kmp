@@ -1,0 +1,17 @@
+10-18 00:15:41.618  2514  2528 I TestRunner: run started: 1 tests
+10-18 00:15:41.619  2514  2528 I TestRunner: started: rotated48mp(core.util.media.SaveSelectedMemoryMeasurement)
+10-18 00:15:42.290   290   290 I lowmemorykiller: Kill 'com.google.android.rkpdapp' (16659), uid 10220, oom_score_adj 955 to free 42272kB rss, 14592kB anon rss, 44208kB swap, 0kB dmabuf_pss, 0kB dmabuf_rss; reason: low watermark is breached and swap is low (14304kB < 153152kB)
+10-18 00:15:42.324   290   296 W lowmemorykiller: Failed to open /proc/16659/task; errno=2: process pid(16659) might have died
+10-18 00:15:43.518  2514  2534 D RindleGalleryExport: saveBulk item fileName=measure475_8000x6000-o6_1792271743498.jpg mime=image/jpeg url=127.0.0.1/photo.jpg
+10-18 00:15:43.686  2514  2534 D RindleGalleryExport: saveBulk DOWNLOADED fileName=measure475_8000x6000-o6_1792271743498.jpg size=27711670 jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27711670 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 00:15:43.686  2514  2534 D RindleGalleryExport: normalize CALL imageBytesWithNormalOrientation fileName=measure475_8000x6000-o6_1792271743498.jpg
+10-18 00:15:43.696  2514  2534 D RindleGalleryExport: orientationNormalize START jpeg SOF=0xc0 stored=8000x6000 ~48.0MP bytes=27711670 exif orientation=6 (ROTATE_90) stored=8000x6000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 00:15:43.706  2514  2534 D RindleGalleryExport: orientationNormalize APPLY orientation=6
+10-18 00:15:44.887  2514  2534 W bal.deveng.test: Throwing OutOfMemoryError "Failed to allocate a 44501299 byte allocation with 8388608 free bytes and 56MB until OOM, target footprint 150124496, growth limit 201326592" (VmSize 17337424 kB)
+10-18 00:15:44.985  2514  2534 D RindleGalleryExport: orientationNormalize END bytesChanged refSame=false contentSame=false before=27711670 after=44501287 jpeg SOF=0xc0 stored=6000x8000 ~48.0MP bytes=44501287 exif orientation=1 (NORMAL) stored=6000x8000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 00:15:53.737  2514  2534 D RindleGalleryExport: mediaStore INSERT fileName=measure475_8000x6000-o6_1792271743498.jpg mimeType=image/jpeg size=44501287 jpeg SOF=0xc0 stored=6000x8000 ~48.0MP bytes=44501287 exif orientation=1 (NORMAL) stored=6000x8000 display~=6000x8000 aspect~=3:4 hasGps=false
+10-18 00:15:53.914  2514  2534 D RindleGalleryExport: mediaStore OK uri=content://media/external/images/media/35 fileName=measure475_8000x6000-o6_1792271743498.jpg
+10-18 00:15:53.914  2514  2534 D RindleGalleryExport: saveBulk item DONE fileName=measure475_8000x6000-o6_1792271743498.jpg saved=true
+10-18 00:15:53.948  2514  2528 I SaveSelectedMeasure: RESULT label=8000x6000-o6 jpegBytes=27711670 savedCount=1 savedOrientation=exif1-6000x8000 error=null durationMs=10418 javaHeapLimitMb=192.0 memoryClassMb=192 deviceRamMb=1994.4 availRamMb=434.5 lowRam=false baseJavaMb=2.2 peakJavaMb=177.8 peakJavaDeltaMb=175.6 baseNativeMb=5.7 peakNativeMb=372.1 peakNativeDeltaMb=366.4
+10-18 00:15:53.951  2514  2528 I TestRunner: finished: rotated48mp(core.util.media.SaveSelectedMemoryMeasurement)
+10-18 00:15:53.955  2514  2528 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored
