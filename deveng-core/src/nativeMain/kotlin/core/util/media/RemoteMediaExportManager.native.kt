@@ -2,12 +2,19 @@ package core.util.media
 
 import core.util.multiplatform.IosShareSheetPresenter
 import kotlin.coroutines.resume
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCObjectVar
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import platform.Foundation.NSCondition
 import platform.Foundation.NSDate
+import platform.Foundation.NSError
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHTTPURLResponse
 import platform.Foundation.NSLog
@@ -136,16 +143,27 @@ actual class RemoteMediaExportManager {
             IosShareSheetPresenter.present(activityItems = fileUrls)
         }
 
-    @OptIn(ExperimentalForeignApi::class)
     private fun saveToPhotosAndDeleteTempFile(tempFile: NSURL, mimeType: String): Boolean =
         try {
             saveToPhotos(tempFile, mimeType)
         } finally {
-            val isTempFileRemoved = NSFileManager.defaultManager.removeItemAtURL(tempFile, error = null)
+            removeTempFile(tempFile)
+        }
+
+    @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
+    private fun removeTempFile(tempFile: NSURL) {
+        memScoped {
+            val removalError = alloc<ObjCObjectVar<NSError?>>()
+            val isTempFileRemoved = NSFileManager.defaultManager.removeItemAtURL(tempFile, error = removalError.ptr)
             if (!isTempFileRemoved) {
-                NSLog("RemoteMediaExportManager: could not remove temp file ${tempFile.lastPathComponent}")
+                NSLog(
+                    "RemoteMediaExportManager: could not remove temp file %@: %@",
+                    tempFile.lastPathComponent,
+                    removalError.value?.localizedDescription,
+                )
             }
         }
+    }
 
     private fun saveToPhotos(fileUrl: NSURL, mimeType: String): Boolean {
         var result = false
