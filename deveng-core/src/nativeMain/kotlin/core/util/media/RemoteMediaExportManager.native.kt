@@ -2,14 +2,22 @@ package core.util.media
 
 import core.util.multiplatform.IosShareSheetPresenter
 import kotlin.coroutines.resume
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCObjectVar
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import platform.Foundation.NSCondition
 import platform.Foundation.NSDate
+import platform.Foundation.NSError
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHTTPURLResponse
+import platform.Foundation.NSLog
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLSession
@@ -72,7 +80,7 @@ actual class RemoteMediaExportManager {
         return@withContext runCatching {
             val url = NSURL.URLWithString(fileUrl) ?: return@runCatching false
             val tempFile = downloadToTempFile(url, fileName) ?: return@runCatching false
-            saveToPhotos(tempFile, mimeType)
+            saveToPhotosAndDeleteTempFile(tempFile, mimeType)
         }.getOrDefault(false)
     }
 
@@ -85,7 +93,7 @@ actual class RemoteMediaExportManager {
                 if (remoteFile.fileUrl.isBlank()) return@forEach
                 val url = NSURL.URLWithString(remoteFile.fileUrl) ?: return@forEach
                 val tempFile = downloadToTempFile(url, remoteFile.fileName) ?: return@forEach
-                if (saveToPhotos(tempFile, remoteFile.mimeType)) count++
+                if (saveToPhotosAndDeleteTempFile(tempFile, remoteFile.mimeType)) count++
             }
             count
         }.getOrDefault(0)
@@ -134,6 +142,28 @@ actual class RemoteMediaExportManager {
         withContext(Dispatchers.Main) {
             IosShareSheetPresenter.present(activityItems = fileUrls)
         }
+
+    private fun saveToPhotosAndDeleteTempFile(tempFile: NSURL, mimeType: String): Boolean =
+        try {
+            saveToPhotos(tempFile, mimeType)
+        } finally {
+            removeTempFile(tempFile)
+        }
+
+    @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
+    private fun removeTempFile(tempFile: NSURL) {
+        memScoped {
+            val removalError = alloc<ObjCObjectVar<NSError?>>()
+            val isTempFileRemoved = NSFileManager.defaultManager.removeItemAtURL(tempFile, error = removalError.ptr)
+            if (!isTempFileRemoved) {
+                NSLog(
+                    "RemoteMediaExportManager: could not remove temp file %@: %@",
+                    tempFile.lastPathComponent,
+                    removalError.value?.localizedDescription,
+                )
+            }
+        }
+    }
 
     private fun saveToPhotos(fileUrl: NSURL, mimeType: String): Boolean {
         var result = false
