@@ -12,6 +12,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import core.util.image.PhotoSaveUtils
 import java.io.File
 import java.net.ServerSocket
+import java.net.SocketException
 import kotlin.concurrent.thread
 import kotlin.random.Random
 import kotlin.test.AfterTest
@@ -19,6 +20,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.test.runTest
 import org.junit.runner.RunWith
 
@@ -45,7 +47,7 @@ class RemoteMediaExportManagerRotationMemoryTest {
     }
 
     @Test
-    fun saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto() = runTest {
+    fun saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto() = runTest(timeout = SAVE_TIMEOUT) {
         heapBallast = fillHeapUntilFree(bytes = FREE_HEAP_BYTES)
 
         val savedCount = RemoteMediaExportManager(context).saveMultipleFilesFromUrls(
@@ -117,21 +119,27 @@ class RemoteMediaExportManagerRotationMemoryTest {
     private fun servePhotoOnce(photo: File): String {
         val server = ServerSocket(0).also { photoServer = it }
         thread(name = "rotation-memory-test-server") {
-            server.use {
-                server.accept().use { socket ->
-                    val reader = socket.getInputStream().bufferedReader()
-                    while (reader.readLine()?.isNotEmpty() == true) Unit
-                    val header = "HTTP/1.1 200 OK\r\nContent-Type: $JPEG_MIME_TYPE\r\n" +
-                        "Content-Length: ${photo.length()}\r\nConnection: close\r\n\r\n"
-                    socket.getOutputStream().apply {
-                        write(header.toByteArray())
-                        photo.inputStream().use { photoStream -> photoStream.copyTo(this) }
-                        flush()
-                    }
-                }
+            try {
+                server.use { respondWithPhoto(server, photo) }
+            } catch (_: SocketException) {
+                // tearDown closed the server because the save never connected; the test reports why.
             }
         }
         return "http://127.0.0.1:${server.localPort}/photo.jpg"
+    }
+
+    private fun respondWithPhoto(server: ServerSocket, photo: File) {
+        server.accept().use { socket ->
+            val reader = socket.getInputStream().bufferedReader()
+            while (reader.readLine()?.isNotEmpty() == true) Unit
+            val header = "HTTP/1.1 200 OK\r\nContent-Type: $JPEG_MIME_TYPE\r\n" +
+                "Content-Length: ${photo.length()}\r\nConnection: close\r\n\r\n"
+            socket.getOutputStream().apply {
+                write(header.toByteArray())
+                photo.inputStream().use { photoStream -> photoStream.copyTo(this) }
+                flush()
+            }
+        }
     }
 
     private fun findSavedPhotoUri(): Uri? =
@@ -154,6 +162,7 @@ class RemoteMediaExportManagerRotationMemoryTest {
         const val RANDOM_SEED = 475
         const val JPEG_MIME_TYPE = "image/jpeg"
         const val BALLAST_CHUNK_BYTES = 1_048_576
+        val SAVE_TIMEOUT = 3.minutes
 
         // Measured on a 192 MB heap (rindle-cmp#475): rotating this photo peaked at 133 MB above the
         // app's own heap before the fix and fits well under 110 MB after it.
