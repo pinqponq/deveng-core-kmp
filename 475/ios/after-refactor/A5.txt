@@ -1,0 +1,13 @@
+# A5 2026-10-18T16:46:17Z tmp/rindle_* listing (after save of 5)
+2968368	rindle_4054.mp4
+2968368	rindle_4055.mp4
+2968368	rindle_4056.mp4
+2968368	rindle_4057.mp4
+4316431	rindle_4065.mp4
+288059	rindle_4135.jpg
+287880	rindle_4136.jpg
+390161	rindle_4223.jpg
+389994	rindle_4224.jpg
+390618	rindle_4225.jpg
+390846	rindle_4226.jpg
+count=11 total_bytes=18327461 new_since_pre=0
