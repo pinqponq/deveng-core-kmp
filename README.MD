@@ -411,6 +411,19 @@ CustomLogger.isLoggingEnabled = true
 CustomLogger.log("Debug message")
 ```
 
+**JWT claims** — Read the claims of a JWT on the client (`core.util`). The payload is decoded as base64url with or without padding. The signature is not verified, so never use the claims to make trust decisions.
+
+```kotlin
+@Serializable
+data class AccessTokenClaims(@SerialName("userId") val userId: String)
+
+val payloadJson = decodeJwtPayload(token)              // raw JSON payload
+val claims = decodeJwtClaims<AccessTokenClaims>(token) // unknown claims are ignored
+val expiresAt: Instant? = jwtExpiresAt(token)          // standard "exp" claim, null when absent
+```
+
+All three throw `IllegalArgumentException` when the token does not have three parts or the payload is not valid (`SerializationException` for JSON errors is a subclass). The sample app shows them in "Open JWT Claims Demo".
+
 ---
 
 ## Data & Domain

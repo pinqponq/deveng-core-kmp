@@ -363,7 +363,9 @@ internal fun App() {
         var showNavigationBarScreen by remember { mutableStateOf(false) }
         var showServerDrivenScreen by remember { mutableStateOf(false) }
         var showMotionScreen by remember { mutableStateOf(false) }
+        var showJwtClaimsScreen by remember { mutableStateOf(false) }
         when {
+            showJwtClaimsScreen -> JwtClaimsDemoScreen(onBack = { showJwtClaimsScreen = false })
             showMotionScreen -> MotionDemoScreen(onBack = { showMotionScreen = false })
             showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
             showMediaViewerScreen -> MediaViewerDemoScreen(onBack = { showMediaViewerScreen = false })
@@ -381,6 +383,7 @@ internal fun App() {
                 onOpenNavigationBar = { showNavigationBarScreen = true },
                 onOpenServerDriven = { showServerDrivenScreen = true },
                 onOpenMotion = { showMotionScreen = true },
+                onOpenJwtClaims = { showJwtClaimsScreen = true },
             )
         }
     }
@@ -646,6 +649,7 @@ private fun ThemingDemo(
     onOpenNavigationBar: () -> Unit = {},
     onOpenServerDriven: () -> Unit = {},
     onOpenMotion: () -> Unit = {},
+    onOpenJwtClaims: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1054,6 +1058,12 @@ private fun ThemingDemo(
                             text = "Open Motion Demo",
                             containerColor = Color(0xFFAD1457),
                             onClick = onOpenMotion
+                        )
+
+                        CustomButton(
+                            text = "Open JWT Claims Demo",
+                            containerColor = Color(0xFF37474F),
+                            onClick = onOpenJwtClaims
                         )
 
                         RatingRow(
