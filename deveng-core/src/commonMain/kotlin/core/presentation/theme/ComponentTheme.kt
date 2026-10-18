@@ -466,6 +466,15 @@ val indicatorCornerRadius: Dp = 3.dp
 )
 
 /**
+ * Theme for shimmer loading placeholders (Modifier.shimmer and ShimmerBox)
+*/
+data class ShimmerTheme(
+val baseColor: Color = CoreChipItemUnselectedBorderColor,
+val highlightColor: Color = CoreBackgroundColor,
+val cornerRadius: Dp = 8.dp
+)
+
+/**
  * Theme for JsonViewer component
 */
 data class JsonViewerTheme(
@@ -809,7 +818,8 @@ val reviewStack: ReviewStackTheme = ReviewStackTheme(),
 val tabRow: TabRowTheme = TabRowTheme(),
 val shutter: ShutterTheme = ShutterTheme(),
 val serverDrivenScreen: ServerDrivenScreenTheme = ServerDrivenScreenTheme(),
-val qrCodeView: QrCodeViewTheme = QrCodeViewTheme()
+val qrCodeView: QrCodeViewTheme = QrCodeViewTheme(),
+val shimmer: ShimmerTheme = ShimmerTheme()
 )
 
 /**
