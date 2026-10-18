@@ -1,0 +1,8 @@
+# before2: grep OutOfMemoryError|RemoteMediaExportManager over full adb logcat -d: 0 matches
+# app GC lines (heap use):
+10-18 12:41:41.213 17456 17463 I m.deveng.rindle: Background concurrent mark compact GC freed 144KB AllocSpace bytes, 5(16MB) LOS objects, 26% free, 65MB/89MB, paused 400us,737us total 132.225ms
+10-18 12:41:42.082 17456 17463 I m.deveng.rindle: NativeAlloc concurrent mark compact GC freed 432KB AllocSpace bytes, 1(32MB) LOS objects, 41% free, 33MB/57MB, paused 137us,897us total 156.388ms
+10-18 12:41:43.839 17456 17463 I m.deveng.rindle: Background concurrent mark compact GC freed 160KB AllocSpace bytes, 2(24MB) LOS objects, 20% free, 92MB/116MB, paused 209us,1.284ms total 177.871ms
+10-18 12:41:48.198 17456 17463 I m.deveng.rindle: Background young concurrent mark compact GC freed 1264KB AllocSpace bytes, 9(8320KB) LOS objects, 0% free, 142MB/142MB, paused 694us,27.777ms total 118.489ms
+10-18 12:41:48.273 17456 17463 I m.deveng.rindle: Background concurrent mark compact GC freed 144KB AllocSpace bytes, 5(110MB) LOS objects, 42% free, 32MB/56MB, paused 116us,5.090ms total 74.781ms
+10-18 12:41:53.908 17456 17463 I m.deveng.rindle: Background young concurrent mark compact GC freed 688KB AllocSpace bytes, 10(16MB) LOS objects, 9% free, 76MB/83MB, paused 100us,10.383ms total 22.837ms

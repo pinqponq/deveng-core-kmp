@@ -1,0 +1,15 @@
+# after2: grep OutOfMemoryError|RemoteMediaExportManager over full adb logcat -d: 0 matches
+# app GC lines (heap use):
+10-18 12:48:05.868 18194 18199 I m.deveng.rindle: Background concurrent mark compact GC freed 944KB AllocSpace bytes, 5(4240KB) LOS objects, 37% free, 40MB/64MB, paused 2.424ms,925us total 157.117ms
+10-18 12:48:08.114 18194 18199 I m.deveng.rindle: NativeAlloc concurrent mark compact GC freed 544KB AllocSpace bytes, 1(32MB) LOS objects, 41% free, 33MB/57MB, paused 919us,10.288ms total 287.018ms
+10-18 12:48:10.897 18194 18199 I m.deveng.rindle: Background young concurrent mark compact GC freed 960KB AllocSpace bytes, 0(0B) LOS objects, 0% free, 59MB/59MB, paused 205us,1.072ms total 171.259ms
+10-18 12:48:11.175 18194 18199 I m.deveng.rindle: Background concurrent mark compact GC freed 304KB AllocSpace bytes, 0(0B) LOS objects, 28% free, 59MB/83MB, paused 11.293ms,1.084ms total 264.960ms
+10-18 12:48:12.660 18194 18199 I m.deveng.rindle: Background young concurrent mark compact GC freed 528KB AllocSpace bytes, 10(16MB) LOS objects, 9% free, 75MB/83MB, paused 336us,9.987ms total 41.354ms
+10-18 12:48:13.957 18194 18199 I m.deveng.rindle: Background concurrent mark compact GC freed 448KB AllocSpace bytes, 2(43MB) LOS objects, 27% free, 64MB/88MB, paused 228us,725us total 151.047ms
+10-18 12:48:14.424 18194 18199 I m.deveng.rindle: NativeAlloc concurrent mark compact GC freed 368KB AllocSpace bytes, 2(48MB) LOS objects, 41% free, 33MB/57MB, paused 123us,10.222ms total 64.730ms
+10-18 12:48:14.799 18194 18199 I m.deveng.rindle: NativeAlloc concurrent mark compact GC freed 320KB AllocSpace bytes, 0(0B) LOS objects, 41% free, 33MB/57MB, paused 146us,767us total 126.220ms
+10-18 12:48:21.497 18194 18199 I m.deveng.rindle: NativeAlloc concurrent mark compact GC freed 1856KB AllocSpace bytes, 0(0B) LOS objects, 41% free, 33MB/57MB, paused 409us,3.188ms total 356.235ms
+10-18 12:48:22.449 18194 18199 I m.deveng.rindle: Background concurrent mark compact GC freed 160KB AllocSpace bytes, 0(0B) LOS objects, 28% free, 59MB/83MB, paused 956us,698us total 118.958ms
+10-18 12:48:25.369 18194 18199 I m.deveng.rindle: Background young concurrent mark compact GC freed 496KB AllocSpace bytes, 0(0B) LOS objects, 0% free, 64MB/64MB, paused 23.065ms,1.842ms total 62.444ms
+10-18 12:48:26.229 18194 18199 I m.deveng.rindle: NativeAlloc concurrent mark compact GC freed 192KB AllocSpace bytes, 0(0B) LOS objects, 41% free, 33MB/57MB, paused 5.303ms,922us total 100.131ms
+10-18 12:48:28.335 18194 18199 I m.deveng.rindle: Background concurrent mark compact GC freed 272KB AllocSpace bytes, 0(0B) LOS objects, 28% free, 60MB/84MB, paused 312us,1.924ms total 135.900ms
