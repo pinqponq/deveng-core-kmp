@@ -298,6 +298,17 @@ class PushNotificationsTest {
     }
 
     @Test
+    fun registerTokenIfPermitted_signedInCheckFails_logsFailureWithoutRegistering() = runTest {
+        permissionsController.permissionState = PermissionState.Granted
+        val signedInFailure = IllegalStateException(SIGNED_IN_FAILURE_MESSAGE)
+
+        createPushNotifications(isSignedInProvider = { throw signedInFailure }).registerTokenIfPermitted(permissionsController)
+
+        assertTrue(pushTokenRegistrar.registrations.isEmpty())
+        assertEquals(listOf<Throwable?>(signedInFailure), recordingLogWriter.warningThrowables)
+    }
+
+    @Test
     fun handleNewToken_signedInCheckFails_logsFailureWithoutRegistering() = runTest {
         val signedInFailure = IllegalStateException(SIGNED_IN_FAILURE_MESSAGE)
 
