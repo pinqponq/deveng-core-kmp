@@ -1,0 +1,51 @@
+appId: ${APP_ID}
+name: Push notifications demo — deny keeps the token unregistered and leads to settings once blocked (#116)
+tags: [push]
+---
+- runFlow: subflows/open-push-demo.yaml
+- startRecording: push-demo-deny
+- tapOn: "Enable notifications"
+- tapOn:
+    text: "Don.t allow|Don’t Allow|Don't Allow"
+- assertVisible: "Last result: Denied.*"
+- assertNotVisible: "register demo-push-token-.*"
+- takeScreenshot: push_4_denied
+# Android shows its dialog once more after a first denial; iOS is blocked after one.
+- runFlow:
+    when:
+      visible: "Permission: Askable"
+    commands:
+      - tapOn: "Enable notifications"
+      - tapOn:
+          text: "Don.t allow"
+- assertVisible: "Permission: BlockedBySystem"
+- takeScreenshot: push_5_blocked_by_system
+# A Settings app left running by another session keeps showing its old page; start it fresh.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - stopApp: com.apple.Preferences
+- tapOn: "Enable notifications"
+# The Settings screen renders blank for a moment; wait for its notifications content before the screenshot.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible: ".*notifications.*"
+          timeout: 10000
+# iOS: the Settings app is in front, opened from this app (status bar back link).
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: "Return to pinqponq-chat-kmp"
+          timeout: 10000
+- waitForAnimationToEnd
+- takeScreenshot: push_6_system_settings
+- launchApp:
+    stopApp: false
+- assertVisible: "Last result: SettingsOpened"
+- stopRecording

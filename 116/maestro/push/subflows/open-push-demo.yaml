@@ -1,0 +1,16 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+    permissions:
+      notifications: unset
+- scrollUntilVisible:
+    element:
+      text: "Open Push Notifications Demo"
+    direction: DOWN
+    timeout: 60000
+    centerElement: true
+# A tap during the scroll's momentum is lost on iOS; let the list settle first.
+- waitForAnimationToEnd
+- tapOn: "Open Push Notifications Demo"
+- assertVisible: "Permission: Askable"

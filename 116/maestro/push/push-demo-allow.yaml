@@ -1,0 +1,32 @@
+appId: ${APP_ID}
+name: Push notifications demo — soft ask cadence, allow, register, rotate, sign out (#116)
+tags: [push]
+---
+- runFlow: subflows/open-push-demo.yaml
+- startRecording: push-demo-allow
+- assertNotVisible: "register demo-push-token-.*"
+- tapOn: "Soft ask"
+- assertVisible: "Last result: show own request \\(Askable\\)"
+- tapOn: "Soft ask"
+- assertVisible: "Last result: no request due"
+- assertNotVisible: "register demo-push-token-.*"
+- takeScreenshot: push_1_soft_ask_cadence
+- tapOn: "Enable notifications"
+- tapOn:
+    text: "Allow"
+- assertVisible: "Last result: Granted"
+- assertVisible: "Permission: Granted"
+- assertVisible: "register demo-push-token-1 .*"
+- takeScreenshot: push_2_granted_registered
+- tapOn: "Register token if permitted"
+- assertNotVisible:
+    text: "register demo-push-token-1 .*"
+    index: 1
+- tapOn: "Rotate token"
+- assertVisible: "register demo-push-token-2 .*"
+- tapOn: "Sign out \\(unregister\\)"
+- assertVisible: "unregister demo-push-token-2 .*"
+- tapOn: "Rotate token"
+- assertNotVisible: "register demo-push-token-3 .*"
+- takeScreenshot: push_3_rotate_and_sign_out
+- stopRecording
