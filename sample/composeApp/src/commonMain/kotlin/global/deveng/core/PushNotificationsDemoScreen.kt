@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -126,6 +127,7 @@ internal fun PushNotificationsDemoScreen(onBack: () -> Unit) {
         )
 
         CustomButton(
+            modifier = Modifier.fillMaxWidth(),
             text = "Soft ask",
             onClick = {
                 coroutineScope.launch {
@@ -137,6 +139,7 @@ internal fun PushNotificationsDemoScreen(onBack: () -> Unit) {
         )
 
         CustomButton(
+            modifier = Modifier.fillMaxWidth(),
             text = "Enable notifications",
             onClick = {
                 coroutineScope.launch {
@@ -148,6 +151,7 @@ internal fun PushNotificationsDemoScreen(onBack: () -> Unit) {
         )
 
         CustomButton(
+            modifier = Modifier.fillMaxWidth(),
             text = "Register token if permitted",
             onClick = {
                 coroutineScope.launch { pushNotifications.registerTokenIfPermitted(permissionsController) }
@@ -155,6 +159,7 @@ internal fun PushNotificationsDemoScreen(onBack: () -> Unit) {
         )
 
         CustomButton(
+            modifier = Modifier.fillMaxWidth(),
             text = "Rotate token",
             onClick = {
                 tokenVersion += 1
@@ -165,6 +170,7 @@ internal fun PushNotificationsDemoScreen(onBack: () -> Unit) {
         )
 
         CustomButton(
+            modifier = Modifier.fillMaxWidth(),
             text = "Sign out (unregister)",
             containerColor = Color(0xFFC62828),
             onClick = {
@@ -176,6 +182,7 @@ internal fun PushNotificationsDemoScreen(onBack: () -> Unit) {
         )
 
         CustomButton(
+            modifier = Modifier.fillMaxWidth(),
             text = "Reset ask history",
             containerColor = Color(0xFF616161),
             onClick = {
