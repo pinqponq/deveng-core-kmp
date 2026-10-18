@@ -18,7 +18,7 @@ class JwtClaimsTest {
     fun decodeJwtPayload_withBase64UrlCharacters_returnsPayloadJson() {
         val token = createToken(URL_SAFE_PAYLOAD_JSON)
 
-        val encodedPayload = token.split(".")[1]
+        val encodedPayload = token.split(".")[PAYLOAD_PART_INDEX]
         assertTrue(encodedPayload.contains('-') && encodedPayload.contains('_'))
         assertEquals(URL_SAFE_PAYLOAD_JSON, decodeJwtPayload(token))
     }
@@ -95,10 +95,16 @@ class JwtClaimsTest {
 
     @Test
     fun jwtExpiresAt_withFractionalExpClaim_keepsMilliseconds() {
-        val token = createToken("""{"exp":$EXPIRES_AT_EPOCH_SECONDS.25}""")
+        val token = createToken("""{"exp":$FRACTIONAL_EXPIRES_AT_EPOCH_SECONDS}""")
 
-        val expected = Instant.fromEpochMilliseconds(EXPIRES_AT_EPOCH_SECONDS * 1_000 + 250)
-        assertEquals(expected, jwtExpiresAt(token))
+        assertEquals(Instant.fromEpochMilliseconds(FRACTIONAL_EXPIRES_AT_EPOCH_MILLISECONDS), jwtExpiresAt(token))
+    }
+
+    @Test
+    fun jwtExpiresAt_withExpNotExactInBinary_roundsToNearestMillisecond() {
+        val token = createToken("""{"exp":$INEXACT_EXPIRES_AT_EPOCH_SECONDS}""")
+
+        assertEquals(Instant.fromEpochMilliseconds(INEXACT_EXPIRES_AT_EPOCH_MILLISECONDS), jwtExpiresAt(token))
     }
 
     @Test
@@ -130,6 +136,11 @@ class JwtClaimsTest {
         const val SUBJECT = "user-42"
         const val EXPIRES_AT_EPOCH_SECONDS = 1_800_000_000L
         const val BASE64_BLOCK_BYTE_COUNT = 3
+        const val PAYLOAD_PART_INDEX = 1
+        const val FRACTIONAL_EXPIRES_AT_EPOCH_SECONDS = "1800000000.25"
+        const val FRACTIONAL_EXPIRES_AT_EPOCH_MILLISECONDS = 1_800_000_000_250L
+        const val INEXACT_EXPIRES_AT_EPOCH_SECONDS = "1.001"
+        const val INEXACT_EXPIRES_AT_EPOCH_MILLISECONDS = 1_001L
         const val SHORT_PAYLOAD_JSON = """{"sub":"a"}"""
         const val URL_SAFE_PAYLOAD_JSON = """{"note":">>>???"}"""
         const val INVALID_JSON_PAYLOAD = """{"sub":"""

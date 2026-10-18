@@ -1,6 +1,7 @@
 package core.util
 
 import kotlin.io.encoding.Base64
+import kotlin.math.roundToLong
 import kotlin.time.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -42,6 +43,8 @@ fun decodeJwtPayload(token: String): String {
  *
  * The signature is not verified, so use the result only to read claims on the client, never to trust them.
  *
+ * @param token the encoded JWT (`header.payload.signature`).
+ * @param json the decoder for the payload; pass a stricter [Json] to fail on claims that [T] does not declare.
  * @throws IllegalArgumentException when the token format is invalid or the payload does not match [T]
  * (a `SerializationException` is an `IllegalArgumentException`).
  */
@@ -57,6 +60,6 @@ inline fun <reified T> decodeJwtClaims(token: String, json: Json = jwtClaimsJson
  */
 fun jwtExpiresAt(token: String): Instant? {
     val expiresAtEpochSeconds = decodeJwtClaims<JwtExpirationClaim>(token).expiresAtEpochSeconds ?: return null
-    val expiresAtEpochMilliseconds = (expiresAtEpochSeconds * MILLISECONDS_PER_SECOND).toLong()
+    val expiresAtEpochMilliseconds = (expiresAtEpochSeconds * MILLISECONDS_PER_SECOND).roundToLong()
     return Instant.fromEpochMilliseconds(expiresAtEpochMilliseconds)
 }

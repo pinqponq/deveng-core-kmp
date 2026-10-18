@@ -44,13 +44,16 @@ private data class DemoTokenClaims(
 
 private data class JwtDemoSample(
     val title: String,
-    val token: String
+    val resultLines: List<String>
 )
 
 private val jwtDemoSamples = listOf(
-    JwtDemoSample(title = "Token with exp (base64url payload, no padding)", token = TOKEN_WITH_EXPIRY),
-    JwtDemoSample(title = "Token without exp", token = TOKEN_WITHOUT_EXPIRY),
-    JwtDemoSample(title = "Invalid token", token = TOKEN_WITH_INVALID_FORMAT),
+    JwtDemoSample(
+        title = "Token with exp (base64url payload, no padding)",
+        resultLines = readJwtDemoResult(TOKEN_WITH_EXPIRY),
+    ),
+    JwtDemoSample(title = "Token without exp", resultLines = readJwtDemoResult(TOKEN_WITHOUT_EXPIRY)),
+    JwtDemoSample(title = "Invalid token", resultLines = readJwtDemoResult(TOKEN_WITH_INVALID_FORMAT)),
 )
 
 @Composable
@@ -86,13 +89,12 @@ internal fun JwtClaimsDemoScreen(onBack: () -> Unit) {
 
 @Composable
 private fun JwtDemoSampleSection(sample: JwtDemoSample) {
-    val resultLines = readJwtDemoResult(sample.token)
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(space = 4.dp),
     ) {
         Text(text = sample.title, style = CoreMediumTextStyle().copy(fontSize = 18.sp))
-        resultLines.forEach { line ->
+        sample.resultLines.forEach { line ->
             Text(text = line, style = CoreRegularTextStyle().copy(fontSize = 14.sp))
         }
     }

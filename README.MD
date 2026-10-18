@@ -415,7 +415,10 @@ CustomLogger.log("Debug message")
 
 ```kotlin
 @Serializable
-data class AccessTokenClaims(@SerialName("userId") val userId: String)
+data class AccessTokenClaims(
+    @SerialName("sub")
+    val subject: String
+)
 
 val payloadJson = decodeJwtPayload(token)              // raw JSON payload
 val claims = decodeJwtClaims<AccessTokenClaims>(token) // unknown claims are ignored
