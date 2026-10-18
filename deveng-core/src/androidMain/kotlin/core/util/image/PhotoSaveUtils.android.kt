@@ -70,10 +70,11 @@ actual object PhotoSaveUtils {
             try {
                 bitmap = applyExifOrientationToBitmap(bitmap, orientation)
                 val normalizedBytes = encodeUprightJpeg(bitmap)
-                if (gps != null) {
-                    return addLocationExif(normalizedBytes, gps.first, gps.second)
+                return if (gps != null) {
+                    addLocationExif(normalizedBytes, gps.first, gps.second)
+                } else {
+                    normalizedBytes
                 }
-                return normalizedBytes
             } finally {
                 if (!bitmap.isRecycled) bitmap.recycle()
             }

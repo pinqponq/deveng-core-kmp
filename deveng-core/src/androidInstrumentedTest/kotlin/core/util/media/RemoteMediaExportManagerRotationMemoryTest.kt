@@ -134,7 +134,7 @@ class RemoteMediaExportManagerRotationMemoryTest {
             try {
                 server.use { respondWithPhoto(server, photo) }
             } catch (e: SocketException) {
-                // tearDown closed the server because the save never connected; the test reports why.
+                // tearDown closes the server when the save never connected. The test failure then reports why.
                 Log.w(LOG_TAG, "photo server closed before the save connected", e)
             }
         }
@@ -179,8 +179,7 @@ class RemoteMediaExportManagerRotationMemoryTest {
         const val BALLAST_CHUNK_BYTES = 1_048_576
         val SAVE_TIMEOUT = 3.minutes
 
-        // Measured on a 192 MB heap (rindle-cmp#475): rotating this photo peaked at 133 MB above the
-        // app's own heap before the fix and fits well under 110 MB after it.
+        // On a 192 MB heap, rotating this photo needs about 70 MB above the app's own heap.
         const val FREE_HEAP_BYTES = 110L * 1_048_576
 
         // Less than the 44 MB the upright copy of this photo needs as one array.

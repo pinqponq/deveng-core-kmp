@@ -22,7 +22,7 @@ class RemoteMediaExportManagerTempFileTest {
 
     private val fileManager = NSFileManager.defaultManager
     private val sourceFile = NSURL.fileURLWithPath(NSTemporaryDirectory() + SOURCE_FILE_NAME)
-    private val tempFilesSeenBySave = mutableListOf<Boolean>()
+    private val tempFileExistedAtSaveList = mutableListOf<Boolean>()
 
     @BeforeTest
     fun setUp() {
@@ -51,7 +51,7 @@ class RemoteMediaExportManagerTempFileTest {
         )
 
         assertTrue(isSaved)
-        assertEquals(listOf(true), tempFilesSeenBySave)
+        assertEquals(listOf(true), tempFileExistedAtSaveList)
         assertFalse(isInTempDirectory(FIRST_SAVED_FILE_NAME))
     }
 
@@ -66,7 +66,7 @@ class RemoteMediaExportManagerTempFileTest {
         )
 
         assertFalse(isSaved)
-        assertEquals(listOf(true), tempFilesSeenBySave)
+        assertEquals(listOf(true), tempFileExistedAtSaveList)
         assertFalse(isInTempDirectory(FIRST_SAVED_FILE_NAME))
     }
 
@@ -75,7 +75,7 @@ class RemoteMediaExportManagerTempFileTest {
         var saveCount = 0
         val manager = RemoteMediaExportManager(
             saveToPhotos = { fileUrl, _ ->
-                tempFilesSeenBySave += fileManager.fileExistsAtPath(checkNotNull(fileUrl.path))
+                tempFileExistedAtSaveList += fileManager.fileExistsAtPath(checkNotNull(fileUrl.path))
                 saveCount++ == 0
             },
         )
@@ -91,13 +91,13 @@ class RemoteMediaExportManagerTempFileTest {
         )
 
         assertEquals(1, savedCount)
-        assertEquals(listOf(true, true), tempFilesSeenBySave)
+        assertEquals(listOf(true, true), tempFileExistedAtSaveList)
         assertFalse(isInTempDirectory(FIRST_SAVED_FILE_NAME))
         assertFalse(isInTempDirectory(SECOND_SAVED_FILE_NAME))
     }
 
     private fun recordingPhotosSave(isSaved: Boolean): (NSURL, String) -> Boolean = { fileUrl, _ ->
-        tempFilesSeenBySave += fileManager.fileExistsAtPath(checkNotNull(fileUrl.path))
+        tempFileExistedAtSaveList += fileManager.fileExistsAtPath(checkNotNull(fileUrl.path))
         isSaved
     }
 

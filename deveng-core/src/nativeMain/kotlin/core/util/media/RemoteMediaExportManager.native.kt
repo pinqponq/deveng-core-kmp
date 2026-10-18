@@ -31,8 +31,6 @@ import platform.Photos.PHPhotoLibrary
 actual class RemoteMediaExportManager internal constructor(
     private val saveToPhotos: (fileUrl: NSURL, mimeType: String) -> Boolean,
 ) {
-    constructor() : this(saveToPhotos = ::saveToPhotoLibrary)
-
     private companion object {
         // Idle timeout between received packets, matching the Android read timeout. There is no cap
         // on the total duration, so a large video on a slow connection still completes.
@@ -47,6 +45,8 @@ actual class RemoteMediaExportManager internal constructor(
         }
         NSURLSession.sessionWithConfiguration(configuration)
     }
+
+    constructor() : this(saveToPhotos = ::saveToPhotoLibrary)
 
     actual suspend fun shareSingleFileFromUrl(
         fileUrl: String,
