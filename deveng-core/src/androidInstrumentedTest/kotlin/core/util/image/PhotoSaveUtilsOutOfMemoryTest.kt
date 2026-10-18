@@ -54,6 +54,6 @@ class PhotoSaveUtilsOutOfMemoryTest {
 
         // The upright JPEG of this photo is read back as one array of 44.7 MB
         // (OutOfMemoryError in encodeUprightJpeg on the Medium_Phone emulator, API 37, 192 MB heap limit).
-        const val TOO_LITTLE_FREE_HEAP_BYTES = 30L * 1_048_576
+        const val TOO_LITTLE_FREE_HEAP_BYTES = 30L * PhotoTestFixtures.BYTES_PER_MEGABYTE
     }
 }

@@ -123,6 +123,6 @@ class RemoteMediaExportManagerRotationMemoryTest {
 
         // With this much free heap, encoding the upright photo into memory runs out of memory and encoding it
         // to a file does not (Medium_Phone emulator, API 37, 192 MB heap limit).
-        const val FREE_HEAP_BYTES = 110L * 1_048_576
+        const val FREE_HEAP_BYTES = 110L * PhotoTestFixtures.BYTES_PER_MEGABYTE
     }
 }

@@ -6,7 +6,16 @@ import java.io.File
 import kotlin.random.Random
 
 internal object PhotoTestFixtures {
-    const val UPRIGHT_TEMP_FILE_PREFIX = "exif_orient_out"
+    const val BYTES_PER_MEGABYTE = 1_048_576
+    private const val SOURCE_JPEG_QUALITY = 92
+    private const val PIXEL_NOISE_RANGE = 48
+    private const val RANDOM_SEED = 475
+    private const val MAX_CHANNEL = 0xFF
+    private const val OPAQUE_ALPHA_MASK = 0xFF shl 24
+    private const val RED_SHIFT = 16
+    private const val GREEN_SHIFT = 8
+    private const val UPRIGHT_TEMP_FILE_PREFIX = "exif_orient_out"
+    private const val BALLAST_CHUNK_BYTES = BYTES_PER_MEGABYTE
 
     fun writeRotatedJpeg(target: File, width: Int, height: Int) {
         val bitmap = createNoiseBitmap(width, height)
@@ -53,13 +62,4 @@ internal object PhotoTestFixtures {
 
         return bitmap
     }
-
-    private const val SOURCE_JPEG_QUALITY = 92
-    private const val PIXEL_NOISE_RANGE = 48
-    private const val RANDOM_SEED = 475
-    private const val MAX_CHANNEL = 0xFF
-    private const val OPAQUE_ALPHA_MASK = 0xFF shl 24
-    private const val RED_SHIFT = 16
-    private const val GREEN_SHIFT = 8
-    private const val BALLAST_CHUNK_BYTES = 1_048_576
 }
