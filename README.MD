@@ -41,6 +41,7 @@ Replace `VERSION` with the [latest release](https://central.sonatype.com/artifac
 - [Data & Domain](#data--domain)
 - [Camera](#camera)
 - [Permissions](#permissions)
+- [Push Notifications](#push-notifications)
 - [Pagination](#pagination)
 - [Sample App](#sample-app)
 - [Building](#building)
@@ -76,6 +77,7 @@ The `deveng-core` module is organized as follows:
 | **Domain** | `PagedList` for pagination; camera (see [Camera](#camera)) — `rememberCameraKState`, `DefaultCameraPreview`, `CameraPreviewView`, `ImageCaptureResult.Success(byteArray, bitmap)`; image save & EXIF via `core.util.image.PhotoSaveUtils`. |
 | **Utilities** | `Platform`, `PlatformConfig`, `MultiPlatformUtils` (dial, clipboard, open URL, maps, share, location); date/time formatting; `ImageSizeProcessor` and `ImageProcessingProfile`; `StringFormatter`, `CustomLogger`, `CustomDispatchers`. |
 | **Permissions** | `Permission` enum, `PermissionsController`, `PermissionState`; Android and iOS implementations. |
+| **Push notifications** | `PushNotifications` (permission status, soft-ask cadence, system prompt, token registration), `PushNotificationMessagingService` (Android), `IosPushTokenBridge` (iOS); see [Push Notifications](#push-notifications). |
 | **Pagination (UI)** | `PaginatedFlowLoader`, `PaginatedListView`, page state. |
 
 ## UI Components & Theming
@@ -646,6 +648,102 @@ if (state != PermissionState.Granted) {
 
 val hasLocation = permissionsController.isPermissionGranted(Permission.LOCATION)
 ```
+
+---
+
+## Push Notifications
+
+`core.push` covers the push notification flow every app rebuilds: notification permission status, the app's own request and how often it may be shown, the system prompt, and registering the device token with your backend (once per token, again after a rotation, removed on sign-out). Firebase Cloud Messaging delivers the pushes; your app keeps its own channel, strings, backend calls and tap routing.
+
+Create one `PushNotifications` per app (for example a DI singleton):
+
+```kotlin
+val pushNotifications = PushNotifications(
+    options = PushNotificationOptions(
+        androidChannelId = "app_notifications",
+        androidChannelName = "Notifications",
+        softAskPolicy = SoftAskPolicy(maxAskCount = 7, minimumInterval = 3.days),
+        // false on iOS: App Store Guideline 5.1.1(iv), no own message in front of the system prompt
+        isAppMessageShownBeforeSystemPrompt = !isIos,
+    ),
+    pushTokenSource = PlatformPushTokenSource,
+    pushTokenRegistrar = { token, platform, deviceIdentifier -> backend.registerDevice(token, platform, deviceIdentifier) },
+    pushTokenUnregistrar = { token, deviceIdentifier -> backend.unregisterDevice(token, deviceIdentifier) },
+    platformConfigProvider = multiPlatformUtils::getPlatformConfig,
+    notificationPermissionStorage = NotificationPermissionStorageImpl(settings),
+    isSignedIn = { authStorage.isUserLoggedIn() },
+)
+```
+
+Use it from screens with the screen's `PermissionsController` (see [Permissions](#permissions)):
+
+| Situation | Call |
+|-----------|------|
+| App start or a screen opens: register if allowed | `registerTokenIfPermitted(permissionsController)` |
+| May the screen show its own request now? (books the ask) | `softAsk(permissionsController)` → status or `null` |
+| Skip the own request and open the system prompt directly | `isSystemPromptShownDirectly(status)` |
+| User tapped "Turn on" | `enableNotifications(permissionsController)` → `NotificationPromptResult` (system prompt, or settings when blocked) |
+| iOS: register rotated tokens | `registerTokenUpdates()` once from the app scope |
+| Sign-out | `unregisterToken()` |
+
+Failures are logged and never thrown (coroutine cancellation still is), so a declined notification never shows an error.
+
+**Android**
+
+1. Apply the Google services plugin with your `google-services.json` (Firebase Messaging comes with core).
+2. Subclass the ready service and declare it with the permission in `AndroidManifest.xml`:
+
+```kotlin
+class AppMessagingService : PushNotificationMessagingService() {
+    override val pushNotifications: PushNotifications by inject()
+    override val launchActivityClass = MainActivity::class.java
+    override val notificationIconResourceId = R.drawable.ic_notification
+
+    // Optional: tap routing and the app's own data-only messages
+    override fun resolveDeepLink(message: RemoteMessage): String? = message.data["deepLink"]
+    override fun handleDataMessage(message: RemoteMessage): Boolean = false
+}
+```
+
+```xml
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+<service android:name=".AppMessagingService" android:exported="false">
+    <intent-filter>
+        <action android:name="com.google.firebase.MESSAGING_EVENT" />
+    </intent-filter>
+</service>
+```
+
+The service creates the channel from the options, shows notification messages, opens `launchActivityClass` with the deep link as intent data, and registers rotated tokens.
+
+**iOS**
+
+Add FirebaseMessaging to the iOS app, enable the Push Notifications capability and upload the APNs key to Firebase. Then hand the APNs token to Firebase and the FCM token to core in `AppDelegate` (the class must be visible to Swift: export core from your framework, or call it through a function in your shared module):
+
+```swift
+func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    FirebaseApp.configure()
+    UNUserNotificationCenter.current().delegate = self
+    Messaging.messaging().delegate = self
+    // On every launch: the APNs token changes across iOS updates, restores and reinstalls, and iOS only
+    // hands out the current one in response to this call. Without it FCM accepts every send and APNs
+    // drops it without an error.
+    application.registerForRemoteNotifications()
+    return true
+}
+
+func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    Messaging.messaging().apnsToken = deviceToken
+}
+
+func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+    guard let token = fcmToken, !token.isEmpty else { return }
+    IosPushTokenBridge.shared.updateToken(token: token)
+}
+```
+
+`PlatformPushTokenSource` reads that token on iOS, Firebase Messaging on Android, and reports none on desktop and web. The **Push Notifications Demo** screen in the sample app runs the whole flow against a fake backend.
 
 ---
 

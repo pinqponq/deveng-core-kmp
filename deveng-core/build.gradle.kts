@@ -97,6 +97,8 @@ kotlin {
             implementation(libs.mlkit.barcode.scanning)
             implementation(project.dependencies.platform(libs.firebase.android.bom))
             implementation(libs.gitlive.firebase.analytics)
+            implementation(libs.firebase.messaging)
+            implementation(libs.kotlinx.coroutines.play.services)
             compileOnly(libs.facebook.core)
             compileOnly(libs.install.referrer)
             compileOnly(libs.basic.ads)
