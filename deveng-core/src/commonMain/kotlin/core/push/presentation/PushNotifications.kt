@@ -144,8 +144,9 @@ class PushNotifications(
     }
 
     /**
-     * Registers a token the platform rotated. Call it from the platform callback that reports a new
-     * token; the Android messaging service in core already does.
+     * Registers a token the platform rotated, whenever a user is signed in; it does not check the
+     * notification permission, so the backend always holds the device's current token. Call it from the
+     * platform callback that reports a new token; the Android messaging service in core already does.
      */
     suspend fun handleNewToken(token: String) {
         runCatchingNonCancellation { if (isSignedIn()) pushTokenRegistration.registerToken(token) }

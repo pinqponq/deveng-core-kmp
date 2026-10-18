@@ -95,7 +95,6 @@ internal fun PushNotificationsDemoScreen(onBack: () -> Unit) {
 
     LaunchedEffect(pushNotifications) {
         refreshPermissionStatus(permissionsController)
-        pushNotifications.registerTokenUpdates()
     }
 
     Column(
@@ -159,7 +158,9 @@ internal fun PushNotificationsDemoScreen(onBack: () -> Unit) {
             text = "Rotate token",
             onClick = {
                 tokenVersion += 1
-                demoPushTokenSource.token.value = "$DEMO_TOKEN_PREFIX$tokenVersion"
+                val rotatedToken = "$DEMO_TOKEN_PREFIX$tokenVersion"
+                demoPushTokenSource.token.value = rotatedToken
+                coroutineScope.launch { pushNotifications.handleNewToken(rotatedToken) }
             },
         )
 
