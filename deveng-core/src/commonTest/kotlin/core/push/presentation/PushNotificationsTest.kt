@@ -11,12 +11,15 @@ import core.push.domain.PushTokenSource
 import core.push.domain.SoftAskPolicy
 import core.push.domain.model.NotificationPermissionStatus
 import core.push.domain.model.NotificationPromptResult
+import co.touchlab.kermit.Logger
+import co.touchlab.kermit.platformLogWriter
 import core.push.fake.FakeClock
 import core.push.fake.FakeNotificationPermissionStorage
 import core.push.fake.FakePermissionsController
 import core.push.fake.FakePushTokenRegistrar
 import core.push.fake.FakePushTokenSource
 import core.push.fake.FakePushTokenUnregistrar
+import core.push.fake.RecordingLogWriter
 import core.util.multiplatform.Platform
 import core.util.multiplatform.PlatformConfig
 import kotlinx.coroutines.CompletableDeferred
@@ -28,6 +31,8 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -43,7 +48,18 @@ class PushNotificationsTest {
     private val pushTokenRegistrar = FakePushTokenRegistrar()
     private val pushTokenUnregistrar = FakePushTokenUnregistrar()
     private val clock = FakeClock()
+    private val recordingLogWriter = RecordingLogWriter()
     private var isSignedIn = true
+
+    @BeforeTest
+    fun setUp() {
+        Logger.setLogWriters(recordingLogWriter)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        Logger.setLogWriters(platformLogWriter())
+    }
 
     @Test
     fun resolvePermissionStatus_granted_returnsGranted() = runTest {
@@ -90,9 +106,11 @@ class PushNotificationsTest {
 
     @Test
     fun resolvePermissionStatus_stateReadFails_returnsBlockedBySystem() = runTest {
-        permissionsController.permissionStateFailure = IllegalStateException(UNBOUND_CONTROLLER_MESSAGE)
+        val stateFailure = IllegalStateException(UNBOUND_CONTROLLER_MESSAGE)
+        permissionsController.permissionStateFailure = stateFailure
 
         assertEquals(NotificationPermissionStatus.BlockedBySystem, createPushNotifications().resolvePermissionStatus(permissionsController))
+        assertEquals(listOf<Throwable?>(stateFailure), recordingLogWriter.warningThrowables)
     }
 
     @Test
@@ -253,13 +271,15 @@ class PushNotificationsTest {
     fun registerTokenIfPermitted_registrarFails_swallowsErrorAndRetriesNextTime() = runTest {
         permissionsController.permissionState = PermissionState.Granted
         val pushNotifications = createPushNotifications()
-        pushTokenRegistrar.registrationFailure = IllegalStateException(BACKEND_FAILURE_MESSAGE)
+        val backendFailure = IllegalStateException(BACKEND_FAILURE_MESSAGE)
+        pushTokenRegistrar.registrationFailure = backendFailure
 
         pushNotifications.registerTokenIfPermitted(permissionsController)
         pushTokenRegistrar.registrationFailure = null
         pushNotifications.registerTokenIfPermitted(permissionsController)
 
         assertEquals(listOf(FIRST_TOKEN), pushTokenRegistrar.registrations.map { it.token })
+        assertEquals(listOf<Throwable?>(backendFailure), recordingLogWriter.warningThrowables)
     }
 
     @Test
@@ -283,12 +303,14 @@ class PushNotificationsTest {
     }
 
     @Test
-    fun handleNewToken_registrarFails_swallowsError() = runTest {
-        pushTokenRegistrar.registrationFailure = IllegalStateException(BACKEND_FAILURE_MESSAGE)
+    fun handleNewToken_registrarFails_logsAndSwallowsError() = runTest {
+        val backendFailure = IllegalStateException(BACKEND_FAILURE_MESSAGE)
+        pushTokenRegistrar.registrationFailure = backendFailure
 
         createPushNotifications().handleNewToken(ROTATED_TOKEN)
 
         assertTrue(pushTokenRegistrar.registrations.isEmpty())
+        assertEquals(listOf<Throwable?>(backendFailure), recordingLogWriter.warningThrowables)
     }
 
     @Test
@@ -322,11 +344,13 @@ class PushNotificationsTest {
     fun unregisterToken_unregistrarFails_clearsCacheAndSwallowsError() = runTest {
         val pushNotifications = createPushNotifications()
         pushNotifications.handleNewToken(ROTATED_TOKEN)
-        pushTokenUnregistrar.unregistrationFailure = IllegalStateException(BACKEND_FAILURE_MESSAGE)
+        val backendFailure = IllegalStateException(BACKEND_FAILURE_MESSAGE)
+        pushTokenUnregistrar.unregistrationFailure = backendFailure
 
         pushNotifications.unregisterToken()
         pushNotifications.handleNewToken(ROTATED_TOKEN)
 
+        assertEquals(listOf<Throwable?>(backendFailure), recordingLogWriter.warningThrowables)
         assertEquals(listOf(ROTATED_TOKEN), pushTokenUnregistrar.unregistrations.map { it.token })
         assertEquals(listOf(ROTATED_TOKEN, ROTATED_TOKEN), pushTokenRegistrar.registrations.map { it.token })
     }
@@ -359,9 +383,11 @@ class PushNotificationsTest {
     @Test
     fun enableNotifications_settingsCannotOpen_returnsNull() = runTest {
         permissionsController.permissionState = PermissionState.DeniedAlways
-        permissionsController.openNotificationSettingsFailure = IllegalStateException(UNBOUND_CONTROLLER_MESSAGE)
+        val settingsFailure = IllegalStateException(UNBOUND_CONTROLLER_MESSAGE)
+        permissionsController.openNotificationSettingsFailure = settingsFailure
 
         assertNull(createPushNotifications().enableNotifications(permissionsController))
+        assertEquals(listOf<Throwable?>(settingsFailure), recordingLogWriter.warningThrowables)
     }
 
     @Test
@@ -449,6 +475,10 @@ class PushNotificationsTest {
         }
 
         assertEquals(NotificationPromptResult.Unknown, pushNotifications.enableNotifications(unreadableAfterPrompt))
+        assertEquals(
+            listOf(IOS_FIRST_DENIAL_MESSAGE, UNBOUND_CONTROLLER_MESSAGE),
+            recordingLogWriter.warningThrowables.map { it?.message }
+        )
     }
 
     @Test
@@ -466,6 +496,7 @@ class PushNotificationsTest {
 
         assertNull(pushNotifications.enableNotifications(failingAfterStatus))
         assertTrue(permissionsController.providedPermissions.isEmpty())
+        assertEquals(listOf(UNBOUND_CONTROLLER_MESSAGE), recordingLogWriter.warningThrowables.map { it?.message })
     }
 
     private suspend fun assertPromptFailureResult(stateAfterFailure: PermissionState, expectedResult: NotificationPromptResult) {
