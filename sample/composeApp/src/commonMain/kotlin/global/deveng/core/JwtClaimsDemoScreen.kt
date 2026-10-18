@@ -97,10 +97,13 @@ private fun JwtDemoSampleSection(sample: JwtDemoSample) {
 
 private fun readJwtDemoResult(token: String): List<String> =
     try {
+        val payloadJson = decodeJwtPayload(token)
+        val subject = decodeJwtClaims<JsonObject>(token).getValue(SUBJECT_CLAIM_NAME).jsonPrimitive.content
+        val expiresAt = jwtExpiresAt(token)
         listOf(
-            "decodeJwtPayload: ${decodeJwtPayload(token)}",
-            "decodeJwtClaims sub: ${decodeJwtClaims<JsonObject>(token).getValue(SUBJECT_CLAIM_NAME).jsonPrimitive.content}",
-            "jwtExpiresAt: ${jwtExpiresAt(token)}",
+            "decodeJwtPayload: $payloadJson",
+            "decodeJwtClaims sub: $subject",
+            "jwtExpiresAt: $expiresAt",
         )
     } catch (exception: IllegalArgumentException) {
         listOf("IllegalArgumentException: ${exception.message}")
