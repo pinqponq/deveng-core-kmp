@@ -27,20 +27,15 @@ import core.util.decodeJwtPayload
 import core.util.jwtExpiresAt
 import deveng_core_kmp.sample.composeapp.generated.resources.Res
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_arrow_left
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 private const val TOKEN_WITH_EXPIRY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vLXVzZXIiLCJub3RlIjoiPj4-Pz8_IiwiZXhwIjoxODAwMDAwMDAwfQ.c2lnbmF0dXJl"
 private const val TOKEN_WITHOUT_EXPIRY =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vLXVzZXIifQ.c2lnbmF0dXJl"
 private const val TOKEN_WITH_INVALID_FORMAT = "not-a-jwt"
-
-@Serializable
-private data class DemoTokenClaims(
-    @SerialName("sub")
-    val subject: String
-)
+private const val SUBJECT_CLAIM_NAME = "sub"
 
 private data class JwtDemoSample(
     val title: String,
@@ -104,7 +99,7 @@ private fun readJwtDemoResult(token: String): List<String> =
     try {
         listOf(
             "decodeJwtPayload: ${decodeJwtPayload(token)}",
-            "decodeJwtClaims: ${decodeJwtClaims<DemoTokenClaims>(token)}",
+            "decodeJwtClaims sub: ${decodeJwtClaims<JsonObject>(token).getValue(SUBJECT_CLAIM_NAME).jsonPrimitive.content}",
             "jwtExpiresAt: ${jwtExpiresAt(token)}",
         )
     } catch (exception: IllegalArgumentException) {
