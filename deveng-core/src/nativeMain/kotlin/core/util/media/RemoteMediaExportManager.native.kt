@@ -80,7 +80,11 @@ actual class RemoteMediaExportManager {
         return@withContext runCatching {
             val url = NSURL.URLWithString(fileUrl) ?: return@runCatching false
             val tempFile = downloadToTempFile(url, fileName) ?: return@runCatching false
-            saveToPhotosAndDeleteTempFile(tempFile, mimeType)
+            try {
+                saveToPhotos(tempFile, mimeType)
+            } finally {
+                removeTempFile(tempFile)
+            }
         }.getOrDefault(false)
     }
 
@@ -93,7 +97,12 @@ actual class RemoteMediaExportManager {
                 if (remoteFile.fileUrl.isBlank()) return@forEach
                 val url = NSURL.URLWithString(remoteFile.fileUrl) ?: return@forEach
                 val tempFile = downloadToTempFile(url, remoteFile.fileName) ?: return@forEach
-                if (saveToPhotosAndDeleteTempFile(tempFile, remoteFile.mimeType)) count++
+                val isSaved = try {
+                    saveToPhotos(tempFile, remoteFile.mimeType)
+                } finally {
+                    removeTempFile(tempFile)
+                }
+                if (isSaved) count++
             }
             count
         }.getOrDefault(0)
@@ -141,13 +150,6 @@ actual class RemoteMediaExportManager {
     private suspend fun presentShareSheet(fileUrls: List<NSURL>): Boolean =
         withContext(Dispatchers.Main) {
             IosShareSheetPresenter.present(activityItems = fileUrls)
-        }
-
-    private fun saveToPhotosAndDeleteTempFile(tempFile: NSURL, mimeType: String): Boolean =
-        try {
-            saveToPhotos(tempFile, mimeType)
-        } finally {
-            removeTempFile(tempFile)
         }
 
     @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
