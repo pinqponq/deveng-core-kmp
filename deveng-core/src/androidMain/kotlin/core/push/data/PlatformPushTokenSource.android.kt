@@ -11,7 +11,7 @@ import kotlinx.coroutines.tasks.await
 private const val LOG_TAG = "PlatformPushTokenSource"
 
 actual object PlatformPushTokenSource : PushTokenSource {
-    override fun observeToken(): Flow<String?> = flow {
+    actual override fun observeToken(): Flow<String?> = flow {
         val token = try {
             FirebaseMessaging.getInstance().token.await()
         } catch (cancellation: CancellationException) {
