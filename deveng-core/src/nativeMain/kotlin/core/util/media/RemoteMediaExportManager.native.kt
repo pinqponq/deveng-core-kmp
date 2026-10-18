@@ -2,14 +2,22 @@ package core.util.media
 
 import core.util.multiplatform.IosShareSheetPresenter
 import kotlin.coroutines.resume
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCObjectVar
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.value
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import platform.Foundation.NSCondition
 import platform.Foundation.NSDate
+import platform.Foundation.NSError
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSHTTPURLResponse
+import platform.Foundation.NSLog
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
 import platform.Foundation.NSURLSession
@@ -20,7 +28,9 @@ import platform.Photos.PHAssetChangeRequest
 import platform.Photos.PHPhotoLibrary
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-actual class RemoteMediaExportManager {
+actual class RemoteMediaExportManager internal constructor(
+    private val saveToPhotos: (fileUrl: NSURL, mimeType: String) -> Boolean,
+) {
     private companion object {
         // Idle timeout between received packets, matching the Android read timeout. There is no cap
         // on the total duration, so a large video on a slow connection still completes.
@@ -35,6 +45,8 @@ actual class RemoteMediaExportManager {
         }
         NSURLSession.sessionWithConfiguration(configuration)
     }
+
+    constructor() : this(saveToPhotos = ::saveToPhotoLibrary)
 
     actual suspend fun shareSingleFileFromUrl(
         fileUrl: String,
@@ -72,7 +84,11 @@ actual class RemoteMediaExportManager {
         return@withContext runCatching {
             val url = NSURL.URLWithString(fileUrl) ?: return@runCatching false
             val tempFile = downloadToTempFile(url, fileName) ?: return@runCatching false
-            saveToPhotos(tempFile, mimeType)
+            try {
+                saveToPhotos(tempFile, mimeType)
+            } finally {
+                removeTempFile(tempFile)
+            }
         }.getOrDefault(false)
     }
 
@@ -85,7 +101,13 @@ actual class RemoteMediaExportManager {
                 if (remoteFile.fileUrl.isBlank()) return@forEach
                 val url = NSURL.URLWithString(remoteFile.fileUrl) ?: return@forEach
                 val tempFile = downloadToTempFile(url, remoteFile.fileName) ?: return@forEach
-                if (saveToPhotos(tempFile, remoteFile.mimeType)) count++
+                val isSaved = try {
+                    saveToPhotos(tempFile, remoteFile.mimeType)
+                } finally {
+                    removeTempFile(tempFile)
+                }
+
+                if (isSaved) count++
             }
             count
         }.getOrDefault(0)
@@ -135,29 +157,43 @@ actual class RemoteMediaExportManager {
             IosShareSheetPresenter.present(activityItems = fileUrls)
         }
 
-    private fun saveToPhotos(fileUrl: NSURL, mimeType: String): Boolean {
-        var result = false
-        val condition = NSCondition()
-        var completed = false
-
-        PHPhotoLibrary.sharedPhotoLibrary().performChanges({
-            if (mimeType.startsWith("video/")) {
-                PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(fileUrl)
-            } else {
-                PHAssetChangeRequest.creationRequestForAssetFromImageAtFileURL(fileUrl)
+    @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
+    private fun removeTempFile(tempFile: NSURL) {
+        memScoped {
+            val removalError = alloc<ObjCObjectVar<NSError?>>()
+            val isTempFileRemoved = NSFileManager.defaultManager.removeItemAtURL(tempFile, error = removalError.ptr)
+            if (!isTempFileRemoved) {
+                NSLog(
+                    "RemoteMediaExportManager: could not remove temp file ${tempFile.lastPathComponent}: " +
+                        "${removalError.value?.localizedDescription}",
+                )
             }
-        }) { success, _ ->
-            condition.lock()
-            result = success
-            completed = true
-            condition.signal()
-            condition.unlock()
         }
-
-        condition.lock()
-        while (!completed) condition.wait()
-        condition.unlock()
-
-        return result
     }
+}
+
+private fun saveToPhotoLibrary(fileUrl: NSURL, mimeType: String): Boolean {
+    var result = false
+    val condition = NSCondition()
+    var completed = false
+
+    PHPhotoLibrary.sharedPhotoLibrary().performChanges({
+        if (mimeType.startsWith("video/")) {
+            PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(fileUrl)
+        } else {
+            PHAssetChangeRequest.creationRequestForAssetFromImageAtFileURL(fileUrl)
+        }
+    }) { success, _ ->
+        condition.lock()
+        result = success
+        completed = true
+        condition.signal()
+        condition.unlock()
+    }
+
+    condition.lock()
+    while (!completed) condition.wait()
+    condition.unlock()
+
+    return result
 }

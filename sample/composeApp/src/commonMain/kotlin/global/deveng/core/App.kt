@@ -364,7 +364,9 @@ internal fun App() {
         var showServerDrivenScreen by remember { mutableStateOf(false) }
         var showMotionScreen by remember { mutableStateOf(false) }
         var showPushNotificationsScreen by remember { mutableStateOf(false) }
+        var showJwtClaimsScreen by remember { mutableStateOf(false) }
         when {
+            showJwtClaimsScreen -> JwtClaimsDemoScreen(onBack = { showJwtClaimsScreen = false })
             showMotionScreen -> MotionDemoScreen(onBack = { showMotionScreen = false })
             showPushNotificationsScreen -> PushNotificationsDemoScreen(onBack = { showPushNotificationsScreen = false })
             showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
@@ -384,6 +386,7 @@ internal fun App() {
                 onOpenServerDriven = { showServerDrivenScreen = true },
                 onOpenMotion = { showMotionScreen = true },
                 onOpenPushNotifications = { showPushNotificationsScreen = true },
+                onOpenJwtClaims = { showJwtClaimsScreen = true },
             )
         }
     }
@@ -650,6 +653,7 @@ private fun ThemingDemo(
     onOpenServerDriven: () -> Unit = {},
     onOpenMotion: () -> Unit = {},
     onOpenPushNotifications: () -> Unit = {},
+    onOpenJwtClaims: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1064,6 +1068,12 @@ private fun ThemingDemo(
                             text = "Open Push Notifications Demo",
                             containerColor = Color(0xFF4527A0),
                             onClick = onOpenPushNotifications
+                        )
+
+                        CustomButton(
+                            text = "Open JWT Claims Demo",
+                            containerColor = Color(0xFF37474F),
+                            onClick = onOpenJwtClaims
                         )
 
                         RatingRow(
