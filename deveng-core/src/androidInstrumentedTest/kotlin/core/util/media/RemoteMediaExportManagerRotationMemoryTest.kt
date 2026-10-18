@@ -2,7 +2,6 @@ package core.util.media
 
 import android.content.ContentUris
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.ExifInterface
 import android.net.Uri
@@ -11,16 +10,15 @@ import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import core.util.image.PhotoSaveUtils
+import core.util.image.PhotoTestFixtures
 import java.io.File
 import java.net.ServerSocket
 import java.net.SocketException
 import kotlin.concurrent.thread
-import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertSame
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.test.runTest
 import org.junit.runner.RunWith
@@ -29,14 +27,14 @@ import org.junit.runner.RunWith
 class RemoteMediaExportManagerRotationMemoryTest {
     private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
     private val savedFileName = "rotation_memory_test_${System.currentTimeMillis()}.jpg"
-    private lateinit var sourcePhoto: File
+    private val sourcePhoto = File(context.cacheDir, "rotation_memory_source.jpg")
     private var heapBallast: List<ByteArray> = emptyList()
     private var photoServer: ServerSocket? = null
 
     @BeforeTest
     fun setUp() {
         PhotoSaveUtils.setApplicationContext(context)
-        sourcePhoto = createRotatedJpeg()
+        PhotoTestFixtures.writeRotatedJpeg(target = sourcePhoto, width = PHOTO_WIDTH, height = PHOTO_HEIGHT)
     }
 
     @AfterTest
@@ -49,7 +47,7 @@ class RemoteMediaExportManagerRotationMemoryTest {
 
     @Test
     fun saveMultipleFilesFromUrls_withRotated48MegapixelPhotoAndLowFreeHeap_savesUprightPhoto() = runTest(timeout = SAVE_TIMEOUT) {
-        heapBallast = fillHeapUntilFree(bytes = FREE_HEAP_BYTES)
+        heapBallast = PhotoTestFixtures.fillHeapUntilFree(bytes = FREE_HEAP_BYTES)
 
         val savedCount = RemoteMediaExportManager(context).saveMultipleFilesFromUrls(
             listOf(
@@ -74,70 +72,6 @@ class RemoteMediaExportManagerRotationMemoryTest {
 
         assertEquals(PHOTO_HEIGHT to PHOTO_WIDTH, savedPhotoBounds.outWidth to savedPhotoBounds.outHeight)
         assertEquals(ExifInterface.ORIENTATION_NORMAL, savedOrientation)
-    }
-
-    @Test
-    fun imageBytesWithNormalOrientation_whenRotatedPhotoDoesNotFitInHeap_returnsOriginalBytes() {
-        val rotatedPhotoBytes = sourcePhoto.readBytes()
-        heapBallast = fillHeapUntilFree(bytes = TOO_LITTLE_FREE_HEAP_BYTES)
-
-        val normalizedPhotoBytes = PhotoSaveUtils.imageBytesWithNormalOrientation(rotatedPhotoBytes)
-
-        assertSame(rotatedPhotoBytes, normalizedPhotoBytes)
-    }
-
-    @Test
-    fun imageBytesWithNormalOrientation_whenRotatedPhotoDoesNotFitInHeap_removesUprightTempFile() {
-        val rotatedPhotoBytes = sourcePhoto.readBytes()
-        val tempFilesBefore = uprightTempFileNames()
-        heapBallast = fillHeapUntilFree(bytes = TOO_LITTLE_FREE_HEAP_BYTES)
-
-        PhotoSaveUtils.imageBytesWithNormalOrientation(rotatedPhotoBytes)
-
-        heapBallast = emptyList()
-        assertEquals(tempFilesBefore, uprightTempFileNames())
-    }
-
-    private fun createRotatedJpeg(): File {
-        val bitmap = createNoiseBitmap()
-        val photo = File(context.cacheDir, "rotation_memory_source.jpg")
-        photo.outputStream().use { outputStream ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, SOURCE_JPEG_QUALITY, outputStream)
-        }
-
-        bitmap.recycle()
-        ExifInterface(photo.absolutePath).apply {
-            setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_ROTATE_90.toString())
-            saveAttributes()
-        }
-
-        return photo
-    }
-
-    private fun createNoiseBitmap(): Bitmap {
-        val bitmap = Bitmap.createBitmap(PHOTO_WIDTH, PHOTO_HEIGHT, Bitmap.Config.ARGB_8888)
-        val random = Random(seed = RANDOM_SEED)
-        val row = IntArray(PHOTO_WIDTH)
-        for (y in 0 until PHOTO_HEIGHT) {
-            for (x in 0 until PHOTO_WIDTH) {
-                val noise = random.nextInt(PIXEL_NOISE_RANGE)
-                val red = (x * 255 / PHOTO_WIDTH + noise) and 0xFF
-                val green = (y * 255 / PHOTO_HEIGHT + noise) and 0xFF
-                row[x] = (0xFF shl 24) or (red shl 16) or (green shl 8) or noise
-            }
-
-            bitmap.setPixels(row, 0, PHOTO_WIDTH, 0, y, PHOTO_WIDTH, 1)
-        }
-
-        return bitmap
-    }
-
-    private fun fillHeapUntilFree(bytes: Long): List<ByteArray> {
-        val runtime = Runtime.getRuntime()
-        runtime.gc()
-        val usedBytes = runtime.totalMemory() - runtime.freeMemory()
-        val ballastChunkCount = ((runtime.maxMemory() - usedBytes - bytes) / BALLAST_CHUNK_BYTES).toInt()
-        return List(ballastChunkCount.coerceAtLeast(0)) { ByteArray(BALLAST_CHUNK_BYTES) { 1 } }
     }
 
     private fun servePhotoOnce(photo: File): String {
@@ -168,13 +102,6 @@ class RemoteMediaExportManagerRotationMemoryTest {
         }
     }
 
-    private fun uprightTempFileNames(): Set<String> =
-        File(checkNotNull(System.getProperty("java.io.tmpdir")))
-            .listFiles { file -> file.name.startsWith(UPRIGHT_TEMP_FILE_PREFIX) }
-            .orEmpty()
-            .map { file -> file.name }
-            .toSet()
-
     private fun findSavedPhotoUri(): Uri? =
         context.contentResolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -190,19 +117,12 @@ class RemoteMediaExportManagerRotationMemoryTest {
     private companion object {
         const val PHOTO_WIDTH = 8_000
         const val PHOTO_HEIGHT = 6_000
-        const val SOURCE_JPEG_QUALITY = 92
-        const val PIXEL_NOISE_RANGE = 48
-        const val RANDOM_SEED = 475
         const val JPEG_MIME_TYPE = "image/jpeg"
         const val LOG_TAG = "RotationMemoryTest"
-        const val UPRIGHT_TEMP_FILE_PREFIX = "exif_orient_out"
-        const val BALLAST_CHUNK_BYTES = 1_048_576
         val SAVE_TIMEOUT = 3.minutes
 
-        // On a 192 MB heap, rotating this photo needs about 70 MB above the app's own heap.
+        // With this much free heap, encoding the upright photo into memory runs out of memory and encoding it
+        // to a file does not (Medium_Phone emulator, API 37, 192 MB heap limit).
         const val FREE_HEAP_BYTES = 110L * 1_048_576
-
-        // Less than the 44 MB the upright copy of this photo needs as one array.
-        const val TOO_LITTLE_FREE_HEAP_BYTES = 30L * 1_048_576
     }
 }

@@ -8,7 +8,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
-import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -20,7 +19,7 @@ import org.junit.runner.RunWith
 class PhotoSaveUtilsOrientationTest {
 
     @Test
-    fun imageBytesWithNormalOrientation_withRotatedPhotoAndLocation_keepsLocationAndSetsNormalOrientation() {
+    fun imageBytesWithNormalOrientation_withRotatedPhotoAndLocation_keepsLocation() {
         val rotatedPhotoBytes = PhotoSaveUtils.addLocationExif(createRotatedJpegBytes(), LATITUDE, LONGITUDE)
 
         val normalizedPhotoBytes = PhotoSaveUtils.imageBytesWithNormalOrientation(rotatedPhotoBytes)
@@ -28,6 +27,14 @@ class PhotoSaveUtilsOrientationTest {
         val location = assertNotNull(PhotoSaveUtils.readLocationFromExif(normalizedPhotoBytes))
         assertEquals(LATITUDE, location.first, LOCATION_TOLERANCE)
         assertEquals(LONGITUDE, location.second, LOCATION_TOLERANCE)
+    }
+
+    @Test
+    fun imageBytesWithNormalOrientation_withRotatedPhotoAndLocation_returnsUprightPhoto() {
+        val rotatedPhotoBytes = PhotoSaveUtils.addLocationExif(createRotatedJpegBytes(), LATITUDE, LONGITUDE)
+
+        val normalizedPhotoBytes = PhotoSaveUtils.imageBytesWithNormalOrientation(rotatedPhotoBytes)
+
         assertEquals(ExifInterface.ORIENTATION_NORMAL, readOrientation(normalizedPhotoBytes))
         assertEquals(PHOTO_HEIGHT to PHOTO_WIDTH, readSize(normalizedPhotoBytes))
     }
@@ -54,30 +61,17 @@ class PhotoSaveUtilsOrientationTest {
 
     @Test
     fun imageBytesWithNormalOrientation_withRotatedPhoto_removesUprightTempFile() {
-        val tempFilesBefore = uprightTempFileNames()
+        val tempFilesBefore = PhotoTestFixtures.uprightTempFileNames()
 
         PhotoSaveUtils.imageBytesWithNormalOrientation(createRotatedJpegBytes())
 
-        assertEquals(tempFilesBefore, uprightTempFileNames())
+        assertEquals(tempFilesBefore, PhotoTestFixtures.uprightTempFileNames())
     }
 
     private fun createRotatedJpegBytes(): ByteArray {
-        val bitmap = Bitmap.createBitmap(PHOTO_WIDTH, PHOTO_HEIGHT, Bitmap.Config.ARGB_8888)
-        val random = Random(seed = RANDOM_SEED)
-        val pixels = IntArray(PHOTO_WIDTH * PHOTO_HEIGHT) { (0xFF shl 24) or random.nextInt(0x1000000) }
-        bitmap.setPixels(pixels, 0, PHOTO_WIDTH, 0, 0, PHOTO_WIDTH, PHOTO_HEIGHT)
         val photo = File.createTempFile("orientation_test_source", ".jpg")
         try {
-            photo.outputStream().use { outputStream ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, SOURCE_JPEG_QUALITY, outputStream)
-            }
-
-            bitmap.recycle()
-            ExifInterface(photo.absolutePath).apply {
-                setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_ROTATE_90.toString())
-                saveAttributes()
-            }
-
+            PhotoTestFixtures.writeRotatedJpeg(target = photo, width = PHOTO_WIDTH, height = PHOTO_HEIGHT)
             return photo.readBytes()
         } finally {
             photo.delete()
@@ -86,7 +80,7 @@ class PhotoSaveUtilsOrientationTest {
 
     private fun encodeUprightInMemory(rotatedPhotoBytes: ByteArray): ByteArray {
         val bitmap = BitmapFactory.decodeByteArray(rotatedPhotoBytes, 0, rotatedPhotoBytes.size)
-        val matrix = Matrix().apply { postRotate(90f) }
+        val matrix = Matrix().apply { postRotate(ROTATION_DEGREES) }
         val upright = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
         val outputStream = ByteArrayOutputStream()
         upright.compress(Bitmap.CompressFormat.JPEG, FULL_JPEG_QUALITY, outputStream)
@@ -113,22 +107,13 @@ class PhotoSaveUtilsOrientationTest {
         return pixels
     }
 
-    private fun uprightTempFileNames(): Set<String> =
-        File(checkNotNull(System.getProperty("java.io.tmpdir")))
-            .listFiles { file -> file.name.startsWith(UPRIGHT_TEMP_FILE_PREFIX) }
-            .orEmpty()
-            .map { file -> file.name }
-            .toSet()
-
     private companion object {
         const val PHOTO_WIDTH = 400
         const val PHOTO_HEIGHT = 300
-        const val SOURCE_JPEG_QUALITY = 92
         const val FULL_JPEG_QUALITY = 100
-        const val RANDOM_SEED = 475
+        const val ROTATION_DEGREES = 90f
         const val LATITUDE = 41.0082
         const val LONGITUDE = 28.9784
         const val LOCATION_TOLERANCE = 0.0001
-        const val UPRIGHT_TEMP_FILE_PREFIX = "exif_orient_out"
     }
 }

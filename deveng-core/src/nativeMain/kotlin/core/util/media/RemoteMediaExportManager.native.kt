@@ -164,9 +164,8 @@ actual class RemoteMediaExportManager internal constructor(
             val isTempFileRemoved = NSFileManager.defaultManager.removeItemAtURL(tempFile, error = removalError.ptr)
             if (!isTempFileRemoved) {
                 NSLog(
-                    "RemoteMediaExportManager: could not remove temp file %@: %@",
-                    tempFile.lastPathComponent,
-                    removalError.value?.localizedDescription,
+                    "RemoteMediaExportManager: could not remove temp file ${tempFile.lastPathComponent}: " +
+                        "${removalError.value?.localizedDescription}",
                 )
             }
         }
