@@ -1,4 +1,4 @@
-package core.push.data
+package core.push.presentation
 
 import android.app.Activity
 import android.app.NotificationChannel
@@ -11,11 +11,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import core.push.presentation.PushNotifications
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 /**
@@ -29,8 +27,6 @@ import kotlinx.coroutines.launch
  */
 abstract class PushNotificationMessagingService : FirebaseMessagingService() {
 
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
     protected abstract val pushNotifications: PushNotifications
 
     protected abstract val launchActivityClass: Class<out Activity>
@@ -43,7 +39,7 @@ abstract class PushNotificationMessagingService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        serviceScope.launch { pushNotifications.handleNewToken(token) }
+        tokenRegistrationScope.launch { pushNotifications.handleNewToken(token) }
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
@@ -56,11 +52,6 @@ abstract class PushNotificationMessagingService : FirebaseMessagingService() {
             body = notification.body.orEmpty(),
             deepLink = resolveDeepLink(message)
         )
-    }
-
-    override fun onDestroy() {
-        serviceScope.cancel()
-        super.onDestroy()
     }
 
     /**
@@ -114,5 +105,11 @@ abstract class PushNotificationMessagingService : FirebaseMessagingService() {
             enableVibration(true)
         }
         notificationManager.createNotificationChannel(channel)
+    }
+
+    private companion object {
+        // Process-wide on purpose: the system stops the service as soon as onNewToken returns, and a
+        // scope tied to the service would cancel the registration request with it.
+        val tokenRegistrationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     }
 }

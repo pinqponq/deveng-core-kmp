@@ -148,9 +148,7 @@ class PushNotifications(
      * token; the Android messaging service in core already does.
      */
     suspend fun handleNewToken(token: String) {
-        if (!isSignedIn()) return
-
-        runCatchingNonCancellation { pushTokenRegistration.registerToken(token) }
+        runCatchingNonCancellation { if (isSignedIn()) pushTokenRegistration.registerToken(token) }
             .onFailure { logger.w(it) { "Push token registration failed for a new token." } }
     }
 
@@ -175,9 +173,7 @@ class PushNotifications(
     }
 
     private suspend fun registerCurrentTokenIfSignedIn() {
-        if (!isSignedIn()) return
-
-        runCatchingNonCancellation { pushTokenRegistration.registerCurrentToken() }
+        runCatchingNonCancellation { if (isSignedIn()) pushTokenRegistration.registerCurrentToken() }
             .onFailure { logger.w(it) { "Push token registration failed." } }
     }
 

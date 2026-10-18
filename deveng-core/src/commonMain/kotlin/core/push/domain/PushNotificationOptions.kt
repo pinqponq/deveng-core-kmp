@@ -1,7 +1,7 @@
 package core.push.domain
 
 /**
- * The per-app settings of [PushNotifications].
+ * The per-app settings of the push notification flow (`core.push.presentation.PushNotifications`).
  *
  * [isAppMessageShownBeforeSystemPrompt]: App Store Guideline 5.1.1(iv) rejects an app's own message
  * in front of a system permission prompt, so iOS apps pass false and go straight to the system

@@ -118,6 +118,12 @@ class PushNotificationsTest {
         val pushNotifications = createPushNotifications(isAppMessageShownBeforeSystemPrompt = false)
 
         assertTrue(pushNotifications.isSystemPromptShownDirectly(NotificationPermissionStatus.Askable))
+    }
+
+    @Test
+    fun isSystemPromptShownDirectly_withoutAppMessageAndBlockedBySystem_returnsFalse() {
+        val pushNotifications = createPushNotifications(isAppMessageShownBeforeSystemPrompt = false)
+
         assertFalse(pushNotifications.isSystemPromptShownDirectly(NotificationPermissionStatus.BlockedBySystem))
     }
 
@@ -268,18 +274,37 @@ class PushNotificationsTest {
     }
 
     @Test
-    fun registerTokenIfPermitted_registrarFails_swallowsErrorAndRetriesNextTime() = runTest {
+    fun registerTokenIfPermitted_registrarFails_logsFailure() = runTest {
         permissionsController.permissionState = PermissionState.Granted
-        val pushNotifications = createPushNotifications()
         val backendFailure = IllegalStateException(BACKEND_FAILURE_MESSAGE)
         pushTokenRegistrar.registrationFailure = backendFailure
 
+        createPushNotifications().registerTokenIfPermitted(permissionsController)
+
+        assertEquals(listOf<Throwable?>(backendFailure), recordingLogWriter.warningThrowables)
+    }
+
+    @Test
+    fun registerTokenIfPermitted_afterRegistrarFailure_retriesOnNextCall() = runTest {
+        permissionsController.permissionState = PermissionState.Granted
+        val pushNotifications = createPushNotifications()
+        pushTokenRegistrar.registrationFailure = IllegalStateException(BACKEND_FAILURE_MESSAGE)
         pushNotifications.registerTokenIfPermitted(permissionsController)
         pushTokenRegistrar.registrationFailure = null
+
         pushNotifications.registerTokenIfPermitted(permissionsController)
 
         assertEquals(listOf(FIRST_TOKEN), pushTokenRegistrar.registrations.map { it.token })
-        assertEquals(listOf<Throwable?>(backendFailure), recordingLogWriter.warningThrowables)
+    }
+
+    @Test
+    fun handleNewToken_signedInCheckFails_logsFailureWithoutRegistering() = runTest {
+        val signedInFailure = IllegalStateException(SIGNED_IN_FAILURE_MESSAGE)
+
+        createPushNotifications(isSignedInProvider = { throw signedInFailure }).handleNewToken(ROTATED_TOKEN)
+
+        assertTrue(pushTokenRegistrar.registrations.isEmpty())
+        assertEquals(listOf<Throwable?>(signedInFailure), recordingLogWriter.warningThrowables)
     }
 
     @Test
@@ -326,18 +351,27 @@ class PushNotificationsTest {
     }
 
     @Test
-    fun unregisterToken_afterRegistration_unregistersTokenAndNextSignInRegistersAgain() = runTest {
+    fun unregisterToken_afterRegistration_unregistersRegisteredToken() = runTest {
         val pushNotifications = createPushNotifications()
         pushNotifications.handleNewToken(FIRST_TOKEN)
 
         pushNotifications.unregisterToken()
-        pushNotifications.handleNewToken(FIRST_TOKEN)
 
         assertEquals(
             listOf(FakePushTokenUnregistrar.Unregistration(token = FIRST_TOKEN, deviceIdentifier = DEVICE_IDENTIFIER)),
             pushTokenUnregistrar.unregistrations
         )
-        assertEquals(2, pushTokenRegistrar.registrations.size)
+    }
+
+    @Test
+    fun handleNewToken_afterUnregister_registersSameTokenAgain() = runTest {
+        val pushNotifications = createPushNotifications()
+        pushNotifications.handleNewToken(FIRST_TOKEN)
+        pushNotifications.unregisterToken()
+
+        pushNotifications.handleNewToken(FIRST_TOKEN)
+
+        assertEquals(listOf(FIRST_TOKEN, FIRST_TOKEN), pushTokenRegistrar.registrations.map { it.token })
     }
 
     @Test
@@ -510,6 +544,7 @@ class PushNotificationsTest {
     private fun createPushNotifications(
         isAppMessageShownBeforeSystemPrompt: Boolean = true,
         pushTokenSource: PushTokenSource = this.pushTokenSource,
+        isSignedInProvider: suspend () -> Boolean = { isSignedIn },
     ) = PushNotifications(
         options = PushNotificationOptions(
             androidChannelId = CHANNEL_ID,
@@ -522,7 +557,7 @@ class PushNotificationsTest {
         pushTokenUnregistrar = pushTokenUnregistrar,
         platformConfigProvider = { PLATFORM_CONFIG },
         notificationPermissionStorage = notificationPermissionStorage,
-        isSignedIn = { isSignedIn },
+        isSignedIn = isSignedInProvider,
         clock = clock,
     )
 
@@ -540,6 +575,7 @@ class PushNotificationsTest {
         const val BACKEND_FAILURE_MESSAGE = "backend unavailable"
         const val UNBOUND_CONTROLLER_MESSAGE = "controller is not bound"
         const val IOS_FIRST_DENIAL_MESSAGE = "notifications not allowed"
+        const val SIGNED_IN_FAILURE_MESSAGE = "session storage unavailable"
         val SOFT_ASK_INTERVAL = 2.days
         val PLATFORM_CONFIG = PlatformConfig(
             platform = Platform.ANDROID,
