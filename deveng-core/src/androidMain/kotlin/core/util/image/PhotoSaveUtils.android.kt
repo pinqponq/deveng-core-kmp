@@ -69,21 +69,7 @@ actual object PhotoSaveUtils {
             var bitmap = BitmapFactory.decodeFile(tempFile.absolutePath, null) ?: return imageBytes
             try {
                 bitmap = applyExifOrientationToBitmap(bitmap, orientation)
-                val normalizedFile = File.createTempFile("exif_orient_out", ".jpg")
-                val normalizedBytes = try {
-                    normalizedFile.outputStream().use { outputStream ->
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
-                    }
-                    val outExif = ExifInterface(normalizedFile.absolutePath)
-                    outExif.setAttribute(
-                        ExifInterface.TAG_ORIENTATION,
-                        ExifInterface.ORIENTATION_NORMAL.toString(),
-                    )
-                    outExif.saveAttributes()
-                    normalizedFile.readBytes()
-                } finally {
-                    normalizedFile.delete()
-                }
+                val normalizedBytes = encodeUprightJpeg(bitmap)
                 if (gps != null) {
                     return addLocationExif(normalizedBytes, gps.first, gps.second)
                 }
@@ -95,6 +81,25 @@ actual object PhotoSaveUtils {
             tempFile.delete()
         }
         return imageBytes
+    }
+
+    private fun encodeUprightJpeg(bitmap: Bitmap): ByteArray {
+        val normalizedFile = File.createTempFile("exif_orient_out", ".jpg")
+        try {
+            normalizedFile.outputStream().use { outputStream ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, NORMALIZED_JPEG_QUALITY, outputStream)
+            }
+
+            val outExif = ExifInterface(normalizedFile.absolutePath)
+            outExif.setAttribute(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL.toString(),
+            )
+            outExif.saveAttributes()
+            return normalizedFile.readBytes()
+        } finally {
+            normalizedFile.delete()
+        }
     }
 
     actual fun savePhoto(imageBytes: ByteArray, targetPath: String): SavePhotoResult = try {
@@ -246,4 +251,5 @@ actual object PhotoSaveUtils {
     }
 
     private const val MILLIS_PER_SECOND = 1000L
+    private const val NORMALIZED_JPEG_QUALITY = 100
 }

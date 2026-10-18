@@ -28,7 +28,11 @@ import platform.Photos.PHAssetChangeRequest
 import platform.Photos.PHPhotoLibrary
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-actual class RemoteMediaExportManager {
+actual class RemoteMediaExportManager internal constructor(
+    private val saveToPhotos: (fileUrl: NSURL, mimeType: String) -> Boolean,
+) {
+    constructor() : this(saveToPhotos = ::saveToPhotoLibrary)
+
     private companion object {
         // Idle timeout between received packets, matching the Android read timeout. There is no cap
         // on the total duration, so a large video on a slow connection still completes.
@@ -102,6 +106,7 @@ actual class RemoteMediaExportManager {
                 } finally {
                     removeTempFile(tempFile)
                 }
+
                 if (isSaved) count++
             }
             count
@@ -166,30 +171,30 @@ actual class RemoteMediaExportManager {
             }
         }
     }
+}
 
-    private fun saveToPhotos(fileUrl: NSURL, mimeType: String): Boolean {
-        var result = false
-        val condition = NSCondition()
-        var completed = false
+private fun saveToPhotoLibrary(fileUrl: NSURL, mimeType: String): Boolean {
+    var result = false
+    val condition = NSCondition()
+    var completed = false
 
-        PHPhotoLibrary.sharedPhotoLibrary().performChanges({
-            if (mimeType.startsWith("video/")) {
-                PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(fileUrl)
-            } else {
-                PHAssetChangeRequest.creationRequestForAssetFromImageAtFileURL(fileUrl)
-            }
-        }) { success, _ ->
-            condition.lock()
-            result = success
-            completed = true
-            condition.signal()
-            condition.unlock()
+    PHPhotoLibrary.sharedPhotoLibrary().performChanges({
+        if (mimeType.startsWith("video/")) {
+            PHAssetChangeRequest.creationRequestForAssetFromVideoAtFileURL(fileUrl)
+        } else {
+            PHAssetChangeRequest.creationRequestForAssetFromImageAtFileURL(fileUrl)
         }
-
+    }) { success, _ ->
         condition.lock()
-        while (!completed) condition.wait()
+        result = success
+        completed = true
+        condition.signal()
         condition.unlock()
-
-        return result
     }
+
+    condition.lock()
+    while (!completed) condition.wait()
+    condition.unlock()
+
+    return result
 }

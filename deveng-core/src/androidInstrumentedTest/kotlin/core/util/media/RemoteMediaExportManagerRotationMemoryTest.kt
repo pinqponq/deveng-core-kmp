@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.media.ExifInterface
 import android.net.Uri
 import android.provider.MediaStore
+import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import core.util.image.PhotoSaveUtils
@@ -66,9 +67,11 @@ class RemoteMediaExportManagerRotationMemoryTest {
         context.contentResolver.openInputStream(savedPhotoUri)?.use { inputStream ->
             BitmapFactory.decodeStream(inputStream, null, savedPhotoBounds)
         }
+
         val savedOrientation = context.contentResolver.openInputStream(savedPhotoUri)?.use { inputStream ->
             ExifInterface(inputStream).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED)
         }
+
         assertEquals(PHOTO_HEIGHT to PHOTO_WIDTH, savedPhotoBounds.outWidth to savedPhotoBounds.outHeight)
         assertEquals(ExifInterface.ORIENTATION_NORMAL, savedOrientation)
     }
@@ -84,6 +87,22 @@ class RemoteMediaExportManagerRotationMemoryTest {
     }
 
     private fun createRotatedJpeg(): File {
+        val bitmap = createNoiseBitmap()
+        val photo = File(context.cacheDir, "rotation_memory_source.jpg")
+        photo.outputStream().use { outputStream ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, SOURCE_JPEG_QUALITY, outputStream)
+        }
+
+        bitmap.recycle()
+        ExifInterface(photo.absolutePath).apply {
+            setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_ROTATE_90.toString())
+            saveAttributes()
+        }
+
+        return photo
+    }
+
+    private fun createNoiseBitmap(): Bitmap {
         val bitmap = Bitmap.createBitmap(PHOTO_WIDTH, PHOTO_HEIGHT, Bitmap.Config.ARGB_8888)
         val random = Random(seed = RANDOM_SEED)
         val row = IntArray(PHOTO_WIDTH)
@@ -94,18 +113,11 @@ class RemoteMediaExportManagerRotationMemoryTest {
                 val green = (y * 255 / PHOTO_HEIGHT + noise) and 0xFF
                 row[x] = (0xFF shl 24) or (red shl 16) or (green shl 8) or noise
             }
+
             bitmap.setPixels(row, 0, PHOTO_WIDTH, 0, y, PHOTO_WIDTH, 1)
         }
-        val photo = File(context.cacheDir, "rotation_memory_source.jpg")
-        photo.outputStream().use { outputStream ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, SOURCE_JPEG_QUALITY, outputStream)
-        }
-        bitmap.recycle()
-        ExifInterface(photo.absolutePath).apply {
-            setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_ROTATE_90.toString())
-            saveAttributes()
-        }
-        return photo
+
+        return bitmap
     }
 
     private fun fillHeapUntilFree(bytes: Long): List<ByteArray> {
@@ -121,10 +133,12 @@ class RemoteMediaExportManagerRotationMemoryTest {
         thread(name = "rotation-memory-test-server") {
             try {
                 server.use { respondWithPhoto(server, photo) }
-            } catch (_: SocketException) {
+            } catch (e: SocketException) {
                 // tearDown closed the server because the save never connected; the test reports why.
+                Log.w(LOG_TAG, "photo server closed before the save connected", e)
             }
         }
+
         return "http://127.0.0.1:${server.localPort}/photo.jpg"
     }
 
@@ -161,6 +175,7 @@ class RemoteMediaExportManagerRotationMemoryTest {
         const val PIXEL_NOISE_RANGE = 48
         const val RANDOM_SEED = 475
         const val JPEG_MIME_TYPE = "image/jpeg"
+        const val LOG_TAG = "RotationMemoryTest"
         const val BALLAST_CHUNK_BYTES = 1_048_576
         val SAVE_TIMEOUT = 3.minutes
 
