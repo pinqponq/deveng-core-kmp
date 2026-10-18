@@ -86,6 +86,18 @@ class RemoteMediaExportManagerRotationMemoryTest {
         assertSame(rotatedPhotoBytes, normalizedPhotoBytes)
     }
 
+    @Test
+    fun imageBytesWithNormalOrientation_whenRotatedPhotoDoesNotFitInHeap_removesUprightTempFile() {
+        val rotatedPhotoBytes = sourcePhoto.readBytes()
+        val tempFilesBefore = uprightTempFileNames()
+        heapBallast = fillHeapUntilFree(bytes = TOO_LITTLE_FREE_HEAP_BYTES)
+
+        PhotoSaveUtils.imageBytesWithNormalOrientation(rotatedPhotoBytes)
+
+        heapBallast = emptyList()
+        assertEquals(tempFilesBefore, uprightTempFileNames())
+    }
+
     private fun createRotatedJpeg(): File {
         val bitmap = createNoiseBitmap()
         val photo = File(context.cacheDir, "rotation_memory_source.jpg")
@@ -156,6 +168,13 @@ class RemoteMediaExportManagerRotationMemoryTest {
         }
     }
 
+    private fun uprightTempFileNames(): Set<String> =
+        File(checkNotNull(System.getProperty("java.io.tmpdir")))
+            .listFiles { file -> file.name.startsWith(UPRIGHT_TEMP_FILE_PREFIX) }
+            .orEmpty()
+            .map { file -> file.name }
+            .toSet()
+
     private fun findSavedPhotoUri(): Uri? =
         context.contentResolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
@@ -176,6 +195,7 @@ class RemoteMediaExportManagerRotationMemoryTest {
         const val RANDOM_SEED = 475
         const val JPEG_MIME_TYPE = "image/jpeg"
         const val LOG_TAG = "RotationMemoryTest"
+        const val UPRIGHT_TEMP_FILE_PREFIX = "exif_orient_out"
         const val BALLAST_CHUNK_BYTES = 1_048_576
         val SAVE_TIMEOUT = 3.minutes
 
