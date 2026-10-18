@@ -3,6 +3,7 @@ package core.push.fake
 import core.push.domain.PushTokenRegistrar
 import core.util.multiplatform.Platform
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.yield
 
 class FakePushTokenRegistrar : PushTokenRegistrar {
     data class Registration(val token: String, val platform: Platform, val deviceIdentifier: String)
@@ -14,6 +15,7 @@ class FakePushTokenRegistrar : PushTokenRegistrar {
     var registrationGate: CompletableDeferred<Unit>? = null
 
     override suspend fun register(token: String, platform: Platform, deviceIdentifier: String) {
+        yield()
         registrationGate?.await()
         registrationFailure?.let { failure -> throw failure }
         registrations += Registration(token = token, platform = platform, deviceIdentifier = deviceIdentifier)

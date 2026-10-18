@@ -3,6 +3,7 @@ package core.push.fake
 import core.presentation.permission.Permission
 import core.presentation.permission.PermissionState
 import core.presentation.permission.PermissionsController
+import kotlinx.coroutines.yield
 
 class FakePermissionsController : PermissionsController {
     var permissionState = PermissionState.NotDetermined
@@ -16,8 +17,10 @@ class FakePermissionsController : PermissionsController {
 
     val providedPermissions = mutableListOf<Permission>()
     var openNotificationSettingsCount = 0
+    var openNotificationSettingsFailure: Exception? = null
 
     override suspend fun providePermission(permission: Permission) {
+        yield()
         providedPermissions += permission
         val failure = providePermissionFailure
         if (failure == null) {
@@ -34,6 +37,7 @@ class FakePermissionsController : PermissionsController {
     }
 
     override suspend fun getPermissionState(permission: Permission): PermissionState {
+        yield()
         permissionStateFailure?.let { failure -> throw failure }
         return permissionState
     }
@@ -41,6 +45,7 @@ class FakePermissionsController : PermissionsController {
     override fun openAppSettings() = Unit
 
     override fun openNotificationSettings() {
+        openNotificationSettingsFailure?.let { failure -> throw failure }
         openNotificationSettingsCount += 1
     }
 }

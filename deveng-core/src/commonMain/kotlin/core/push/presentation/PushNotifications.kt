@@ -1,4 +1,4 @@
-package core.push.domain
+package core.push.presentation
 
 import co.touchlab.kermit.Logger
 import core.presentation.permission.DeniedAlwaysException
@@ -7,6 +7,12 @@ import core.presentation.permission.Permission
 import core.presentation.permission.PermissionState
 import core.presentation.permission.PermissionsController
 import core.presentation.permission.RequestCanceledException
+import core.push.domain.PushNotificationOptions
+import core.push.domain.PushTokenRegistrar
+import core.push.domain.PushTokenRegistration
+import core.push.domain.PushTokenSource
+import core.push.domain.PushTokenUnregistrar
+import core.push.domain.SoftAskPolicy
 import core.push.domain.model.NotificationPermissionStatus
 import core.push.domain.model.NotificationPromptResult
 import core.push.domain.store.NotificationPermissionStorage
@@ -126,8 +132,10 @@ class PushNotifications(
         val status = resolvePermissionStatus(permissionsController)
 
         if (status == NotificationPermissionStatus.BlockedBySystem) {
-            permissionsController.openNotificationSettings()
-            return NotificationPromptResult.SettingsOpened
+            return runCatchingNonCancellation { permissionsController.openNotificationSettings() }
+                .onFailure { logger.w(it) { "Notification settings could not be opened." } }
+                .map { NotificationPromptResult.SettingsOpened }
+                .getOrNull()
         }
 
         return runCatchingNonCancellation { requestPermissionAndRegisterToken(permissionsController) }

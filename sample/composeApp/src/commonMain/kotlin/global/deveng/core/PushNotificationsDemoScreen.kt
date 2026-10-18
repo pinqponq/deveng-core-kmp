@@ -35,10 +35,10 @@ import core.presentation.theme.CoreMediumTextStyle
 import core.presentation.theme.CoreRegularTextStyle
 import core.push.data.store.NotificationPermissionStorageImpl
 import core.push.domain.PushNotificationOptions
-import core.push.domain.PushNotifications
 import core.push.domain.PushTokenSource
 import core.push.domain.SoftAskPolicy
 import core.push.domain.model.NotificationPermissionStatus
+import core.push.presentation.PushNotifications
 import core.util.multiplatform.PlatformConfig
 import deveng_core_kmp.sample.composeapp.generated.resources.Res
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_arrow_left

@@ -12,14 +12,14 @@ class NotificationPermissionStorageImplTest {
     private val notificationPermissionStorage = NotificationPermissionStorageImpl(settings = MapSettings())
 
     @Test
-    fun newStorage_hasNoPromptAndNoAsks() {
+    fun read_withEmptySettings_hasNoPromptAndNoAsks() {
         assertFalse(notificationPermissionStorage.isSystemPromptShown())
         assertEquals(0, notificationPermissionStorage.getAskCount())
         assertNull(notificationPermissionStorage.getLastAskedAtEpochMilliseconds())
     }
 
     @Test
-    fun setSystemPromptShown_marksPromptShown() {
+    fun setSystemPromptShown_onEmptySettings_marksPromptShown() {
         notificationPermissionStorage.setSystemPromptShown()
 
         assertTrue(notificationPermissionStorage.isSystemPromptShown())

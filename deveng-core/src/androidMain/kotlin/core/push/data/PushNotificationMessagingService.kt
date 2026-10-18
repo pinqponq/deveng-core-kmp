@@ -11,7 +11,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import core.push.domain.PushNotifications
+import core.push.presentation.PushNotifications
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

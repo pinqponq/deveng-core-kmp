@@ -1,4 +1,4 @@
-package core.push.domain
+package core.push.presentation
 
 import core.presentation.permission.DeniedAlwaysException
 import core.presentation.permission.DeniedException
@@ -6,6 +6,9 @@ import core.presentation.permission.Permission
 import core.presentation.permission.PermissionState
 import core.presentation.permission.PermissionsController
 import core.presentation.permission.RequestCanceledException
+import core.push.domain.PushNotificationOptions
+import core.push.domain.PushTokenSource
+import core.push.domain.SoftAskPolicy
 import core.push.domain.model.NotificationPermissionStatus
 import core.push.domain.model.NotificationPromptResult
 import core.push.fake.FakeClock
@@ -50,13 +53,17 @@ class PushNotificationsTest {
     }
 
     @Test
-    fun resolvePermissionStatus_notDeterminedOrDenied_returnsAskable() = runTest {
-        val pushNotifications = createPushNotifications()
-
+    fun resolvePermissionStatus_notDetermined_returnsAskable() = runTest {
         permissionsController.permissionState = PermissionState.NotDetermined
-        assertEquals(NotificationPermissionStatus.Askable, pushNotifications.resolvePermissionStatus(permissionsController))
+
+        assertEquals(NotificationPermissionStatus.Askable, createPushNotifications().resolvePermissionStatus(permissionsController))
+    }
+
+    @Test
+    fun resolvePermissionStatus_deniedOnce_returnsAskable() = runTest {
         permissionsController.permissionState = PermissionState.Denied
-        assertEquals(NotificationPermissionStatus.Askable, pushNotifications.resolvePermissionStatus(permissionsController))
+
+        assertEquals(NotificationPermissionStatus.Askable, createPushNotifications().resolvePermissionStatus(permissionsController))
     }
 
     @Test
@@ -206,6 +213,15 @@ class PushNotificationsTest {
     }
 
     @Test
+    fun registerTokenIfPermitted_tokenNeverArrives_givesUpWithoutRegistering() = runTest {
+        permissionsController.permissionState = PermissionState.Granted
+
+        createPushNotifications(pushTokenSource = FakePushTokenSource(initialToken = null)).registerTokenIfPermitted(permissionsController)
+
+        assertTrue(pushTokenRegistrar.registrations.isEmpty())
+    }
+
+    @Test
     fun registerTokenIfPermitted_calledTwiceWithSameToken_registersOnce() = runTest {
         permissionsController.permissionState = PermissionState.Granted
         val pushNotifications = createPushNotifications()
@@ -341,6 +357,14 @@ class PushNotificationsTest {
     }
 
     @Test
+    fun enableNotifications_settingsCannotOpen_returnsNull() = runTest {
+        permissionsController.permissionState = PermissionState.DeniedAlways
+        permissionsController.openNotificationSettingsFailure = IllegalStateException(UNBOUND_CONTROLLER_MESSAGE)
+
+        assertNull(createPushNotifications().enableNotifications(permissionsController))
+    }
+
+    @Test
     fun enableNotifications_askableAndGranted_marksPromptShownAndRegistersToken() = runTest {
         val result = createPushNotifications().enableNotifications(permissionsController)
 
@@ -393,6 +417,10 @@ class PushNotificationsTest {
     @Test
     fun enableNotifications_promptFailsAndStateNotGranted_returnsDenied() = runTest {
         assertPromptFailureResult(stateAfterFailure = PermissionState.NotGranted, expectedResult = NotificationPromptResult.Denied)
+    }
+
+    @Test
+    fun enableNotifications_promptFailsAndStateDenied_returnsDenied() = runTest {
         assertPromptFailureResult(stateAfterFailure = PermissionState.Denied, expectedResult = NotificationPromptResult.Denied)
     }
 

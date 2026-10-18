@@ -1,13 +1,20 @@
 package core.push.domain
 
+import co.touchlab.kermit.Logger
 import core.util.multiplatform.PlatformConfig
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+private const val LOG_TAG = "PushTokenRegistration"
+
+// The token can arrive late (on iOS only after APNs answered); a later token still reaches the backend
+// through PushNotifications.handleNewToken, so the caller does not wait for it here.
+private val TOKEN_LOOKUP_TIMEOUT_FOR_REGISTER = 10.seconds
 private val TOKEN_LOOKUP_TIMEOUT_FOR_UNREGISTER = 5.seconds
 
 internal class PushTokenRegistration(
@@ -16,6 +23,8 @@ internal class PushTokenRegistration(
     private val pushTokenUnregistrar: PushTokenUnregistrar,
     private val platformConfigProvider: () -> PlatformConfig,
 ) {
+    private val logger = Logger.withTag(LOG_TAG)
+
     // Registration is triggered from several places, often near-concurrently during app start. The
     // last token actually sent turns a repeat call with an unchanged token into a no-op while a
     // rotated token still gets through; the mutex keeps two concurrent calls from both passing the
@@ -25,7 +34,12 @@ internal class PushTokenRegistration(
     private var lastRegisteredToken: String? = null
 
     suspend fun registerCurrentToken() {
-        val token = pushTokenSource.observeToken().filterNotNull().firstOrNull() ?: return
+        val token = findCurrentToken(timeout = TOKEN_LOOKUP_TIMEOUT_FOR_REGISTER)
+        if (token == null) {
+            logger.w { "No push token available; registration skipped." }
+            return
+        }
+
         registerToken(token)
     }
 
@@ -45,8 +59,11 @@ internal class PushTokenRegistration(
 
     suspend fun unregisterToken() {
         val token = registrationMutex.withLock { lastRegisteredToken }
-            ?: findCurrentTokenForUnregister()
-            ?: return
+            ?: findCurrentToken(timeout = TOKEN_LOOKUP_TIMEOUT_FOR_UNREGISTER)
+        if (token == null) {
+            logger.w { "No push token available; the device could not be unregistered." }
+            return
+        }
 
         try {
             pushTokenUnregistrar.unregister(
@@ -62,8 +79,8 @@ internal class PushTokenRegistration(
         }
     }
 
-    private suspend fun findCurrentTokenForUnregister(): String? {
-        return withTimeoutOrNull(TOKEN_LOOKUP_TIMEOUT_FOR_UNREGISTER) {
+    private suspend fun findCurrentToken(timeout: Duration): String? {
+        return withTimeoutOrNull(timeout) {
             pushTokenSource.observeToken().filterNotNull().firstOrNull()
         }
     }
