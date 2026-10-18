@@ -5,5 +5,5 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
 actual object PlatformPushTokenSource : PushTokenSource {
-    override fun observeToken(): Flow<String?> = emptyFlow()
+    actual override fun observeToken(): Flow<String?> = emptyFlow()
 }
