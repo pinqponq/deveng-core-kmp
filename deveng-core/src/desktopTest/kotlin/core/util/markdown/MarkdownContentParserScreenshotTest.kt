@@ -48,11 +48,39 @@ class MarkdownContentParserScreenshotTest {
             onRoot().captureRoboImage(filePath = screenshotPath(name = "markdown_content_parser_headings_lists_bold_italic"))
         }
 
+    @Test
+    fun codeLinksOrderedAndNestedLists_matchBaseline() =
+        runDesktopComposeUiTest(width = CANVAS_WIDTH_PX, height = CANVAS_HEIGHT_PX) {
+            setContent {
+                CompositionLocalProvider(LocalDensity provides Density(density = SCREENSHOT_DENSITY)) {
+                    AppTheme(darkTheme = false) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(BACKGROUND_COLOR)
+                                .padding(16.dp)
+                        ) {
+                            MarkdownContentParser(
+                                markdownContent = CODE_LINKS_AND_LISTS,
+                                textColor = TEXT_COLOR,
+                                linkColor = LINK_COLOR
+                            )
+                        }
+                    }
+                }
+            }
+
+            waitForIdle()
+
+            onRoot().captureRoboImage(filePath = screenshotPath(name = "markdown_content_parser_code_links_lists"))
+        }
+
     private companion object {
         const val CANVAS_WIDTH_PX = 900
         const val CANVAS_HEIGHT_PX = 700
         val BACKGROUND_COLOR = Color(0xFF1E1E1E)
         val TEXT_COLOR = Color(0xFFE7E7E7)
+        val LINK_COLOR = Color(0xFF56E096)
         val HEADINGS_LISTS_BOLD_AND_ITALIC = """
             # Terms
             ## Account
@@ -61,6 +89,15 @@ class MarkdownContentParserScreenshotTest {
 
             ### Notes
             Keep this text short for demo.
+        """.trimIndent()
+        val CODE_LINKS_AND_LISTS = """
+            Run `./gradlew build` and keep pending_backend_verification as it is.
+            1. Open [the pull request](https://github.com/pinqponq/deveng-core-kmp/pull/1)
+            2. Check *every* item:
+              - nested item with https://example.com/docs.
+            ```
+            val answer = 42 // a long line that scrolls sideways instead of wrapping onto the next line
+            ```
         """.trimIndent()
     }
 }

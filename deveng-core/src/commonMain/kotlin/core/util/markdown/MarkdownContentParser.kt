@@ -3,137 +3,53 @@ package core.util.markdown
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+
+private const val CODE_BACKGROUND_ALPHA = 0.12f
 
 /**
- * Renders a markdown string as simple rich text lines.
- * Supports headings (#, ##, ###), list items (-), bold (**text**) and italic (_text_).
+ * Renders a markdown string as rich text, one line at a time.
+ * Supports headings (# to ######), list items (-, * or + with optional indentation), fenced code blocks (```),
+ * inline code (`code`), bold (**text**), italic (_text_ or *text*, not inside a word), links ([text](url))
+ * and bare http/https URLs. Links open with the platform URI handler when tapped.
  *
  * @param markdownContent Raw markdown content to render.
  * @param textColor Color for all rendered text (paragraphs inherit via [BasicText] style; inline spans keep weight/style only).
+ * @param modifier Modifier for the column that holds the lines.
+ * @param textStyle Base text style (font family, size, line height); [textColor] replaces its color.
+ * @param linkColor Color of links and bare URLs.
+ * @param codeBackgroundColor Background of inline code and code blocks.
  */
 @Composable
 fun MarkdownContentParser(
     markdownContent: String,
     textColor: Color,
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle = TextStyle(),
+    linkColor: Color = textColor,
+    codeBackgroundColor: Color = textColor.copy(alpha = CODE_BACKGROUND_ALPHA),
 ) {
-    val lines = markdownContent.lines()
-    val baseStyle = TextStyle(color = textColor)
+    val blocks = remember(markdownContent) { parseMarkdownBlocks(markdownContent = markdownContent) }
+    val baseStyle = textStyle.copy(color = textColor)
+    val inlineStyles = MarkdownInlineStyles(linkColor = linkColor, codeBackgroundColor = codeBackgroundColor)
 
-    Column {
-        lines.forEach { line ->
-            BasicText(
-                text = parseMarkdownLine(line = line),
-                style = baseStyle,
-            )
-        }
-    }
-}
-
-private fun parseMarkdownLine(line: String): AnnotatedString {
-    return buildAnnotatedString {
-        when {
-            line.startsWith("# ") -> {
-                val content = line.removePrefix("# ")
-                append(content)
-                addStyle(
-                    style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.SemiBold).toSpanStyle(),
-                    start = 0,
-                    end = content.length
+    Column(modifier = modifier) {
+        blocks.forEach { block ->
+            when (block) {
+                is MarkdownBlock.Line -> BasicText(
+                    text = parseMarkdownLine(line = block.text, inlineStyles = inlineStyles),
+                    style = baseStyle
                 )
-            }
 
-            line.startsWith("## ") -> {
-                val content = line.removePrefix("## ")
-                append(content)
-                addStyle(
-                    style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold).toSpanStyle(),
-                    start = 0,
-                    end = content.length
+                is MarkdownBlock.CodeBlock -> MarkdownCodeBlock(
+                    code = block.code,
+                    textStyle = baseStyle,
+                    backgroundColor = codeBackgroundColor
                 )
-            }
-
-            line.startsWith("### ") -> {
-                val content = line.removePrefix("### ")
-                append(content)
-                addStyle(
-                    style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium).toSpanStyle(),
-                    start = 0,
-                    end = content.length
-                )
-            }
-
-            line.startsWith("- ") -> {
-                append("• ")
-                appendInlineMarkdownStyles(
-                    content = line.removePrefix("- "),
-                    builder = this
-                )
-            }
-
-            else -> {
-                appendInlineMarkdownStyles(content = line, builder = this)
             }
         }
     }
-}
-
-private fun appendInlineMarkdownStyles(
-    content: String,
-    builder: AnnotatedString.Builder
-) {
-    val inlinePattern = Regex("""(\*\*.+?\*\*|_.+?_)""")
-    var currentIndex = 0
-
-    inlinePattern.findAll(content).forEach { matchResult ->
-        val start = matchResult.range.first
-        val endExclusive = matchResult.range.last + 1
-
-        if (currentIndex < start) {
-            builder.append(content.substring(currentIndex, start))
-        }
-
-        val token = matchResult.value
-        when {
-            token.startsWith("**") && token.endsWith("**") && token.length > 4 -> {
-                val boldText = token.substring(2, token.length - 2)
-                builder.appendWithStyle(
-                    text = boldText,
-                    style = SpanStyle(fontWeight = FontWeight.Bold)
-                )
-            }
-
-            token.startsWith("_") && token.endsWith("_") && token.length > 2 -> {
-                val italicText = token.substring(1, token.length - 1)
-                builder.appendWithStyle(
-                    text = italicText,
-                    style = SpanStyle(fontStyle = FontStyle.Italic)
-                )
-            }
-
-            else -> builder.append(token)
-        }
-
-        currentIndex = endExclusive
-    }
-
-    if (currentIndex < content.length) {
-        builder.append(content.substring(currentIndex))
-    }
-}
-
-private fun AnnotatedString.Builder.appendWithStyle(
-    text: String,
-    style: SpanStyle
-) {
-    val start = length
-    append(text)
-    addStyle(style = style, start = start, end = length)
 }
