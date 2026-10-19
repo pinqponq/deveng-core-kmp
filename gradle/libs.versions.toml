@@ -5,7 +5,7 @@ android-targetSdk = "36"
 android-compileSdk = "36"
 app-version-major = "1"
 app-version-code = "7"
-app-minor-version = "118"
+app-minor-version = "119"
 
 androidx-activityCompose = "1.12.2"
 compose-plugin = "1.10.0"
@@ -30,6 +30,7 @@ datetime = "0.7.1"
 russhwolfsettings = "1.2.0"
 
 kotlinx-coroutines-test = "1.10.2"
+turbine = "1.2.1"
 androidx-test-runner = "1.6.2"
 androidx-test-ext-junit = "1.2.1"
 adaptive = "1.2.0"
@@ -102,6 +103,7 @@ russhwolf-settings-test = { module = "com.russhwolf:multiplatform-settings-test"
 
 material3-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 roborazzi-compose-desktop = { module = "io.github.takahirom.roborazzi:roborazzi-compose-desktop", version.ref = "roborazzi" }
 
 [plugins]

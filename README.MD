@@ -42,6 +42,7 @@ Replace `VERSION` with the [latest release](https://central.sonatype.com/artifac
 - [Camera](#camera)
 - [Permissions](#permissions)
 - [Push Notifications](#push-notifications)
+- [Auth Session](#auth-session)
 - [Pagination](#pagination)
 - [Sample App](#sample-app)
 - [Building](#building)
@@ -744,6 +745,42 @@ func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: Str
 ```
 
 `PlatformPushTokenSource` reads that token on iOS, Firebase Messaging on Android, and reports none on desktop and web. The **Push Notifications Demo** screen in the sample app runs the whole flow against a fake backend.
+
+---
+
+## Auth Session
+
+`core.session` covers the sign-in session every app wires by hand: storing the token pair, handing the access token to the HTTP client, renewing the tokens when the backend rejects the access token, and clearing everything on sign-out. A renewal that finishes after a sign-out, or after the next sign-in, is dropped instead of writing old tokens back. Your app keeps its renew and revoke endpoints and its own cleanup.
+
+Create one `AuthSessionManager` per app (for example a DI singleton):
+
+```kotlin
+val authSessionManager = AuthSessionManager(
+    options = AuthSessionOptions(
+        renewTokens = { refreshToken -> authApi.renew(refreshToken).let { AuthTokens(it.accessToken, it.refreshToken) } },
+        onAccessTokenChanged = { accessToken -> devengNetworkingModule.setToken(accessToken.orEmpty()) },
+        revokeRefreshToken = { refreshToken -> authApi.revoke(refreshToken) }, // optional
+    ),
+    // Pass your current keys (AuthSessionStorageKeys(accessTokenKey = "TOKEN", ...)) to keep signed-in users signed in.
+    authCredentialsStorage = AuthCredentialsStorageImpl(settings),
+)
+
+// deveng-networking-kmp: renew on HTTP 401 and start with the stored token
+DevengNetworkingConfig(
+    token = authSessionManager.getAccessToken().orEmpty(),
+    sessionRefresher = DevengSessionRefresher(authSessionManager::refreshSession),
+)
+```
+
+| Situation | Call |
+|-----------|------|
+| Sign-in or sign-up succeeded | `signIn(accessToken, refreshToken, onSignedIn = { syncBillingUser() })` |
+| Sign-out | `signOut(beforeSignOut = { pushNotifications.unregisterToken() }, onCleared = { productStores.forEach { it.clear() } })` |
+| Show the signed-in or signed-out screens | `isLoggedIn` (`StateFlow<Boolean>`) |
+| Read claims of the access token | `claims<UserClaims>()` (null when signed out; signature not verified) |
+| Renew before a long background job | `refreshSession()` |
+
+`signIn` hands the token to the client before `isLoggedIn` turns true. `signOut` runs `beforeSignOut` while requests are still authenticated, then turns `isLoggedIn` false, revokes the refresh token, clears the stored tokens and runs `onCleared`; a failing hook or revoke is logged and never stops the local sign-out. A renewal without a new refresh token keeps the stored one. The **Auth Session Demo** screen in the sample app shows the flow, including a sign-out while a renewal is running.
 
 ---
 
