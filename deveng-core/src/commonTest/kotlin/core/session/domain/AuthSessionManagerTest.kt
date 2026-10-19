@@ -1,7 +1,9 @@
 package core.session.domain
 
 import app.cash.turbine.test
+import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Severity
 import co.touchlab.kermit.platformLogWriter
 import com.russhwolf.settings.MapSettings
 import core.push.fake.RecordingLogWriter
@@ -288,6 +290,30 @@ class AuthSessionManagerTest {
     }
 
     @Test
+    fun refreshSession_whenRenewFails_logsWithConfiguredTag() = runTest {
+        val loggedTags = mutableListOf<String>()
+        Logger.setLogWriters(object : LogWriter() {
+            override fun log(severity: Severity, message: String, tag: String, throwable: Throwable?) {
+                loggedTags += tag
+            }
+        })
+        renewResponse = CompletableDeferred<AuthTokens>().apply { completeExceptionally(IllegalStateException(RENEW_FAILURE)) }
+        val authSessionManager = AuthSessionManager(
+            options = AuthSessionOptions(
+                renewTokens = { renewResponse.await() },
+                onAccessTokenChanged = {},
+                logTag = CUSTOM_LOG_TAG,
+            ),
+            authCredentialsStorage = authCredentialsStorage,
+        )
+        authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
+
+        authSessionManager.refreshSession()
+
+        assertEquals(listOf(CUSTOM_LOG_TAG), loggedTags)
+    }
+
+    @Test
     fun claims_decodesStoredAccessTokenAndIsNullWhenSignedOut() = runTest {
         val authSessionManager = createAuthSessionManager()
         assertNull(authSessionManager.claims<UserClaims>())
@@ -333,6 +359,7 @@ class AuthSessionManagerTest {
         const val BEFORE_SIGN_OUT_FAILURE = "before sign-out failed"
         const val ON_CLEARED_FAILURE = "on cleared failed"
         const val USER_ID = "user-42"
+        const val CUSTOM_LOG_TAG = "AppSession"
         const val USER_CLAIMS_JSON = """{"sub":"$USER_ID","exp":1900000000}"""
 
         val payloadEncoder = Base64.UrlSafe.withPadding(Base64.PaddingOption.ABSENT)
