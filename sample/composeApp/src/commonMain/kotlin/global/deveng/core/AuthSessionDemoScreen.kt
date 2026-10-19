@@ -71,6 +71,7 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
             authCredentialsStorage = AuthCredentialsStorageImpl(settings = Settings()),
         )
     }
+
     val isLoggedIn by authSessionManager.isLoggedIn.collectAsState()
     val userIdClaim = if (isLoggedIn) {
         authSessionManager.decodeClaims<JsonObject>()?.get(SUBJECT_CLAIM_NAME)?.jsonPrimitive?.content

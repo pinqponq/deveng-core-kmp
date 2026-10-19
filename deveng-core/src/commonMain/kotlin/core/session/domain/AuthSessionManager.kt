@@ -61,6 +61,7 @@ class AuthSessionManager(
             authSessionOptions.onAccessTokenChanged(accessToken)
             authCredentialsStorage.setLoggedIn(true)
         }
+
         onSignedIn()
     }
 

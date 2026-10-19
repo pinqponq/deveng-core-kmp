@@ -109,6 +109,7 @@ class AuthSessionManagerTest {
             ),
             events
         )
+
         assertNull(authSessionManager.getAccessToken())
     }
 
