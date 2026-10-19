@@ -50,7 +50,7 @@ class AuthSessionManagerTest {
     }
 
     @Test
-    fun signIn_storesTokensAndSendsAccessTokenBeforeLoggedIn() = runTest {
+    fun signIn_whileSignedOut_storesTokensAndSendsAccessTokenBeforeLoggedIn() = runTest {
         val authSessionManager = createAuthSessionManager(onAccessTokenChanged = { accessToken ->
             events += "token:$accessToken loggedIn:${authCredentialsStorage.isLoggedIn.value}"
         })
@@ -65,7 +65,7 @@ class AuthSessionManagerTest {
     }
 
     @Test
-    fun signInAndSignOut_isLoggedInEmitsEachChange() = runTest {
+    fun signInThenSignOut_fromSignedOut_isLoggedInEmitsEachChange() = runTest {
         val authSessionManager = createAuthSessionManager()
 
         authSessionManager.isLoggedIn.test {
@@ -80,7 +80,7 @@ class AuthSessionManagerTest {
     }
 
     @Test
-    fun signOut_runsStepsInOrder() = runTest {
+    fun signOut_whileSignedIn_runsStepsInOrder() = runTest {
         val authSessionManager = createAuthSessionManager(
             onAccessTokenChanged = { accessToken -> events += "token:$accessToken" },
             revokeRefreshToken = { refreshToken ->
@@ -155,7 +155,7 @@ class AuthSessionManagerTest {
     }
 
     @Test
-    fun signInDuringRevoke_keepsNewSessionAndSkipsOnCleared() = runTest {
+    fun signIn_duringSignOutRevoke_keepsNewSessionAndSkipsOnCleared() = runTest {
         revokeResponse = CompletableDeferred()
         val authSessionManager = createAuthSessionManager()
         authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
@@ -175,7 +175,7 @@ class AuthSessionManagerTest {
     }
 
     @Test
-    fun refreshSession_storesRotatedTokensAndSendsAccessToken() = runTest {
+    fun refreshSession_withRotatedTokens_storesThemAndSendsAccessToken() = runTest {
         val authSessionManager = createAuthSessionManager()
         authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
 
@@ -371,21 +371,40 @@ class AuthSessionManagerTest {
     }
 
     @Test
-    fun signOut_overlappingSignOuts_revokeRefreshTokenOnce() = runTest {
+    fun signOut_whileAnotherSignOutRevokes_doesNothing() = runTest {
         revokeResponse = CompletableDeferred()
         val authSessionManager = createAuthSessionManager()
         authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
 
-        val firstSignOut = launch { authSessionManager.signOut() }
+        val firstSignOut = launch { authSessionManager.signOut(onCleared = { events += "first onCleared" }) }
         runCurrent()
-        val secondSignOut = launch { authSessionManager.signOut() }
+        val secondSignOut = launch {
+            authSessionManager.signOut(
+                beforeSignOut = { events += "second beforeSignOut" },
+                onCleared = { events += "second onCleared" },
+            )
+        }
         runCurrent()
         revokeResponse.complete(Unit)
         firstSignOut.join()
         secondSignOut.join()
 
         assertEquals(listOf(REFRESH_TOKEN), revokedRefreshTokens)
+        assertEquals(listOf("first onCleared"), events)
         assertNull(authCredentialsStorage.getAccessToken())
+    }
+
+    @Test
+    fun signOut_whenRevokeNeverAnswers_clearsSessionAfterTimeout() = runTest {
+        revokeResponse = CompletableDeferred()
+        val authSessionManager = createAuthSessionManager()
+        authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
+
+        authSessionManager.signOut()
+
+        assertNull(authCredentialsStorage.getAccessToken())
+        assertEquals(listOf(ACCESS_TOKEN, null), accessTokensSentToClient)
+        assertEquals(1, recordingLogWriter.warningThrowables.size)
     }
 
     private fun createAuthSessionManager(

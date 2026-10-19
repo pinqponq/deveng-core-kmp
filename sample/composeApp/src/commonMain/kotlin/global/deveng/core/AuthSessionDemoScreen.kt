@@ -72,6 +72,12 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
         )
     }
     val isLoggedIn by authSessionManager.isLoggedIn.collectAsState()
+    val userIdClaim = if (isLoggedIn) {
+        authSessionManager.decodeClaims<JsonObject>()?.get(SUBJECT_CLAIM_NAME)?.jsonPrimitive?.content
+    } else {
+        null
+    }
+    val userIdClaimText = userIdClaim ?: "-"
 
     fun refreshSession() {
         coroutineScope.launch {
@@ -106,7 +112,7 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
 
         Text(text = "Signed in: $isLoggedIn", style = CoreMediumTextStyle().copy(fontSize = 16.sp))
         Text(
-            text = "User id claim: ${authSessionManager.decodeClaims<JsonObject>()?.get(SUBJECT_CLAIM_NAME)?.jsonPrimitive?.content ?: "-"}",
+            text = "User id claim: $userIdClaimText",
             style = CoreMediumTextStyle().copy(fontSize = 16.sp),
         )
         Text(text = "Last refresh: $lastRefreshResult", style = CoreMediumTextStyle().copy(fontSize = 16.sp))

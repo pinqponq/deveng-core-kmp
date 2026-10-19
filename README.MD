@@ -778,9 +778,9 @@ DevengNetworkingConfig(
 | Sign-out | `signOut(beforeSignOut = { pushNotifications.unregisterToken() }, onCleared = { productStores.forEach { it.clear() } })` |
 | Show the signed-in or signed-out screens | `isLoggedIn` (`StateFlow<Boolean>`) |
 | Read claims of the access token | `decodeClaims<UserClaims>()` (null when signed out; signature not verified) |
-| Renew before a long background job | `refreshSession()` |
+| Renew before a long background job | `devengNetworkingModule.refreshSession()` (shares the client's single-flight lock; do not call `authSessionManager.refreshSession()` directly) |
 
-`signIn` hands the token to the client before `isLoggedIn` turns true. `signOut` runs `beforeSignOut` while requests are still authenticated, then turns `isLoggedIn` false, revokes the refresh token, clears the stored tokens and runs `onCleared`; a failing hook or revoke is logged and never stops the local sign-out, and the steps after `isLoggedIn` turns false still run when the calling screen's scope is cancelled. A renewal without a new refresh token keeps the stored one. The **Auth Session Demo** screen in the sample app shows the flow, including a sign-out while a renewal is running.
+`signIn` hands the token to the client before `isLoggedIn` turns true. `signOut` runs `beforeSignOut` while requests are still authenticated, then turns `isLoggedIn` false, revokes the refresh token, clears the stored tokens and runs `onCleared`; a failing hook or revoke is logged and never stops the local sign-out, and the steps after `isLoggedIn` turns false still run when the calling screen's scope is cancelled. A revoke that does not answer within `revokeTimeout` (10 s by default) is abandoned. A renewal without a new refresh token keeps the stored one. The **Auth Session Demo** screen in the sample app shows the flow, including a sign-out while a renewal is running.
 
 ---
 

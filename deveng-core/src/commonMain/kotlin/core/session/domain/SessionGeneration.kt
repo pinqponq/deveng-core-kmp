@@ -21,6 +21,18 @@ internal class SessionGeneration {
         block(currentGeneration)
     }
 
+    suspend fun <T : Any> advanceIf(
+        condition: () -> Boolean,
+        block: suspend (newGeneration: Long) -> T,
+    ): T? = generationMutex.withLock {
+        if (!condition()) {
+            return@withLock null
+        }
+
+        currentGeneration += 1
+        block(currentGeneration)
+    }
+
     suspend fun runIfUnchanged(expectedGeneration: Long, block: suspend () -> Unit): Boolean =
         generationMutex.withLock {
             if (currentGeneration != expectedGeneration) {

@@ -9,6 +9,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
 
 /**
@@ -71,19 +72,24 @@ class AuthSessionManager(
      * Sign-out always finishes locally: a failing hook or revoke is only logged, and everything after
      * [isLoggedIn] turns false still runs when the caller's scope is cancelled, because the signed-in
      * screen that started the sign-out usually closes at that moment. When a new sign-in lands while the
-     * revoke is running, the new session is kept and [onCleared] does not run. Only the first of two
-     * overlapping sign-outs revokes the refresh token.
+     * revoke is running, the new session is kept and [onCleared] does not run. A revoke that takes longer
+     * than [AuthSessionOptions.revokeTimeout] is abandoned. A sign-out while no user is signed in, or while
+     * another sign-out has already signed the user out, does nothing.
      */
     suspend fun signOut(beforeSignOut: suspend () -> Unit = {}, onCleared: suspend () -> Unit = {}) {
+        if (!authCredentialsStorage.isLoggedIn.value) return
+
         runCatchingNonCancellation { beforeSignOut() }
             .onFailure { logger.w(it) { "A before-sign-out hook failed." } }
 
-        val signOutStart = sessionGeneration.advance { newGeneration ->
+        val signOutStart = sessionGeneration.advanceIf(
+            condition = { authCredentialsStorage.isLoggedIn.value },
+        ) { newGeneration ->
             val refreshToken = authCredentialsStorage.getRefreshToken()
             authCredentialsStorage.setLoggedIn(false)
             authCredentialsStorage.setRefreshToken(null)
             SignOutStart(generation = newGeneration, refreshToken = refreshToken)
-        }
+        } ?: return
 
         withContext(NonCancellable) {
             revokeRefreshToken(signOutStart.refreshToken)
@@ -97,6 +103,10 @@ class AuthSessionManager(
      * Returns false without a request when no user is signed in or no refresh token is stored, and false
      * when the renewal fails or the session was ended or replaced while it ran; its tokens are then dropped.
      * A renewal without a new refresh token keeps the stored one.
+     *
+     * The HTTP client calls this on HTTP 401 behind its own single-flight lock. To renew early, call the
+     * client's renewal (`devengNetworkingModule.refreshSession()`) instead, so the two never send the same
+     * refresh token at once.
      */
     suspend fun refreshSession(): Boolean {
         val refreshStart = sessionGeneration.withCurrent { generation ->
@@ -140,7 +150,10 @@ class AuthSessionManager(
         val revokeRefreshToken = authSessionOptions.revokeRefreshToken ?: return
         if (refreshToken.isNullOrBlank()) return
 
-        runCatchingNonCancellation { revokeRefreshToken(refreshToken) }
+        runCatchingNonCancellation {
+            withTimeoutOrNull(authSessionOptions.revokeTimeout) { revokeRefreshToken(refreshToken) }
+        }
+            .onSuccess { revokeOutcome -> if (revokeOutcome == null) logger.w { "Refresh token revoke timed out during sign-out." } }
             .onFailure { logger.w(it) { "Refresh token revoke failed during sign-out." } }
     }
 
