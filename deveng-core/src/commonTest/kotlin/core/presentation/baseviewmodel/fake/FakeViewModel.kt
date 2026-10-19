@@ -5,6 +5,8 @@ import core.presentation.baseviewmodel.UiState
 import core.presentation.baseviewmodel.ViewEvent
 import core.presentation.baseviewmodel.ViewSideEffect
 import core.presentation.baseviewmodel.launch
+import core.presentation.error.ErrorPrinter
+import core.presentation.error.ErrorPrinterImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.awaitCancellation
 
@@ -19,8 +21,10 @@ sealed interface FakeEffect : ViewSideEffect {
     data object CounterChanged : FakeEffect
 }
 
-class FakeViewModel(private val dispatcher: CoroutineDispatcher) :
-    BaseViewModel<FakeUiState, FakeEvent, FakeEffect>(initialState = FakeUiState()) {
+class FakeViewModel(
+    private val dispatcher: CoroutineDispatcher,
+    errorPrinter: ErrorPrinter = ErrorPrinterImpl()
+) : BaseViewModel<FakeUiState, FakeEvent, FakeEffect>(initialState = FakeUiState(), errorPrinter = errorPrinter) {
 
     override fun handleEvents(event: FakeEvent) {
         when (event) {
@@ -34,6 +38,16 @@ class FakeViewModel(private val dispatcher: CoroutineDispatcher) :
 
     fun runFailingWork(exception: Exception, notifyError: Boolean) {
         launch(dispatcher = dispatcher, notifyError = notifyError) {
+            throw exception
+        }
+    }
+
+    fun runFailingWorkWithCallbacks(exception: Exception, callbackLog: MutableList<String>) {
+        launch(
+            dispatcher = dispatcher,
+            onError = { callbackLog += "onError:${it.message}:showError=${currentState.showError}" },
+            onCompleted = { callbackLog += "onCompleted:isLoading=${currentState.isLoading}" }
+        ) {
             throw exception
         }
     }

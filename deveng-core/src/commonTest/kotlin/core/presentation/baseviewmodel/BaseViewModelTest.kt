@@ -9,6 +9,7 @@ import core.presentation.baseviewmodel.fake.FakeEvent
 import core.presentation.baseviewmodel.fake.FakeViewModel
 import core.presentation.baseviewmodel.fake.FakeLogWriter
 import core.presentation.baseviewmodel.fake.FakeViewModelInterceptor
+import core.presentation.error.ErrorPrinter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
@@ -110,6 +111,18 @@ class BaseViewModelTest {
         assertEquals(exception, viewModel.currentState.error)
         assertEquals(ERROR_MESSAGE, viewModel.currentState.errorDescription)
         assertEquals(listOf(Severity.Error to ERROR_MESSAGE), logWriter.loggedMessageList)
+    }
+
+    @Test
+    fun setError_withCustomErrorPrinter_showsPrintedDescription() {
+        val errorPrinter = object : ErrorPrinter {
+            override fun print(exception: Exception): String = "$PRINTED_PREFIX${exception.message}"
+        }
+        val viewModel = FakeViewModel(dispatcher = testDispatcher, errorPrinter = errorPrinter)
+
+        viewModel.setError(IllegalStateException(ERROR_MESSAGE))
+
+        assertEquals("$PRINTED_PREFIX$ERROR_MESSAGE", viewModel.currentState.errorDescription)
     }
 
     @Test
@@ -216,6 +229,21 @@ class BaseViewModelTest {
     }
 
     @Test
+    fun launch_failing_callsOnErrorBeforeShowingErrorAndOnCompletedBeforeHidingProgress() {
+        val viewModel = FakeViewModel(dispatcher = testDispatcher)
+        val callbackLog = mutableListOf<String>()
+
+        viewModel.runFailingWorkWithCallbacks(exception = IllegalStateException(ERROR_MESSAGE), callbackLog = callbackLog)
+
+        assertEquals(
+            listOf("onError:$ERROR_MESSAGE:showError=false", "onCompleted:isLoading=true"),
+            callbackLog
+        )
+        assertTrue(viewModel.currentState.showError)
+        assertFalse(viewModel.currentState.isLoading)
+    }
+
+    @Test
     fun launch_cancelled_neitherShowsNorReportsError() {
         registerInterceptors(FIRST_INTERCEPTOR)
         val viewModel = FakeViewModel(dispatcher = testDispatcher)
@@ -262,6 +290,7 @@ class BaseViewModelTest {
         const val SECOND_INTERCEPTOR = "second"
         const val VIEW_MODEL_NAME = "FakeViewModel"
         const val ERROR_MESSAGE = "request failed"
+        const val PRINTED_PREFIX = "printed: "
         const val EVENT_COUNT = 50
     }
 }
