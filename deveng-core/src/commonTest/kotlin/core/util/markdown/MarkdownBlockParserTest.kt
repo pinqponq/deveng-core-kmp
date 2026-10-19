@@ -45,4 +45,12 @@ class MarkdownBlockParserTest {
             blocks
         )
     }
+
+    @Test
+    fun parseMarkdownBlocks_withTwoFencedCodeBlocks_keepsTheirLinesApart() {
+        val blocks = parseMarkdownBlocks(markdownContent = "```\nfirst\n```\nbetween\n```\nsecond\n```")
+
+        val codes = blocks.filterIsInstance<MarkdownBlock.CodeBlock>().map { codeBlock -> codeBlock.code }
+        assertEquals(listOf("first", "second"), codes)
+    }
 }

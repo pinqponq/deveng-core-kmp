@@ -166,6 +166,40 @@ class MarkdownLineParserTest {
         )
     }
 
+    @Test
+    fun parseMarkdownLine_withItalicAtLineStart_stylesContent() {
+        val line = parse("_a_ word")
+
+        assertEquals("a word", line.text)
+        assertEquals(listOf(styleRange(SpanStyle(fontStyle = FontStyle.Italic), 0, 1)), line.spanStyles)
+    }
+
+    @Test
+    fun parseMarkdownLine_withDelimiterAfterSpaceOrInsideWord_closesItalicAtTheNextValidDelimiter() {
+        val afterSpace = parse("_a _b_")
+        val insideWord = parse("_snake_case_ x")
+
+        assertEquals("a _b", afterSpace.text)
+        assertEquals(listOf(styleRange(SpanStyle(fontStyle = FontStyle.Italic), 0, 4)), afterSpace.spanStyles)
+        assertEquals("snake_case x", insideWord.text)
+        assertEquals(listOf(styleRange(SpanStyle(fontStyle = FontStyle.Italic), 0, 10)), insideWord.spanStyles)
+    }
+
+    @Test
+    fun parseMarkdownLine_withEmptyBoldOrEmptyLinkUrl_keepsTextLiteral() {
+        assertEquals("a **** b", parse("a **** b").text)
+        assertEquals("[a]()", parse("[a]()").text)
+    }
+
+    @Test
+    fun parseMarkdownLine_withClosingBracketBeforeLink_linksOnlyTheBracketedText() {
+        val line = parse("][a](https://a.io)")
+
+        assertEquals("]a", line.text)
+        val link = line.getLinkAnnotations(start = 0, end = line.length).single()
+        assertEquals(1 to 2, link.start to link.end)
+    }
+
     private fun parse(line: String): AnnotatedString = parseMarkdownLine(
         line = line,
         inlineStyles = MarkdownInlineStyles(linkColor = LINK_COLOR, codeBackgroundColor = CODE_BACKGROUND_COLOR)
