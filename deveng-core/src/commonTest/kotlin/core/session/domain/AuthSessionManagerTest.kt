@@ -91,6 +91,7 @@ class AuthSessionManagerTest {
                 events += "revoke:$refreshToken loggedIn:${authCredentialsStorage.isLoggedIn.value}"
             },
         )
+
         authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
         events.clear()
 
@@ -150,6 +151,7 @@ class AuthSessionManagerTest {
             ),
             authCredentialsStorage = authCredentialsStorage,
         )
+
         authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
 
         authSessionManager.signOut()
@@ -312,6 +314,7 @@ class AuthSessionManagerTest {
             ),
             authCredentialsStorage = authCredentialsStorage,
         )
+
         authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
 
         authSessionManager.refreshSession()
@@ -389,6 +392,7 @@ class AuthSessionManagerTest {
                 onCleared = { events += "second onCleared" },
             )
         }
+
         runCurrent()
         revokeResponse.complete(Unit)
         firstSignOut.join()
@@ -423,6 +427,7 @@ class AuthSessionManagerTest {
             ),
             authCredentialsStorage = authCredentialsStorage,
         )
+
         authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
 
         authSessionManager.signOut()
@@ -474,6 +479,7 @@ class AuthSessionManagerTest {
                 )
             }
         }
+
         runCurrent()
         beforeSignOutResponse.complete(Unit)
         signOuts.forEach { it.join() }

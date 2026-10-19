@@ -138,6 +138,7 @@ class AuthSessionManager(
         renewedTokens.refreshToken?.let { rotatedRefreshToken ->
             authCredentialsStorage.setRefreshToken(rotatedRefreshToken)
         }
+
         authSessionOptions.onAccessTokenChanged(renewedTokens.accessToken)
     }
 
@@ -145,6 +146,7 @@ class AuthSessionManager(
         val isSessionUnchanged = sessionGeneration.runIfUnchanged(signedOutGeneration) {
             authSessionOptions.onAccessTokenChanged(null)
         }
+
         if (!isSessionUnchanged) return
 
         runCatchingNonCancellation { onCleared() }

@@ -19,4 +19,8 @@ class AuthSessionOptions(
     val revokeRefreshToken: (suspend (refreshToken: String) -> Unit)? = null,
     val revokeTimeout: Duration = DEFAULT_REVOKE_TIMEOUT,
     val logTag: String = DEFAULT_LOG_TAG,
-)
+) {
+    init {
+        require(revokeTimeout.isPositive()) { "revokeTimeout must be positive, was $revokeTimeout" }
+    }
+}
