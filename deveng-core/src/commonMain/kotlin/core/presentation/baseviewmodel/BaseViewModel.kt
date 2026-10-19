@@ -49,8 +49,8 @@ abstract class BaseViewModel<
      * Claims the initial load for this ViewModel instance: true on the first call, false afterwards.
      *
      * The flag deliberately lives here and nowhere else. It guards data held by this ViewModel, so
-     * it has to die with that data — a flag kept in saved state outlives the process while the data
-     * does not, which is what left restored screens empty.
+     * it has to die with that data: a flag kept in saved state outlives the process while the data
+     * does not.
      */
     internal fun markInitialLoadStarted(): Boolean {
         if (hasStartedInitialLoad) return false

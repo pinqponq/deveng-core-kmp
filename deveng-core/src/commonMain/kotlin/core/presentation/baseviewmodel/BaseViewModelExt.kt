@@ -24,8 +24,7 @@ fun BaseViewModel<*, *, *>.launch(
     try {
         block()
     } catch (exception: CancellationException) {
-        // Cancellation is teardown, not failure. Routing it into setError flashed an empty error
-        // dialog when a screen closed mid-request.
+        // Cancellation is teardown, not failure, so it never reaches setError.
         throw exception
     } catch (exception: Exception) {
         onError(exception)

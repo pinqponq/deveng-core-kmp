@@ -5,11 +5,11 @@ import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
 import co.touchlab.kermit.platformLogWriter
 import core.presentation.baseviewmodel.fake.FakeEffect
+import core.presentation.baseviewmodel.fake.FakeErrorPrinter
 import core.presentation.baseviewmodel.fake.FakeEvent
 import core.presentation.baseviewmodel.fake.FakeViewModel
 import core.presentation.baseviewmodel.fake.FakeLogWriter
 import core.presentation.baseviewmodel.fake.FakeViewModelInterceptor
-import core.presentation.error.ErrorPrinter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
@@ -115,10 +115,10 @@ class BaseViewModelTest {
 
     @Test
     fun setError_withCustomErrorPrinter_showsPrintedDescription() {
-        val errorPrinter = object : ErrorPrinter {
-            override fun print(exception: Exception): String = "$PRINTED_PREFIX${exception.message}"
-        }
-        val viewModel = FakeViewModel(dispatcher = testDispatcher, errorPrinter = errorPrinter)
+        val viewModel = FakeViewModel(
+            dispatcher = testDispatcher,
+            errorPrinter = FakeErrorPrinter(prefix = PRINTED_PREFIX)
+        )
 
         viewModel.setError(IllegalStateException(ERROR_MESSAGE))
 

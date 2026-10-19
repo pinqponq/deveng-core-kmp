@@ -44,6 +44,7 @@ Replace `VERSION` with the [latest release](https://central.sonatype.com/artifac
 - [Push Notifications](#push-notifications)
 - [Auth Session](#auth-session)
 - [Pagination](#pagination)
+- [BaseViewModel and interceptors](#baseviewmodel-and-interceptors)
 - [Sample App](#sample-app)
 - [Building](#building)
 - [License](#license)
@@ -826,6 +827,46 @@ PaginatedListView(
 // Refresh or new filters
 loader.updatePageSource(newKey, newPageSource, reload = true)
 ```
+
+---
+
+## BaseViewModel and interceptors
+
+`BaseViewModel<State, Event, Effect>` keeps a screen's `State` (UI state, loading flag, error), handles `Event`s in order and sends one-time `Effect`s. `StateLayout` draws the loading indicator and the error dialog from that state, and `InitEffect` runs a screen's first load once per ViewModel.
+
+```kotlin
+class ProfileViewModel(private val fetchProfile: FetchProfileUseCase) :
+    BaseViewModel<ProfileUiState, ProfileEvent, ProfileEffect>(initialState = ProfileUiState()) {
+
+    override fun handleEvents(event: ProfileEvent) {
+        when (event) {
+            ProfileEvent.Load -> launch(dispatcher = Dispatchers.IO) {
+                val profile = fetchProfile()
+                setState { copy(name = profile.name) }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProfileScreen(viewModel: ProfileViewModel) {
+    val state = viewModel.getState()
+    InitEffect(viewModel = viewModel) { isInit -> if (isInit) viewModel.setEvent(ProfileEvent.Load) }
+    StateLayout(state = state, onCloseError = viewModel::hideError) {
+        ProfileContent(state = state.uiState)
+    }
+}
+```
+
+`launch` shows the loading flag while the block runs and sends a failure to `setError`, which shows the error dialog. With `notifyError = false` the failure is not shown.
+
+App rules such as logging or ending the session live in a `ViewModelInterceptor`, registered once at app start with `ViewModelInterceptors.register(...)`. Every ViewModel calls each interceptor:
+
+- `onEvent` and `onEffect` for every event and effect.
+- `onError` for a failure passed to `setError`. It returns an `ErrorDecision`: `SHOW` (show the dialog), `SILENT` (log only) or `HANDLED` (the interceptor took care of it). When interceptors answer differently, `HANDLED` wins over `SILENT`, and `SILENT` wins over `SHOW`.
+- `onSilentError` for a failure that is not shown, for example a `launch` with `notifyError = false`.
+
+The sample app's "BaseViewModel Demo" screen shows each case.
 
 ---
 
