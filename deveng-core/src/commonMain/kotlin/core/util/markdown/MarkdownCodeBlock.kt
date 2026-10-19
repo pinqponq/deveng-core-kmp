@@ -15,6 +15,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 
+private val CODE_BLOCK_VERTICAL_PADDING = 4.dp
+private val CODE_BLOCK_CORNER_RADIUS = 8.dp
+private val CODE_BLOCK_CONTENT_PADDING = 10.dp
+
 @Composable
 internal fun MarkdownCodeBlock(
     code: String,
@@ -24,13 +28,13 @@ internal fun MarkdownCodeBlock(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .background(color = backgroundColor, shape = RoundedCornerShape(8.dp))
+            .padding(vertical = CODE_BLOCK_VERTICAL_PADDING)
+            .background(color = backgroundColor, shape = RoundedCornerShape(CODE_BLOCK_CORNER_RADIUS))
     ) {
         BasicText(
             modifier = Modifier
                 .horizontalScroll(rememberScrollState())
-                .padding(10.dp),
+                .padding(CODE_BLOCK_CONTENT_PADDING),
             text = code,
             style = textStyle.copy(fontFamily = FontFamily.Monospace),
             softWrap = false

@@ -418,10 +418,10 @@ CustomLogger.log("Debug message")
 ```kotlin
 MarkdownContentParser(
     markdownContent = reply,
-    textColor = OnSurfaceColor,
-    textStyle = RegularTextStyle().copy(fontSize = 15.sp),  // optional: font family, size, line height
-    linkColor = PrimaryColor,                                // optional, defaults to textColor
-    codeBackgroundColor = OnSurfaceColor.copy(alpha = 0.12f) // optional, this is the default
+    textColor = MaterialTheme.colorScheme.onSurface,
+    textStyle = CoreRegularTextStyle().copy(fontSize = 15.sp),     // optional: font family, size, line height
+    linkColor = MaterialTheme.colorScheme.primary,                 // optional, defaults to textColor
+    codeBackgroundColor = MaterialTheme.colorScheme.surfaceVariant // optional, defaults to textColor at 12% alpha
 )
 ```
 

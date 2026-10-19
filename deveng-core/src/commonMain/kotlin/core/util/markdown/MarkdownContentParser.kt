@@ -17,7 +17,7 @@ private const val CODE_BACKGROUND_ALPHA = 0.12f
  * and bare http/https URLs. Links open with the platform URI handler when tapped.
  *
  * @param markdownContent Raw markdown content to render.
- * @param textColor Color for all rendered text (paragraphs inherit via [BasicText] style; inline spans keep weight/style only).
+ * @param textColor Color for all text except links (see [linkColor]); also the base of the default [codeBackgroundColor].
  * @param modifier Modifier for the column that holds the lines.
  * @param textStyle Base text style (font family, size, line height); [textColor] replaces its color.
  * @param linkColor Color of links and bare URLs.
