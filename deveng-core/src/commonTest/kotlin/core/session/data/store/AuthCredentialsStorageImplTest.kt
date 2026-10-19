@@ -51,7 +51,7 @@ class AuthCredentialsStorageImplTest {
         assertNull(authCredentialsStorage.getAccessToken())
         assertNull(authCredentialsStorage.getRefreshToken())
         assertFalse(authCredentialsStorage.isLoggedIn.value)
-        assertFalse(settings.getBoolean(AuthSessionStorageKeys().isLoggedInKey, true))
+        assertFalse(settings.hasKey(AuthSessionStorageKeys().isLoggedInKey))
         assertEquals(OTHER_VALUE, settings.getStringOrNull(OTHER_KEY))
     }
 

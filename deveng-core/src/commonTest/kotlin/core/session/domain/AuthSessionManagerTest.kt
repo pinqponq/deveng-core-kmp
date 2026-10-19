@@ -182,7 +182,7 @@ class AuthSessionManagerTest {
         assertEquals(listOf(REFRESH_TOKEN), renewedRefreshTokens)
         assertEquals(RENEWED_ACCESS_TOKEN, authSessionManager.getAccessToken())
         assertEquals(RENEWED_REFRESH_TOKEN, authCredentialsStorage.getRefreshToken())
-        assertEquals(listOf(ACCESS_TOKEN, RENEWED_ACCESS_TOKEN), accessTokensSentToClient)
+        assertEquals(listOf<String?>(ACCESS_TOKEN, RENEWED_ACCESS_TOKEN), accessTokensSentToClient)
     }
 
     @Test
