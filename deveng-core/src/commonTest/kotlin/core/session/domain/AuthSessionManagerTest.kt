@@ -6,7 +6,7 @@ import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
 import co.touchlab.kermit.platformLogWriter
 import com.russhwolf.settings.MapSettings
-import core.push.fake.RecordingLogWriter
+import core.testing.RecordingLogWriter
 import core.session.data.store.AuthCredentialsStorageImpl
 import core.session.domain.model.AuthTokens
 import kotlinx.coroutines.CompletableDeferred
@@ -22,6 +22,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -139,7 +140,7 @@ class AuthSessionManagerTest {
     @Test
     fun signOut_withoutRevokeOption_clearsSession() = runTest {
         val authSessionManager = AuthSessionManager(
-            options = AuthSessionOptions(
+            authSessionOptions = AuthSessionOptions(
                 renewTokens = { renewResponse.await() },
                 onAccessTokenChanged = { accessToken -> accessTokensSentToClient += accessToken },
             ),
@@ -299,7 +300,7 @@ class AuthSessionManagerTest {
         })
         renewResponse = CompletableDeferred<AuthTokens>().apply { completeExceptionally(IllegalStateException(RENEW_FAILURE)) }
         val authSessionManager = AuthSessionManager(
-            options = AuthSessionOptions(
+            authSessionOptions = AuthSessionOptions(
                 renewTokens = { renewResponse.await() },
                 onAccessTokenChanged = {},
                 logTag = CUSTOM_LOG_TAG,
@@ -314,13 +315,77 @@ class AuthSessionManagerTest {
     }
 
     @Test
-    fun claims_decodesStoredAccessTokenAndIsNullWhenSignedOut() = runTest {
+    fun decodeClaims_whenSignedIn_decodesStoredAccessToken() = runTest {
         val authSessionManager = createAuthSessionManager()
-        assertNull(authSessionManager.claims<UserClaims>())
 
         authSessionManager.signIn(createJwt(USER_CLAIMS_JSON), REFRESH_TOKEN)
 
-        assertEquals(UserClaims(userId = USER_ID), authSessionManager.claims<UserClaims>())
+        assertEquals(UserClaims(userId = USER_ID), authSessionManager.decodeClaims<UserClaims>())
+    }
+
+    @Test
+    fun decodeClaims_whenSignedOut_returnsNull() = runTest {
+        val authSessionManager = createAuthSessionManager()
+
+        assertNull(authSessionManager.decodeClaims<UserClaims>())
+    }
+
+    @Test
+    fun getAccessToken_withLeftoverTokenWhileSignedOut_returnsNull() = runTest {
+        authCredentialsStorage.setAccessToken(ACCESS_TOKEN)
+        val authSessionManager = createAuthSessionManager()
+
+        assertNull(authSessionManager.getAccessToken())
+    }
+
+    @Test
+    fun signIn_whenOnSignedInFails_throwsAndStaysSignedIn() = runTest {
+        val authSessionManager = createAuthSessionManager()
+
+        val failure = assertFailsWith<IllegalStateException> {
+            authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN, onSignedIn = { throw IllegalStateException(ON_SIGNED_IN_FAILURE) })
+        }
+
+        assertEquals(ON_SIGNED_IN_FAILURE, failure.message)
+        assertTrue(authSessionManager.isLoggedIn.value)
+        assertEquals(ACCESS_TOKEN, authSessionManager.getAccessToken())
+    }
+
+    @Test
+    fun signOut_whenCallerIsCancelledDuringRevoke_stillClearsSession() = runTest {
+        revokeResponse = CompletableDeferred()
+        val authSessionManager = createAuthSessionManager()
+        authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
+        var isOnClearedRun = false
+
+        val signOut = launch { authSessionManager.signOut(onCleared = { isOnClearedRun = true }) }
+        runCurrent()
+        signOut.cancel()
+        revokeResponse.complete(Unit)
+        signOut.join()
+
+        assertNull(authCredentialsStorage.getAccessToken())
+        assertNull(authCredentialsStorage.getRefreshToken())
+        assertEquals(listOf(ACCESS_TOKEN, null), accessTokensSentToClient)
+        assertTrue(isOnClearedRun)
+    }
+
+    @Test
+    fun signOut_overlappingSignOuts_revokeRefreshTokenOnce() = runTest {
+        revokeResponse = CompletableDeferred()
+        val authSessionManager = createAuthSessionManager()
+        authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
+
+        val firstSignOut = launch { authSessionManager.signOut() }
+        runCurrent()
+        val secondSignOut = launch { authSessionManager.signOut() }
+        runCurrent()
+        revokeResponse.complete(Unit)
+        firstSignOut.join()
+        secondSignOut.join()
+
+        assertEquals(listOf(REFRESH_TOKEN), revokedRefreshTokens)
+        assertNull(authCredentialsStorage.getAccessToken())
     }
 
     private fun createAuthSessionManager(
@@ -330,7 +395,7 @@ class AuthSessionManagerTest {
             revokeResponse.await()
         },
     ) = AuthSessionManager(
-        options = AuthSessionOptions(
+        authSessionOptions = AuthSessionOptions(
             renewTokens = { refreshToken ->
                 renewedRefreshTokens += refreshToken
                 renewResponse.await()
@@ -358,6 +423,7 @@ class AuthSessionManagerTest {
         const val RENEW_FAILURE = "renew failed"
         const val BEFORE_SIGN_OUT_FAILURE = "before sign-out failed"
         const val ON_CLEARED_FAILURE = "on cleared failed"
+        const val ON_SIGNED_IN_FAILURE = "on signed in failed"
         const val USER_ID = "user-42"
         const val CUSTOM_LOG_TAG = "AppSession"
         const val USER_CLAIMS_JSON = """{"sub":"$USER_ID","exp":1900000000}"""

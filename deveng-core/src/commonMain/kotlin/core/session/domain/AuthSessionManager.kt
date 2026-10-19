@@ -6,7 +6,9 @@ import core.session.domain.store.AuthCredentialsStorage
 import core.util.decodeJwtClaims
 import core.util.jwtClaimsJson
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 /**
@@ -21,15 +23,19 @@ import kotlinx.serialization.json.Json
  * hooks; core never names a product store.
  */
 class AuthSessionManager(
-    private val options: AuthSessionOptions,
+    private val authSessionOptions: AuthSessionOptions,
     private val authCredentialsStorage: AuthCredentialsStorage,
 ) {
-    private val logger = Logger.withTag(options.logTag)
+    private val logger = Logger.withTag(authSessionOptions.logTag)
     private val sessionGeneration = SessionGeneration()
 
     val isLoggedIn: StateFlow<Boolean> = authCredentialsStorage.isLoggedIn
 
-    fun getAccessToken(): String? = authCredentialsStorage.getAccessToken()
+    /** Null when no user is signed in, also while a sign-out is still revoking the refresh token. */
+    fun getAccessToken(): String? {
+        if (!authCredentialsStorage.isLoggedIn.value) return null
+        return authCredentialsStorage.getAccessToken()
+    }
 
     /**
      * Decodes the claims of the stored access token, or returns null when no user is signed in.
@@ -37,7 +43,7 @@ class AuthSessionManager(
      *
      * @throws IllegalArgumentException when the stored token is not a JWT or its payload does not match [T].
      */
-    inline fun <reified T> claims(json: Json = jwtClaimsJson): T? {
+    inline fun <reified T> decodeClaims(json: Json = jwtClaimsJson): T? {
         val accessToken = getAccessToken() ?: return null
         return decodeJwtClaims<T>(token = accessToken, json = json)
     }
@@ -51,7 +57,7 @@ class AuthSessionManager(
         sessionGeneration.advance {
             authCredentialsStorage.setAccessToken(accessToken)
             authCredentialsStorage.setRefreshToken(refreshToken)
-            options.onAccessTokenChanged(accessToken)
+            authSessionOptions.onAccessTokenChanged(accessToken)
             authCredentialsStorage.setLoggedIn(true)
         }
         onSignedIn()
@@ -62,27 +68,27 @@ class AuthSessionManager(
      * (push unregister, ending a chat session). Then [isLoggedIn] turns false, the refresh token is revoked,
      * the stored tokens are cleared and [onCleared] runs (the app's own stores, billing sync).
      *
-     * Sign-out always finishes locally: a failing hook or revoke is only logged. When a new sign-in lands
-     * while the revoke is running, the new session is kept and [onCleared] does not run.
+     * Sign-out always finishes locally: a failing hook or revoke is only logged, and everything after
+     * [isLoggedIn] turns false still runs when the caller's scope is cancelled, because the signed-in
+     * screen that started the sign-out usually closes at that moment. When a new sign-in lands while the
+     * revoke is running, the new session is kept and [onCleared] does not run. Only the first of two
+     * overlapping sign-outs revokes the refresh token.
      */
     suspend fun signOut(beforeSignOut: suspend () -> Unit = {}, onCleared: suspend () -> Unit = {}) {
         runCatchingNonCancellation { beforeSignOut() }
             .onFailure { logger.w(it) { "A before-sign-out hook failed." } }
 
         val signOutStart = sessionGeneration.advance { newGeneration ->
+            val refreshToken = authCredentialsStorage.getRefreshToken()
             authCredentialsStorage.setLoggedIn(false)
-            SignOutStart(generation = newGeneration, refreshToken = authCredentialsStorage.getRefreshToken())
+            authCredentialsStorage.setRefreshToken(null)
+            SignOutStart(generation = newGeneration, refreshToken = refreshToken)
         }
-        revokeRefreshToken(signOutStart.refreshToken)
 
-        val isCleared = sessionGeneration.runIfUnchanged(signOutStart.generation) {
-            authCredentialsStorage.clear()
-            options.onAccessTokenChanged(null)
+        withContext(NonCancellable) {
+            revokeRefreshToken(signOutStart.refreshToken)
+            clearSignedOutSession(signOutStart.generation, onCleared)
         }
-        if (!isCleared) return
-
-        runCatchingNonCancellation { onCleared() }
-            .onFailure { logger.w(it) { "An after-sign-out hook failed." } }
     }
 
     /**
@@ -102,7 +108,7 @@ class AuthSessionManager(
             RefreshStart(generation = generation, refreshToken = storedRefreshToken)
         } ?: return false
 
-        val renewedTokens = runCatchingNonCancellation { options.renewTokens(refreshStart.refreshToken) }
+        val renewedTokens = runCatchingNonCancellation { authSessionOptions.renewTokens(refreshStart.refreshToken) }
             .onFailure { logger.w(it) { "Session refresh failed." } }
             .getOrNull() ?: return false
 
@@ -116,14 +122,24 @@ class AuthSessionManager(
         renewedTokens.refreshToken?.let { rotatedRefreshToken ->
             authCredentialsStorage.setRefreshToken(rotatedRefreshToken)
         }
-        options.onAccessTokenChanged(renewedTokens.accessToken)
+        authSessionOptions.onAccessTokenChanged(renewedTokens.accessToken)
+    }
+
+    private suspend fun clearSignedOutSession(signedOutGeneration: Long, onCleared: suspend () -> Unit) {
+        val isCleared = sessionGeneration.runIfUnchanged(signedOutGeneration) {
+            authCredentialsStorage.clear()
+            authSessionOptions.onAccessTokenChanged(null)
+        }
+        if (!isCleared) return
+
+        runCatchingNonCancellation { onCleared() }
+            .onFailure { logger.w(it) { "An after-sign-out hook failed." } }
     }
 
     private suspend fun revokeRefreshToken(refreshToken: String?) {
-        val revokeRefreshToken = options.revokeRefreshToken ?: return
+        val revokeRefreshToken = authSessionOptions.revokeRefreshToken ?: return
         if (refreshToken.isNullOrBlank()) return
 
-        // A session left on the backend expires on its own; the device must still sign out.
         runCatchingNonCancellation { revokeRefreshToken(refreshToken) }
             .onFailure { logger.w(it) { "Refresh token revoke failed during sign-out." } }
     }

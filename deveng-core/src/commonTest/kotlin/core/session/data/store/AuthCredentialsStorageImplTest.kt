@@ -14,7 +14,7 @@ class AuthCredentialsStorageImplTest {
     private val authCredentialsStorage = AuthCredentialsStorageImpl(settings = settings)
 
     @Test
-    fun setTokens_readsThemBack() {
+    fun setTokens_withBothTokens_readsThemBack() {
         authCredentialsStorage.setAccessToken(ACCESS_TOKEN)
         authCredentialsStorage.setRefreshToken(REFRESH_TOKEN)
 
@@ -32,15 +32,21 @@ class AuthCredentialsStorageImplTest {
     }
 
     @Test
-    fun setLoggedIn_updatesFlowAndSurvivesNewInstance() {
+    fun setLoggedIn_withTrue_updatesFlow() {
         authCredentialsStorage.setLoggedIn(true)
 
         assertTrue(authCredentialsStorage.isLoggedIn.value)
+    }
+
+    @Test
+    fun setLoggedIn_withTrue_isReadByNewInstance() {
+        authCredentialsStorage.setLoggedIn(true)
+
         assertTrue(AuthCredentialsStorageImpl(settings = settings).isLoggedIn.value)
     }
 
     @Test
-    fun clear_removesOnlySessionKeys() {
+    fun clear_withOtherAppData_removesOnlySessionKeys() {
         settings.putString(OTHER_KEY, OTHER_VALUE)
         authCredentialsStorage.setAccessToken(ACCESS_TOKEN)
         authCredentialsStorage.setRefreshToken(REFRESH_TOKEN)
@@ -56,7 +62,7 @@ class AuthCredentialsStorageImplTest {
     }
 
     @Test
-    fun customStorageKeys_readExistingValues() {
+    fun newInstance_withCustomStorageKeys_readsExistingValues() {
         settings.putString(LEGACY_ACCESS_TOKEN_KEY, ACCESS_TOKEN)
         settings.putString(LEGACY_REFRESH_TOKEN_KEY, REFRESH_TOKEN)
         settings.putBoolean(LEGACY_IS_LOGGED_IN_KEY, true)

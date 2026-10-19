@@ -38,20 +38,15 @@ import deveng_core_kmp.sample.composeapp.generated.resources.Res
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_arrow_left
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.time.Duration.Companion.seconds
 
 private val DEMO_RENEW_DURATION = 2.seconds
 private const val DEMO_ACCESS_TOKEN =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vLXVzZXIifQ.c2lnbmF0dXJl"
 private const val DEMO_REFRESH_TOKEN_PREFIX = "demo-refresh-"
-
-@Serializable
-private data class DemoUserClaims(
-    @SerialName("sub")
-    val userId: String,
-)
+private const val SUBJECT_CLAIM_NAME = "sub"
 
 @Composable
 internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
@@ -61,7 +56,7 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
     var lastRefreshResult by remember { mutableStateOf("-") }
     val authSessionManager = remember {
         AuthSessionManager(
-            options = AuthSessionOptions(
+            authSessionOptions = AuthSessionOptions(
                 renewTokens = { refreshToken ->
                     eventLines += "renew with $refreshToken (takes $DEMO_RENEW_DURATION)"
                     delay(DEMO_RENEW_DURATION)
@@ -111,7 +106,7 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
 
         Text(text = "Signed in: $isLoggedIn", style = CoreMediumTextStyle().copy(fontSize = 16.sp))
         Text(
-            text = "User id claim: ${authSessionManager.claims<DemoUserClaims>()?.userId ?: "-"}",
+            text = "User id claim: ${authSessionManager.decodeClaims<JsonObject>()?.get(SUBJECT_CLAIM_NAME)?.jsonPrimitive?.content ?: "-"}",
             style = CoreMediumTextStyle().copy(fontSize = 16.sp),
         )
         Text(text = "Last refresh: $lastRefreshResult", style = CoreMediumTextStyle().copy(fontSize = 16.sp))
