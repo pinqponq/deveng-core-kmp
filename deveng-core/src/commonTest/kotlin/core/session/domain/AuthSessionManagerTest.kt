@@ -9,10 +9,13 @@ import com.russhwolf.settings.MapSettings
 import core.testing.RecordingLogWriter
 import core.session.data.store.AuthCredentialsStorageImpl
 import core.session.domain.model.AuthTokens
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.SerialName
@@ -26,6 +29,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthSessionManagerTest {
@@ -298,6 +302,7 @@ class AuthSessionManagerTest {
                 loggedTags += tag
             }
         })
+
         renewResponse = CompletableDeferred<AuthTokens>().apply { completeExceptionally(IllegalStateException(RENEW_FAILURE)) }
         val authSessionManager = AuthSessionManager(
             authSessionOptions = AuthSessionOptions(
@@ -395,16 +400,87 @@ class AuthSessionManagerTest {
     }
 
     @Test
-    fun signOut_whenRevokeNeverAnswers_clearsSessionAfterTimeout() = runTest {
+    fun signOut_whenRevokeNeverAnswers_clearsSessionAfterDefaultTimeout() = runTest {
         revokeResponse = CompletableDeferred()
         val authSessionManager = createAuthSessionManager()
         authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
 
         authSessionManager.signOut()
 
+        assertEquals(DEFAULT_REVOKE_TIMEOUT_MILLISECONDS, currentTime)
+        assertEquals(listOf(ACCESS_TOKEN, null), accessTokensSentToClient)
+        assertEquals(listOf(REVOKE_TIMEOUT_MESSAGE), recordingLogWriter.logEntries.map { it.message })
+    }
+
+    @Test
+    fun signOut_withCustomRevokeTimeout_abandonsRevokeAfterIt() = runTest {
+        val authSessionManager = AuthSessionManager(
+            authSessionOptions = AuthSessionOptions(
+                renewTokens = { renewResponse.await() },
+                onAccessTokenChanged = { accessToken -> accessTokensSentToClient += accessToken },
+                revokeRefreshToken = { awaitCancellation() },
+                revokeTimeout = CUSTOM_REVOKE_TIMEOUT_MILLISECONDS.milliseconds,
+            ),
+            authCredentialsStorage = authCredentialsStorage,
+        )
+        authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
+
+        authSessionManager.signOut()
+
+        assertEquals(CUSTOM_REVOKE_TIMEOUT_MILLISECONDS, currentTime)
+        assertEquals(listOf(ACCESS_TOKEN, null), accessTokensSentToClient)
+    }
+
+    @Test
+    fun signOut_whenRevokeThrowsCancellation_stillDropsClientToken() = runTest {
+        val authSessionManager = createAuthSessionManager(revokeRefreshToken = { throw CancellationException(REVOKE_FAILURE) })
+        authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
+        var isOnClearedRun = false
+
+        assertFailsWith<CancellationException> { authSessionManager.signOut(onCleared = { isOnClearedRun = true }) }
+
         assertNull(authCredentialsStorage.getAccessToken())
         assertEquals(listOf(ACCESS_TOKEN, null), accessTokensSentToClient)
-        assertEquals(1, recordingLogWriter.warningThrowables.size)
+        assertTrue(isOnClearedRun)
+    }
+
+    @Test
+    fun signOut_whileRevokeRuns_hasNoStoredTokensButClientKeepsAccessToken() = runTest {
+        revokeResponse = CompletableDeferred()
+        val authSessionManager = createAuthSessionManager()
+        authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
+
+        val signOut = launch { authSessionManager.signOut() }
+        runCurrent()
+
+        assertNull(authCredentialsStorage.getAccessToken())
+        assertNull(authCredentialsStorage.getRefreshToken())
+        assertEquals(listOf<String?>(ACCESS_TOKEN), accessTokensSentToClient)
+        revokeResponse.complete(Unit)
+        signOut.join()
+    }
+
+    @Test
+    fun signOut_twoStartedDuringBeforeSignOut_revokeAndClearOnce() = runTest {
+        val beforeSignOutResponse = CompletableDeferred<Unit>()
+        val authSessionManager = createAuthSessionManager()
+        authSessionManager.signIn(ACCESS_TOKEN, REFRESH_TOKEN)
+
+        val signOuts = List(2) {
+            launch {
+                authSessionManager.signOut(
+                    beforeSignOut = { beforeSignOutResponse.await() },
+                    onCleared = { events += ON_CLEARED_EVENT },
+                )
+            }
+        }
+        runCurrent()
+        beforeSignOutResponse.complete(Unit)
+        signOuts.forEach { it.join() }
+
+        assertEquals(listOf(REFRESH_TOKEN), revokedRefreshTokens)
+        assertEquals(listOf(ON_CLEARED_EVENT), events)
+        assertEquals(listOf(ACCESS_TOKEN, null), accessTokensSentToClient)
     }
 
     private fun createAuthSessionManager(
@@ -445,6 +521,10 @@ class AuthSessionManagerTest {
         const val ON_SIGNED_IN_FAILURE = "on signed in failed"
         const val USER_ID = "user-42"
         const val CUSTOM_LOG_TAG = "AppSession"
+        const val DEFAULT_REVOKE_TIMEOUT_MILLISECONDS = 10_000L
+        const val CUSTOM_REVOKE_TIMEOUT_MILLISECONDS = 2_500L
+        const val REVOKE_TIMEOUT_MESSAGE = "Refresh token revoke timed out during sign-out."
+        const val ON_CLEARED_EVENT = "onCleared"
         const val USER_CLAIMS_JSON = """{"sub":"$USER_ID","exp":1900000000}"""
 
         val payloadEncoder = Base64.UrlSafe.withPadding(Base64.PaddingOption.ABSENT)

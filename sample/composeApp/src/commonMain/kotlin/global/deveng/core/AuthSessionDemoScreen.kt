@@ -77,6 +77,7 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
     } else {
         null
     }
+
     val userIdClaimText = userIdClaim ?: "-"
 
     fun refreshSession() {
@@ -115,6 +116,7 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
             text = "User id claim: $userIdClaimText",
             style = CoreMediumTextStyle().copy(fontSize = 16.sp),
         )
+
         Text(text = "Last refresh: $lastRefreshResult", style = CoreMediumTextStyle().copy(fontSize = 16.sp))
 
         CustomButton(

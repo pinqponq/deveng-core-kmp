@@ -66,15 +66,19 @@ class AuthSessionManager(
 
     /**
      * Ends the session on this device. [beforeSignOut] runs first, while requests are still authenticated
-     * (push unregister, ending a chat session). Then [isLoggedIn] turns false, the refresh token is revoked,
-     * the stored tokens are cleared and [onCleared] runs (the app's own stores, billing sync).
+     * (push unregister, ending a chat session). Then [isLoggedIn] turns false and the stored tokens are
+     * removed, the refresh token is revoked, the HTTP client drops the access token and [onCleared] runs
+     * (the app's own stores, billing sync).
      *
      * Sign-out always finishes locally: a failing hook or revoke is only logged, and everything after
      * [isLoggedIn] turns false still runs when the caller's scope is cancelled, because the signed-in
-     * screen that started the sign-out usually closes at that moment. When a new sign-in lands while the
-     * revoke is running, the new session is kept and [onCleared] does not run. A revoke that takes longer
-     * than [AuthSessionOptions.revokeTimeout] is abandoned. A sign-out while no user is signed in, or while
-     * another sign-out has already signed the user out, does nothing.
+     * screen that started the sign-out usually closes at that moment. A revoke that takes longer than
+     * [AuthSessionOptions.revokeTimeout] is abandoned. When a new sign-in lands while the revoke is running,
+     * the new session is kept and [onCleared] does not run. If the process dies during the revoke, no token
+     * is left stored, but [onCleared] does not run.
+     *
+     * A sign-out while no user is signed in does nothing. Two sign-outs started together may both run
+     * [beforeSignOut]; only one of them revokes, clears and runs [onCleared].
      */
     suspend fun signOut(beforeSignOut: suspend () -> Unit = {}, onCleared: suspend () -> Unit = {}) {
         if (!authCredentialsStorage.isLoggedIn.value) return
@@ -86,14 +90,16 @@ class AuthSessionManager(
             condition = { authCredentialsStorage.isLoggedIn.value },
         ) { newGeneration ->
             val refreshToken = authCredentialsStorage.getRefreshToken()
-            authCredentialsStorage.setLoggedIn(false)
-            authCredentialsStorage.setRefreshToken(null)
+            authCredentialsStorage.clear()
             SignOutStart(generation = newGeneration, refreshToken = refreshToken)
         } ?: return
 
         withContext(NonCancellable) {
-            revokeRefreshToken(signOutStart.refreshToken)
-            clearSignedOutSession(signOutStart.generation, onCleared)
+            try {
+                revokeRefreshToken(signOutStart.refreshToken)
+            } finally {
+                finishSignOut(signOutStart.generation, onCleared)
+            }
         }
     }
 
@@ -135,12 +141,11 @@ class AuthSessionManager(
         authSessionOptions.onAccessTokenChanged(renewedTokens.accessToken)
     }
 
-    private suspend fun clearSignedOutSession(signedOutGeneration: Long, onCleared: suspend () -> Unit) {
-        val isCleared = sessionGeneration.runIfUnchanged(signedOutGeneration) {
-            authCredentialsStorage.clear()
+    private suspend fun finishSignOut(signedOutGeneration: Long, onCleared: suspend () -> Unit) {
+        val isSessionUnchanged = sessionGeneration.runIfUnchanged(signedOutGeneration) {
             authSessionOptions.onAccessTokenChanged(null)
         }
-        if (!isCleared) return
+        if (!isSessionUnchanged) return
 
         runCatchingNonCancellation { onCleared() }
             .onFailure { logger.w(it) { "An after-sign-out hook failed." } }

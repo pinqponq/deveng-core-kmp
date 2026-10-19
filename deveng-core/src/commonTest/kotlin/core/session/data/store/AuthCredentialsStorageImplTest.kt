@@ -14,7 +14,7 @@ class AuthCredentialsStorageImplTest {
     private val authCredentialsStorage = AuthCredentialsStorageImpl(settings = settings)
 
     @Test
-    fun setTokens_withBothTokens_readsThemBack() {
+    fun setAccessTokenAndRefreshToken_withBothTokens_readsThemBack() {
         authCredentialsStorage.setAccessToken(ACCESS_TOKEN)
         authCredentialsStorage.setRefreshToken(REFRESH_TOKEN)
 
