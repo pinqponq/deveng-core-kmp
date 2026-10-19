@@ -1,0 +1,27 @@
+appId: ${APP_ID}
+name: Auth session demo — sign in, renew, sign out while a renewal runs (#121)
+tags: [session]
+---
+- runFlow: subflows/open-auth-session-demo.yaml
+- startRecording: auth-session-demo
+- tapOn: "Sign in"
+- assertVisible: "Signed in: true"
+- assertVisible: "User id claim: demo-user"
+- assertVisible: "onSignedIn: sync billing user"
+- takeScreenshot: auth_1_signed_in
+- tapOn: "Refresh session"
+- extendedWaitUntil:
+    visible: "Last refresh: stored"
+    timeout: 10000
+- assertVisible: "renew with demo-refresh-0.*"
+- takeScreenshot: auth_2_renewed
+- tapOn: "Refresh, then sign out before it finishes"
+- assertVisible: "Signed in: false"
+- assertVisible: "revoke demo-refresh-1"
+- assertVisible: "onCleared: clear product stores"
+- extendedWaitUntil:
+    visible: "Last refresh: dropped"
+    timeout: 10000
+- assertVisible: "User id claim: -"
+- takeScreenshot: auth_3_sign_out_during_renewal
+- stopRecording

@@ -1,0 +1,14 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+- scrollUntilVisible:
+    element:
+      text: "Open Auth Session Demo"
+    direction: DOWN
+    timeout: 60000
+    centerElement: true
+# A tap during the scroll's momentum is lost on iOS; let the list settle first.
+- waitForAnimationToEnd
+- tapOn: "Open Auth Session Demo"
+- assertVisible: "Signed in: false"
