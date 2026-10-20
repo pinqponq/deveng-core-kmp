@@ -39,6 +39,10 @@ roborazzi = "1.76.0"
 # RevenueCat
 purchases-kmp = "3.0.1"
 
+# Home screen widget
+glance = "1.1.1"
+work-manager = "2.10.1"
+
 # QR generator
 qrose = "1.1.2"
 # QR scanner
@@ -110,6 +114,10 @@ russhwolf-settings-test = { module = "com.russhwolf:multiplatform-settings-test"
 material3-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
 roborazzi-compose-desktop = { module = "io.github.takahirom.roborazzi:roborazzi-compose-desktop", version.ref = "roborazzi" }
+
+# Home screen widget
+glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glance" }
+work-manager = { module = "androidx.work:work-runtime-ktx", version.ref = "work-manager" }
 
 [plugins]
 
