@@ -729,6 +729,12 @@ private fun ThemingDemo(
         - You can cancel _anytime_.
         ### Notes
         Keep this text short for demo.
+        1. Run `./gradlew build`, keep snake_case_names as they are.
+        2. Read [the docs](https://github.com/pinqponq/deveng-core-kmp) or https://example.com.
+          - Nested *item*
+        ```
+        val answer = 42
+        ```
         """.trimIndent()
     }
 
@@ -1503,7 +1509,8 @@ private fun ThemingDemo(
                                         )
                                         MarkdownContentParser(
                                             markdownContent = sampleMarkdown,
-                                            textColor = Color.Red,
+                                            textColor = Color.White,
+                                            linkColor = Color(0xFF56E096)
                                         )
                                         CustomButton(
                                             text = "Close",

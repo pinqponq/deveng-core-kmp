@@ -413,6 +413,18 @@ CustomLogger.isLoggingEnabled = true
 CustomLogger.log("Debug message")
 ```
 
+**Markdown** — `MarkdownContentParser` (`core.util.markdown`) renders a markdown string line by line with a caller-controlled text color. It supports headings (`#` to `######`), list items (`-`, `*` or `+`, indented for nesting; numbered items keep their number), fenced code blocks (```` ``` ````, scrolled sideways instead of wrapped), inline code, bold (`**text**`), italic (`_text_` or `*text*`; a delimiter inside a word such as `snake_case_name` stays plain text), links (`[text](url)`) and bare `http`/`https` URLs. Tapping a link opens it with the platform `LocalUriHandler`. The sample app shows it in "Show Markdown Dialog".
+
+```kotlin
+MarkdownContentParser(
+    markdownContent = reply,
+    textColor = MaterialTheme.colorScheme.onSurface,
+    textStyle = CoreRegularTextStyle().copy(fontSize = 15.sp),     // optional: font family, size, line height
+    linkColor = MaterialTheme.colorScheme.primary,                 // optional, defaults to textColor
+    codeBackgroundColor = MaterialTheme.colorScheme.surfaceVariant // optional, defaults to textColor at 12% alpha
+)
+```
+
 **JWT claims** — Read the claims of a JWT on the client (`core.util`). The payload is decoded as base64url with or without padding. The signature is not verified, so never use the claims to make trust decisions.
 
 ```kotlin

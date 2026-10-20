@@ -22,7 +22,7 @@ This skill ensures that when building or vibecoding an app that depends on **dev
 - When the user asks for dial, clipboard, maps, URL open, share, location, or platform info → use **MultiPlatformUtils**.
 - When the app needs to **download remote media by URL** and **share as files** or **save to the device gallery** (photos/videos from URLs) → use **RemoteMediaExportManager** (`core.util.media`) and **`RemoteMediaFile`** for bulk lists—not `MultiPlatformUtils.shareText` (that API is for plain text).
 - When the app needs to save captured photo bytes or add location EXIF → use **PhotoSaveUtils**.
-- When the app needs **simple markdown lines** in Compose (headings, lists, bold/italic) with a **caller-controlled text color** → use **MarkdownContentParser** (`core.util.markdown`).
+- When the app needs **markdown text** in Compose (headings, lists, bold/italic, inline code, code blocks, tappable links) with a **caller-controlled text color** → use **MarkdownContentParser** (`core.util.markdown`).
 - When the app needs a **fullscreen image viewer** with zoom and swipe-to-dismiss → use **MediaViewer** (`core.presentation.component.mediaviewer`).
 - When the app needs camera capture, preview, or recording → use **CameraController** / **CameraKScreen** / **rememberCameraKState** and related compose/domain APIs.
 - When the app needs to stack or persist camera photos in temp storage (e.g. before upload, swipe-to-delete flow) → use core **CameraTempPhotoRepository** and **TempPhotoItem**; register **CameraTempDirProvider** in DI (or use default implementations from core).
