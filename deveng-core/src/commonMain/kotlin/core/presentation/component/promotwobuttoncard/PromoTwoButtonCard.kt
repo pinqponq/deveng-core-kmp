@@ -32,16 +32,16 @@ private val ButtonVerticalPadding = 16.dp
 private val SecondaryButtonBorderWidth = 1.dp
 
 /**
- * Promotional card with an optional hero, a title, a body text, a filled primary button and an outlined
- * secondary button.
+ * Promotional card with an optional hero, a title, a body text, a filled primary button and an optional
+ * outlined secondary button.
  *
  * @param title Title displayed under the hero.
  * @param body Body text displayed under the title.
  * @param primaryButtonLabel Label of the filled primary button.
- * @param secondaryButtonLabel Label of the outlined secondary button.
  * @param onPrimaryClick Callback invoked when the primary button is clicked.
- * @param onSecondaryClick Callback invoked when the secondary button is clicked.
  * @param modifier Modifier to be applied to the card.
+ * @param secondaryButtonLabel Label of the outlined secondary button; `null` hides the button.
+ * @param onSecondaryClick Callback invoked when the secondary button is clicked.
  * @param heroContent Optional content displayed above the title, e.g. a logo.
  */
 @Composable
@@ -49,10 +49,10 @@ fun PromoTwoButtonCard(
     title: String,
     body: String,
     primaryButtonLabel: String,
-    secondaryButtonLabel: String,
     onPrimaryClick: () -> Unit,
-    onSecondaryClick: () -> Unit,
     modifier: Modifier = Modifier,
+    secondaryButtonLabel: String? = null,
+    onSecondaryClick: () -> Unit = {},
     heroContent: Slot? = null
 ) {
     val promoTheme = LocalComponentTheme.current.promoTwoButtonCard
@@ -105,21 +105,23 @@ fun PromoTwoButtonCard(
                 )
             }
 
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .debouncedCombinedClickable(onClick = onSecondaryClick),
-                shape = promoTheme.buttonShape,
-                color = promoTheme.secondaryButtonColor,
-                border = BorderStroke(SecondaryButtonBorderWidth, promoTheme.secondaryButtonBorderColor)
-            ) {
-                Text(
+            if (secondaryButtonLabel != null) {
+                Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = ButtonVerticalPadding),
-                    text = secondaryButtonLabel,
-                    style = promoTheme.secondaryButtonTextStyle
-                )
+                        .debouncedCombinedClickable(onClick = onSecondaryClick),
+                    shape = promoTheme.buttonShape,
+                    color = promoTheme.secondaryButtonColor,
+                    border = BorderStroke(SecondaryButtonBorderWidth, promoTheme.secondaryButtonBorderColor)
+                ) {
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = ButtonVerticalPadding),
+                        text = secondaryButtonLabel,
+                        style = promoTheme.secondaryButtonTextStyle
+                    )
+                }
             }
         }
     }

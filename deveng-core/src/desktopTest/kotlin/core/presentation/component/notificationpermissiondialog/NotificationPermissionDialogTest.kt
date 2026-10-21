@@ -64,6 +64,29 @@ class NotificationPermissionDialogTest {
     }
 
     @Test
+    fun render_withoutLaterButtonLabel_showsOnlyEnableButton() = runComposeUiTest {
+        var enableClickCount = 0
+        setContent {
+            AppTheme {
+                NotificationPermissionDialog(
+                    isVisible = true,
+                    title = TITLE,
+                    body = BODY,
+                    primaryButtonLabel = ENABLE_LABEL,
+                    laterButtonLabel = null,
+                    onDismissRequest = {},
+                    onEnableButtonClick = { enableClickCount++ }
+                )
+            }
+        }
+
+        onAllNodesWithText(LATER_LABEL).assertCountEquals(0)
+        onNodeWithText(ENABLE_LABEL).performClick()
+
+        assertEquals(1, enableClickCount)
+    }
+
+    @Test
     fun render_whenHidden_showsNothing() = runComposeUiTest {
         setContent {
             AppTheme {
