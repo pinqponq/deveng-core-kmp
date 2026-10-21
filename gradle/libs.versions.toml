@@ -28,6 +28,7 @@ coil-mp = "3.3.0"
 javacvPlatform = "1.5.12"
 datetime = "0.7.1"
 russhwolfsettings = "1.2.0"
+navigation-compose = "2.9.0"
 
 kotlinx-coroutines-test = "1.10.2"
 turbine = "1.2.1"
@@ -67,6 +68,7 @@ androidx-activityCompose = { module = "androidx.activity:activity-compose", vers
 kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines-swing" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
 russhwolf-settings = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "russhwolfsettings" }
 
 figma-code-connect-lib = { module = "com.figma.code.connect:code-connect-lib", version.ref = "figma-code-connect-lib" }
