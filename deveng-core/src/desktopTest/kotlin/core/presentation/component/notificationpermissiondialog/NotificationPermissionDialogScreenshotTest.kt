@@ -37,6 +37,28 @@ class NotificationPermissionDialogScreenshotTest {
         onNode(isDialog()).captureRoboImage(filePath = screenshotPath(name = "notification_permission_dialog_visible"))
     }
 
+    @Test
+    fun dialog_withoutLaterButton_matchesBaseline() = runDesktopComposeUiTest(width = CANVAS_WIDTH_PX, height = CANVAS_HEIGHT_PX) {
+        setContent {
+            CompositionLocalProvider(LocalDensity provides Density(density = SCREENSHOT_DENSITY)) {
+                AppTheme(darkTheme = false) {
+                    NotificationPermissionDialog(
+                        isVisible = true,
+                        title = TITLE,
+                        body = BODY,
+                        primaryButtonLabel = ENABLE_LABEL,
+                        laterButtonLabel = null,
+                        onDismissRequest = {},
+                        onEnableButtonClick = {}
+                    )
+                }
+            }
+        }
+        waitForIdle()
+
+        onNode(isDialog()).captureRoboImage(filePath = screenshotPath(name = "notification_permission_dialog_without_later_button"))
+    }
+
     private companion object {
         const val CANVAS_WIDTH_PX = 720
         const val CANVAS_HEIGHT_PX = 1000

@@ -46,18 +46,13 @@ fun NotificationPermissionDialog(
     onEnableButtonClick: () -> Unit
 ) {
     if (isVisible) {
-        val isDismissible = laterButtonLabel != null
         CustomDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = DialogHorizontalPadding),
             onDismissRequest = onDismissRequest,
             backgroundColor = Color.Transparent,
-            properties = DialogProperties(
-                dismissOnBackPress = isDismissible,
-                dismissOnClickOutside = isDismissible,
-                usePlatformDefaultWidth = false
-            )
+            properties = notificationPermissionDialogProperties(laterButtonLabel = laterButtonLabel)
         ) {
             PromoTwoButtonCard(
                 title = title,
@@ -70,4 +65,13 @@ fun NotificationPermissionDialog(
             )
         }
     }
+}
+
+internal fun notificationPermissionDialogProperties(laterButtonLabel: String?): DialogProperties {
+    val isDismissible = laterButtonLabel != null
+    return DialogProperties(
+        dismissOnBackPress = isDismissible,
+        dismissOnClickOutside = isDismissible,
+        usePlatformDefaultWidth = false
+    )
 }

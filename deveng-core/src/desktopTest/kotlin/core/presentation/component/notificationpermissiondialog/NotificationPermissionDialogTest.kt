@@ -9,6 +9,8 @@ import androidx.compose.ui.test.runComposeUiTest
 import core.presentation.theme.AppTheme
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
 class NotificationPermissionDialogTest {
@@ -84,6 +86,22 @@ class NotificationPermissionDialogTest {
         onNodeWithText(ENABLE_LABEL).performClick()
 
         assertEquals(1, enableClickCount)
+    }
+
+    @Test
+    fun dialogProperties_withLaterButtonLabel_allowBackAndOutsideDismiss() {
+        val properties = notificationPermissionDialogProperties(laterButtonLabel = LATER_LABEL)
+
+        assertTrue(properties.dismissOnBackPress)
+        assertTrue(properties.dismissOnClickOutside)
+    }
+
+    @Test
+    fun dialogProperties_withoutLaterButtonLabel_blockBackAndOutsideDismiss() {
+        val properties = notificationPermissionDialogProperties(laterButtonLabel = null)
+
+        assertFalse(properties.dismissOnBackPress)
+        assertFalse(properties.dismissOnClickOutside)
     }
 
     @Test

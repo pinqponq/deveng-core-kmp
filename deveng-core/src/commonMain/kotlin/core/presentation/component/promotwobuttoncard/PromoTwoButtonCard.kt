@@ -40,8 +40,9 @@ private val SecondaryButtonBorderWidth = 1.dp
  * @param primaryButtonLabel Label of the filled primary button.
  * @param onPrimaryClick Callback invoked when the primary button is clicked.
  * @param modifier Modifier to be applied to the card.
- * @param secondaryButtonLabel Label of the outlined secondary button; `null` hides the button.
- * @param onSecondaryClick Callback invoked when the secondary button is clicked.
+ * @param secondaryButtonLabel Label of the outlined secondary button.
+ * @param onSecondaryClick Callback invoked when the secondary button is clicked. The secondary button is shown
+ * only when both [secondaryButtonLabel] and [onSecondaryClick] are set.
  * @param heroContent Optional content displayed above the title, e.g. a logo.
  */
 @Composable
@@ -52,7 +53,7 @@ fun PromoTwoButtonCard(
     onPrimaryClick: () -> Unit,
     modifier: Modifier = Modifier,
     secondaryButtonLabel: String? = null,
-    onSecondaryClick: () -> Unit = {},
+    onSecondaryClick: (() -> Unit)? = null,
     heroContent: Slot? = null
 ) {
     val promoTheme = LocalComponentTheme.current.promoTwoButtonCard
@@ -105,7 +106,7 @@ fun PromoTwoButtonCard(
                 )
             }
 
-            if (secondaryButtonLabel != null) {
+            if (secondaryButtonLabel != null && onSecondaryClick != null) {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
