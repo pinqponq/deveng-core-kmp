@@ -365,8 +365,10 @@ internal fun App() {
         var showMotionScreen by remember { mutableStateOf(false) }
         var showPushNotificationsScreen by remember { mutableStateOf(false) }
         var showJwtClaimsScreen by remember { mutableStateOf(false) }
+        var showAuthSessionScreen by remember { mutableStateOf(false) }
         when {
             showJwtClaimsScreen -> JwtClaimsDemoScreen(onBack = { showJwtClaimsScreen = false })
+            showAuthSessionScreen -> AuthSessionDemoScreen(onBack = { showAuthSessionScreen = false })
             showMotionScreen -> MotionDemoScreen(onBack = { showMotionScreen = false })
             showPushNotificationsScreen -> PushNotificationsDemoScreen(onBack = { showPushNotificationsScreen = false })
             showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
@@ -387,6 +389,7 @@ internal fun App() {
                 onOpenMotion = { showMotionScreen = true },
                 onOpenPushNotifications = { showPushNotificationsScreen = true },
                 onOpenJwtClaims = { showJwtClaimsScreen = true },
+                onOpenAuthSession = { showAuthSessionScreen = true },
             )
         }
     }
@@ -654,6 +657,7 @@ private fun ThemingDemo(
     onOpenMotion: () -> Unit = {},
     onOpenPushNotifications: () -> Unit = {},
     onOpenJwtClaims: () -> Unit = {},
+    onOpenAuthSession: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1080,6 +1084,12 @@ private fun ThemingDemo(
                             text = "Open JWT Claims Demo",
                             containerColor = Color(0xFF37474F),
                             onClick = onOpenJwtClaims
+                        )
+
+                        CustomButton(
+                            text = "Open Auth Session Demo",
+                            containerColor = Color(0xFF00695C),
+                            onClick = onOpenAuthSession
                         )
 
                         RatingRow(

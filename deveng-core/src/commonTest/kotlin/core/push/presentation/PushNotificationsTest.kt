@@ -19,7 +19,7 @@ import core.push.fake.FakePermissionsController
 import core.push.fake.FakePushTokenRegistrar
 import core.push.fake.FakePushTokenSource
 import core.push.fake.FakePushTokenUnregistrar
-import core.push.fake.RecordingLogWriter
+import core.testing.RecordingLogWriter
 import core.util.multiplatform.Platform
 import core.util.multiplatform.PlatformConfig
 import kotlinx.coroutines.CompletableDeferred

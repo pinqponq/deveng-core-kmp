@@ -1,4 +1,4 @@
-package core.push.fake
+package core.testing
 
 import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Severity
