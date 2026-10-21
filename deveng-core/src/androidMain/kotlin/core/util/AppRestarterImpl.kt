@@ -13,6 +13,7 @@ class AppRestarterImpl(
                 Logger.w { "[AppRestarter] No launch intent for ${context.packageName}, restart skipped" }
                 return
             }
+
         launchIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
         context.startActivity(launchIntent)
         Runtime.getRuntime().exit(0)

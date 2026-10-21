@@ -8,7 +8,7 @@ import kotlin.test.assertNull
 
 class LanguageStorageImplTest {
     private val settings = MapSettings()
-    private val storage = LanguageStorageImpl(dataStore = settings)
+    private val storage = LanguageStorageImpl(settings = settings)
 
     @Test
     fun getSelectedLanguageCode_withoutChoice_returnsNull() {
@@ -16,25 +16,32 @@ class LanguageStorageImplTest {
     }
 
     @Test
-    fun setSelectedLanguageCode_storesChoiceForLaterReads() {
-        storage.setSelectedLanguageCode("de")
+    fun setSelectedLanguageCode_withNoPriorChoice_storesItForLaterReads() {
+        storage.setSelectedLanguageCode(GERMAN)
 
-        assertEquals("de", storage.getSelectedLanguageCode())
+        assertEquals(GERMAN, storage.getSelectedLanguageCode())
     }
 
     @Test
-    fun setSelectedLanguageCode_overwritesPreviousChoice() {
-        storage.setSelectedLanguageCode("de")
-        storage.setSelectedLanguageCode("fr")
+    fun setSelectedLanguageCode_withPriorChoice_overwritesIt() {
+        storage.setSelectedLanguageCode(GERMAN)
+        storage.setSelectedLanguageCode(FRENCH)
 
-        assertEquals("fr", storage.getSelectedLanguageCode())
+        assertEquals(FRENCH, storage.getSelectedLanguageCode())
     }
 
     @Test
-    fun setSelectedLanguageCode_usesTheKeyPlatformStartupHooksRead() {
-        storage.setSelectedLanguageCode("ja")
+    fun setSelectedLanguageCode_withAnyChoice_usesTheKeyPlatformStartupHooksRead() {
+        storage.setSelectedLanguageCode(JAPANESE)
 
-        assertEquals("ja", SelectedLanguagePreference.read(settings))
-        assertEquals("ja", settings.getString("core_selected_language_code", ""))
+        assertEquals(JAPANESE, SelectedLanguagePreference.read(settings))
+        assertEquals(JAPANESE, settings.getString(SELECTED_LANGUAGE_KEY, ""))
+    }
+
+    private companion object {
+        const val GERMAN = "de"
+        const val FRENCH = "fr"
+        const val JAPANESE = "ja"
+        const val SELECTED_LANGUAGE_KEY = "core_selected_language_code"
     }
 }

@@ -18,6 +18,12 @@ fun interface DeepLinkRouter {
     fun route(navController: NavController, uri: String): Boolean
 }
 
+/**
+ * Opens every link handed to [ExternalUriHandler] while this composable is in the composition.
+ *
+ * @param navController The controller the links navigate.
+ * @param router Maps app-specific links; a link it declines opens as a plain destination deep link.
+ */
 @NonRestartableComposable
 @Composable
 fun DeepLinkListener(
@@ -47,7 +53,7 @@ internal fun NavController.openDeepLink(uri: String, router: DeepLinkRouter) {
                 launchSingleTop = true
             }
         )
-    } catch (e: Exception) {
-        Logger.e(e) { "[DeepLink] Could not open uri=$uri" }
+    } catch (exception: Exception) {
+        Logger.e(exception) { "[DeepLink] Could not open uri=$uri" }
     }
 }

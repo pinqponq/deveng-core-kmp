@@ -7,7 +7,7 @@ package core.util
  * the form-urlencoded variant that writes a space as '+'. Deep link parsers do not agree on what a
  * '+' means inside a query value, so the escape has to be unambiguous here.
  */
-fun String.percentEncodeUriComponent(): String = buildString(capacity = length + 8) {
+fun String.percentEncodeUriComponent(): String = buildString {
     for (character in this@percentEncodeUriComponent) {
         val isUnreserved = character in 'A'..'Z' || character in 'a'..'z' || character in '0'..'9' ||
             character == '-' || character == '_' || character == '.' || character == '~'

@@ -68,7 +68,7 @@ kotlin {
             api(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
             api(libs.russhwolf.settings)
-            implementation(libs.navigation.compose)
+            api(libs.navigation.compose)
             implementation(libs.atomicfu)
             implementation(libs.kermit)
             implementation(libs.kotlinx.coroutines.core)

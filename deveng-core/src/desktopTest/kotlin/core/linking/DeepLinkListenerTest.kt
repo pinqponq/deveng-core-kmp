@@ -32,11 +32,11 @@ class DeepLinkListenerTest {
             Host(router = { _, uri -> routed += uri; true }, onController = { navController = it })
         }
 
-        ExternalUriHandler.onNewUri("app://detail")
+        ExternalUriHandler.onNewUri(DETAIL_LINK)
         waitForIdle()
 
-        assertEquals(listOf("app://detail"), routed)
-        assertEquals("start", navController?.currentBackStackEntry?.destination?.route)
+        assertEquals(listOf(DETAIL_LINK), routed)
+        assertEquals(START_ROUTE, navController?.currentBackStackEntry?.destination?.route)
     }
 
     @Test
@@ -46,10 +46,10 @@ class DeepLinkListenerTest {
             Host(router = { _, _ -> false }, onController = { navController = it })
         }
 
-        ExternalUriHandler.onNewUri("app://detail")
+        ExternalUriHandler.onNewUri(DETAIL_LINK)
         waitForIdle()
 
-        assertEquals("detail", navController?.currentBackStackEntry?.destination?.route)
+        assertEquals(DETAIL_ROUTE, navController?.currentBackStackEntry?.destination?.route)
         runOnIdle { navController?.popBackStack() }
     }
 
@@ -60,15 +60,15 @@ class DeepLinkListenerTest {
             Host(router = { _, _ -> false }, onController = { navController = it })
         }
 
-        ExternalUriHandler.onNewUri("app://detail")
+        ExternalUriHandler.onNewUri(DETAIL_LINK)
         waitForIdle()
-        ExternalUriHandler.onNewUri("app://detail")
+        ExternalUriHandler.onNewUri(DETAIL_LINK)
         waitForIdle()
 
         runOnIdle { navController?.popBackStack() }
         waitForIdle()
 
-        assertNotEquals("detail", navController?.currentBackStackEntry?.destination?.route)
+        assertNotEquals(DETAIL_ROUTE, navController?.currentBackStackEntry?.destination?.route)
     }
 
     @Test
@@ -81,7 +81,7 @@ class DeepLinkListenerTest {
         ExternalUriHandler.onNewUri("app://unknown")
         waitForIdle()
 
-        assertEquals("start", navController?.currentBackStackEntry?.destination?.route)
+        assertEquals(START_ROUTE, navController?.currentBackStackEntry?.destination?.route)
     }
 
     @Test
@@ -91,18 +91,19 @@ class DeepLinkListenerTest {
             Host(router = { _, _ -> error("boom") }, onController = { navController = it })
         }
 
-        ExternalUriHandler.onNewUri("app://detail")
+        ExternalUriHandler.onNewUri(DETAIL_LINK)
         waitForIdle()
 
-        assertEquals("start", navController?.currentBackStackEntry?.destination?.route)
+        assertEquals(START_ROUTE, navController?.currentBackStackEntry?.destination?.route)
     }
 
     @Test
-    fun dispose_removesListener() = runComposeUiTest {
+    fun dispose_withHostRemoved_removesListener() = runComposeUiTest {
         val showHost = mutableStateOf(true)
         setContent {
             if (showHost.value) Host(router = { _, _ -> false }, onController = {})
         }
+
         waitForIdle()
         assertNotNull(ExternalUriHandler.listener)
 
@@ -116,10 +117,17 @@ class DeepLinkListenerTest {
     private fun Host(router: DeepLinkRouter, onController: (NavController) -> Unit) {
         val navController = rememberNavController()
         onController(navController)
-        NavHost(navController = navController, startDestination = "start") {
-            composable("start") {}
-            composable("detail", deepLinks = listOf<NavDeepLink>(navDeepLink { uriPattern = "app://detail" })) {}
+        NavHost(navController = navController, startDestination = START_ROUTE) {
+            composable(START_ROUTE) {}
+            composable(DETAIL_ROUTE, deepLinks = listOf<NavDeepLink>(navDeepLink { uriPattern = DETAIL_LINK })) {}
         }
+
         DeepLinkListener(navController, router)
+    }
+
+    private companion object {
+        const val START_ROUTE = "start"
+        const val DETAIL_ROUTE = "detail"
+        const val DETAIL_LINK = "app://detail"
     }
 }
