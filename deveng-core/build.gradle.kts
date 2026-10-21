@@ -77,6 +77,7 @@ kotlin {
             implementation(libs.qrose)
             implementation(libs.material3.adaptive)
             api(libs.ktor.client.core)
+            api(libs.androidx.lifecycle.viewmodel)
         }
 
         androidMain.dependencies {

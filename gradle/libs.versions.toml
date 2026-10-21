@@ -33,6 +33,7 @@ kotlinx-coroutines-test = "1.10.2"
 turbine = "1.2.1"
 androidx-test-runner = "1.6.2"
 androidx-test-ext-junit = "1.2.1"
+lifecycle-viewmodel = "2.9.6"
 adaptive = "1.2.0"
 kover = "0.9.11"
 roborazzi = "1.76.0"
@@ -113,6 +114,7 @@ google-play-services-ads = { module = "com.google.android.gms:play-services-ads"
 russhwolf-settings-test = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "russhwolfsettings" }
 
 material3-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
+androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "lifecycle-viewmodel" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines-test" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 roborazzi-compose-desktop = { module = "io.github.takahirom.roborazzi:roborazzi-compose-desktop", version.ref = "roborazzi" }

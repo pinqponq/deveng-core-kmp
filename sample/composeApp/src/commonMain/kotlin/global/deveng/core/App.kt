@@ -366,9 +366,11 @@ internal fun App() {
         var showPushNotificationsScreen by remember { mutableStateOf(false) }
         var showJwtClaimsScreen by remember { mutableStateOf(false) }
         var showAuthSessionScreen by remember { mutableStateOf(false) }
+        var showBaseViewModelScreen by remember { mutableStateOf(false) }
         when {
             showJwtClaimsScreen -> JwtClaimsDemoScreen(onBack = { showJwtClaimsScreen = false })
             showAuthSessionScreen -> AuthSessionDemoScreen(onBack = { showAuthSessionScreen = false })
+            showBaseViewModelScreen -> BaseViewModelDemoScreen(onBack = { showBaseViewModelScreen = false })
             showMotionScreen -> MotionDemoScreen(onBack = { showMotionScreen = false })
             showPushNotificationsScreen -> PushNotificationsDemoScreen(onBack = { showPushNotificationsScreen = false })
             showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
@@ -390,6 +392,7 @@ internal fun App() {
                 onOpenPushNotifications = { showPushNotificationsScreen = true },
                 onOpenJwtClaims = { showJwtClaimsScreen = true },
                 onOpenAuthSession = { showAuthSessionScreen = true },
+                onOpenBaseViewModel = { showBaseViewModelScreen = true },
             )
         }
     }
@@ -658,6 +661,7 @@ private fun ThemingDemo(
     onOpenPushNotifications: () -> Unit = {},
     onOpenJwtClaims: () -> Unit = {},
     onOpenAuthSession: () -> Unit = {},
+    onOpenBaseViewModel: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1090,6 +1094,12 @@ private fun ThemingDemo(
                             text = "Open Auth Session Demo",
                             containerColor = Color(0xFF00695C),
                             onClick = onOpenAuthSession
+                        )
+
+                        CustomButton(
+                            text = "Open BaseViewModel Demo",
+                            containerColor = Color(0xFF00695C),
+                            onClick = onOpenBaseViewModel
                         )
 
                         RatingRow(
