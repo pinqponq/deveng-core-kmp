@@ -12,7 +12,7 @@ interface ViewModelInterceptor {
     fun onError(viewModelName: String, exception: Exception): ErrorDecision = ErrorDecision.SHOW
 
     /**
-     * Called for failures the user is not shown, for example a `launch` with `notifyError = false`.
+     * Called when a `launch` with `notifyError = false` fails. The user is not shown this failure.
      */
     fun onSilentError(viewModelName: String, exception: Exception) {}
 }

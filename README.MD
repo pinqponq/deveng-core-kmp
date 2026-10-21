@@ -864,7 +864,7 @@ App rules such as logging or ending the session live in a `ViewModelInterceptor`
 
 - `onEvent` and `onEffect` for every event and effect.
 - `onError` for a failure passed to `setError`. It returns an `ErrorDecision`: `SHOW` (show the dialog), `SILENT` (log only) or `HANDLED` (the interceptor took care of it). When interceptors answer differently, `HANDLED` wins over `SILENT`, and `SILENT` wins over `SHOW`.
-- `onSilentError` for a failure that is not shown, for example a `launch` with `notifyError = false`.
+- `onSilentError` when a `launch` with `notifyError = false` fails. The user is not shown this failure.
 
 The sample app's "BaseViewModel Demo" screen shows each case.
 

@@ -52,7 +52,7 @@ private sealed interface BaseViewModelDemoEvent : ViewEvent {
     data object Load : BaseViewModelDemoEvent
     data object FailWithDialog : BaseViewModelDemoEvent
     data object FailSilently : BaseViewModelDemoEvent
-    data object InitialLoad : BaseViewModelDemoEvent
+    data object LoadInitialData : BaseViewModelDemoEvent
 }
 
 private sealed interface BaseViewModelDemoEffect : ViewSideEffect
@@ -77,7 +77,7 @@ private class BaseViewModelDemoViewModel :
                 error("The background refresh failed")
             }
 
-            BaseViewModelDemoEvent.InitialLoad -> setState { copy(initialLoadCount = initialLoadCount + 1) }
+            BaseViewModelDemoEvent.LoadInitialData -> setState { copy(initialLoadCount = initialLoadCount + 1) }
         }
     }
 }
@@ -99,7 +99,7 @@ private class DemoLogInterceptor(private val logLineList: SnapshotStateList<Stri
 
     private fun addLine(line: String) {
         logLineList.add(0, line)
-        if (logLineList.size > MAX_VISIBLE_LOG_LINES) logLineList.removeLast()
+        if (logLineList.size > MAX_VISIBLE_LOG_LINES) logLineList.removeAt(logLineList.lastIndex)
     }
 }
 
@@ -115,7 +115,7 @@ internal fun BaseViewModelDemoScreen(onBack: () -> Unit) {
     }
 
     InitEffect(viewModel = viewModel) { isInit ->
-        if (isInit) viewModel.setEvent(BaseViewModelDemoEvent.InitialLoad)
+        if (isInit) viewModel.setEvent(BaseViewModelDemoEvent.LoadInitialData)
     }
 
     StateLayout(
