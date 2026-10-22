@@ -192,6 +192,17 @@ Text(text = "Custom", style = BoldTextStyle().copy(fontSize = 24.sp, color = Col
 CustomButton(text = "Button", textStyle = SemiBoldTextStyle().copy(fontSize = 18.sp), onClick = { })
 ```
 
+`CustomButton` keeps Material's inner padding (24.dp horizontal, 8.dp vertical) unless you pass `contentPadding`. A narrow or short button can give its label more room this way:
+
+```kotlin
+CustomButton(
+    modifier = Modifier.width(120.dp).height(40.dp),
+    text = "See answer",
+    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+    onClick = { }
+)
+```
+
 ### Components (overview)
 
 - **Actions:** `CustomButton`, `CustomIconButton`, `LabeledSwitch`
