@@ -232,11 +232,11 @@ class RevealMotionTest {
     fun countUpText_withJuiceState_popsOnEveryStep() = runDesktopComposeUiTest {
         lateinit var juiceState: JuiceState
         var peakScale = 1f
+        mainClock.autoAdvance = false
         setContent {
             juiceState = rememberJuiceState()
             CountUpText(value = COUNT_TARGET, stepDelayMillis = COUNT_STEP_DELAY_MILLIS, juiceState = juiceState)
         }
-        mainClock.autoAdvance = false
 
         repeat(POP_FRAME_COUNT) {
             mainClock.advanceTimeBy(FRAME_MILLIS)
