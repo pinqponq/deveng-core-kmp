@@ -367,10 +367,12 @@ internal fun App() {
         var showJwtClaimsScreen by remember { mutableStateOf(false) }
         var showAuthSessionScreen by remember { mutableStateOf(false) }
         var showBaseViewModelScreen by remember { mutableStateOf(false) }
+        var showPinqloqScreen by remember { mutableStateOf(false) }
         when {
             showJwtClaimsScreen -> JwtClaimsDemoScreen(onBack = { showJwtClaimsScreen = false })
             showAuthSessionScreen -> AuthSessionDemoScreen(onBack = { showAuthSessionScreen = false })
             showBaseViewModelScreen -> BaseViewModelDemoScreen(onBack = { showBaseViewModelScreen = false })
+            showPinqloqScreen -> PinqloqDemoScreen(onBack = { showPinqloqScreen = false })
             showMotionScreen -> MotionDemoScreen(onBack = { showMotionScreen = false })
             showPushNotificationsScreen -> PushNotificationsDemoScreen(onBack = { showPushNotificationsScreen = false })
             showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
@@ -393,6 +395,7 @@ internal fun App() {
                 onOpenJwtClaims = { showJwtClaimsScreen = true },
                 onOpenAuthSession = { showAuthSessionScreen = true },
                 onOpenBaseViewModel = { showBaseViewModelScreen = true },
+                onOpenPinqloq = { showPinqloqScreen = true },
             )
         }
     }
@@ -662,6 +665,7 @@ private fun ThemingDemo(
     onOpenJwtClaims: () -> Unit = {},
     onOpenAuthSession: () -> Unit = {},
     onOpenBaseViewModel: () -> Unit = {},
+    onOpenPinqloq: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1100,6 +1104,12 @@ private fun ThemingDemo(
                             text = "Open BaseViewModel Demo",
                             containerColor = Color(0xFF00695C),
                             onClick = onOpenBaseViewModel
+                        )
+
+                        CustomButton(
+                            text = "Open Pinqloq Client Log Demo",
+                            containerColor = Color(0xFF6A1B9A),
+                            onClick = onOpenPinqloq
                         )
 
                         RatingRow(
