@@ -338,7 +338,7 @@ Package `core.presentation.motion` (plus `core.presentation.haptics` and `core.p
 | Short grow-and-settle bounce ("pop") | `rememberJuiceState()` + `Modifier.juice(state)`; call `state.pop()`. A new pop restarts the running one |
 | Card that turns between two faces | `FlipCard(front, back, isFlipped, delayMillis = …)`: `rotationY` with a camera distance, each face composed only while visible; a small different `delayMillis` per card keeps several cards from moving in lockstep |
 | Number that counts up step by step | `CountUpText(value, startValue, formatter, juiceState, onStep)`: at most `maxStepCount` steps and `maxTotalMillis` in total, `onStep` per step |
-| Haptic ticks of three strengths | `rememberHapticTicker()` → `light()` (dropped when faster than `minLightIntervalMillis`), `medium()`, `strong()` |
+| Haptic ticks of three strengths | `rememberHapticTicker()` returns a ticker with `light()` (dropped when faster than `minLightIntervalMillis`), `medium()`, `strong()` |
 
 Everything that animates respects `LocalReduceMotion`: `pressScale` stays at full size, `shimmer` shows the static base color, `NavTransitions` return no transition, `pop()` does nothing, `FlipCard` swaps faces at once and `CountUpText` shows the final number at once. Defaults of the pop, flip and count-up are in `MotionDefaults`.
 

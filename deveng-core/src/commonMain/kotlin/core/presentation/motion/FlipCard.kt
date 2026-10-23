@@ -52,7 +52,7 @@ fun FlipCard(
         },
         label = "flipCardRotation"
     )
-    val isFrontFaceVisible by remember { derivedStateOf { isFrontFaceVisible(rotationDegrees) } }
+    val isFrontFaceShown by remember { derivedStateOf { isFrontFaceVisible(rotationDegrees) } }
 
     Box(
         modifier = modifier.graphicsLayer {
@@ -60,7 +60,7 @@ fun FlipCard(
             this.cameraDistance = cameraDistance * density
         }
     ) {
-        if (isFrontFaceVisible) {
+        if (isFrontFaceShown) {
             Box(modifier = Modifier.graphicsLayer { rotationY = FRONT_ROTATION_DEGREES }) {
                 front()
             }

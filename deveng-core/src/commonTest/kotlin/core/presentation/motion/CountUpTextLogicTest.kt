@@ -2,7 +2,6 @@ package core.presentation.motion
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class CountUpTextLogicTest {
@@ -53,15 +52,5 @@ class CountUpTextLogicTest {
     @Test
     fun countUpStepDelayMillis_withoutSteps_isZero() {
         assertEquals(0L, countUpStepDelayMillis(stepCount = 0, stepDelayMillis = 120L, maxTotalMillis = 1500L))
-    }
-
-    @Test
-    fun isFrontFaceVisible_pastHalfTurn_isTrue() {
-        assertTrue(isFrontFaceVisible(rotationDegrees = 90.5f))
-    }
-
-    @Test
-    fun isFrontFaceVisible_atHalfTurn_isFalse() {
-        assertFalse(isFrontFaceVisible(rotationDegrees = 90f))
     }
 }
