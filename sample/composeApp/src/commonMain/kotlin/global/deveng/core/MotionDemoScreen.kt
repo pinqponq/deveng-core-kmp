@@ -50,7 +50,7 @@ private const val MOTION_DEMO_PAGE_COUNT = 3
 private const val MOTION_DEMO_SHIMMER_ROW_COUNT = 3
 
 /**
- * Playground for core motion: press feedback, shimmer placeholders, screen transitions and haptics.
+ * Playground for core motion: press feedback, shimmer placeholders, screen transitions, haptics and reveal motion (pop, flip card, count-up).
  * The switch forces reduce motion on for this screen, on top of the system setting.
  */
 @Composable
@@ -91,6 +91,8 @@ internal fun MotionDemoScreen(onBack: () -> Unit) {
             MotionDemoHapticButtons()
 
             MotionDemoShimmer()
+
+            MotionRevealDemo()
 
             MotionDemoTransitions(isReduceMotionEnabled = isReduceMotionEnabled)
         }

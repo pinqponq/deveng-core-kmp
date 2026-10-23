@@ -335,8 +335,12 @@ Package `core.presentation.motion` (plus `core.presentation.haptics` and `core.p
 | Screen transitions | `NavTransitions.enter` / `exit` / `popEnter` / `popExit(isReduceMotionEnabled)` for NavHost or `AnimatedContent` |
 | System reduce-motion setting | `LocalReduceMotion` (provided by `AppTheme`, override with `AppTheme(reduceMotion = …)`); Android: "Remove animations", iOS: Reduce Motion, desktop/web: false |
 | Haptics | `rememberAppHaptics()` → `tap()`, `success()`, `warning()` (Compose `VirtualKey` / `Confirm` / `Reject`) |
+| Short grow-and-settle bounce ("pop") | `rememberJuiceState()` + `Modifier.juice(state)`; call `state.pop()`. A new pop restarts the running one |
+| Card that turns between two faces | `FlipCard(front, back, isFlipped, delayMillis = …)`: `rotationY` with a camera distance, each face composed only while visible; a small different `delayMillis` per card keeps several cards from moving in lockstep |
+| Number that counts up step by step | `CountUpText(value, startValue, formatter, juiceState, onStep)`: at most `maxStepCount` steps and `maxTotalMillis` in total, `onStep` per step |
+| Haptic ticks of three strengths | `rememberHapticTicker()` returns a ticker with `light()` (dropped when faster than `minLightIntervalMillis`), `medium()`, `strong()` |
 
-Everything that animates respects `LocalReduceMotion`: `pressScale` stays at full size, `shimmer` shows the static base color, `NavTransitions` return no transition.
+Everything that animates respects `LocalReduceMotion`: `pressScale` stays at full size, `shimmer` shows the static base color, `NavTransitions` return no transition, `pop()` does nothing, `FlipCard` swaps faces at once and `CountUpText` shows the final number at once. Defaults of the pop, flip and count-up are in `MotionDefaults`.
 
 ```kotlin
 val isReduceMotionEnabled = LocalReduceMotion.current
@@ -350,7 +354,7 @@ NavHost(
 ) { /* … */ }
 ```
 
-The sample app's **Motion Demo** screen shows all of them.
+The sample app's **Motion Demo** screen shows all of them; the "Reveal motion" section there has the pop, the flip card and the count-up.
 
 ### Best Practices (UI)
 
