@@ -45,6 +45,7 @@ plugins {
 include(":sample:composeApp")
 include(":deveng-core")
 include(":deveng-billing")
+include(":deveng-pinqloq")
 include(":deveng-widget")
 
 include(":figma-sync")

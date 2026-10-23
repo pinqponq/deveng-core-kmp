@@ -5,7 +5,7 @@ android-targetSdk = "36"
 android-compileSdk = "36"
 app-version-major = "1"
 app-version-code = "7"
-app-minor-version = "121"
+app-minor-version = "122"
 
 androidx-activityCompose = "1.12.2"
 compose-plugin = "1.10.0"
@@ -31,6 +31,8 @@ russhwolfsettings = "1.2.0"
 navigation-compose = "2.9.0"
 
 kotlinx-coroutines-test = "1.10.2"
+koin = "4.1.0"
+deveng-networking = "2.13.80"
 turbine = "1.2.1"
 androidx-test-runner = "1.6.2"
 androidx-test-ext-junit = "1.2.1"
@@ -98,6 +100,10 @@ compose-media-player = { module = "network.chaintech:compose-multiplatform-media
 jogamp-gluegen-rt = { module = "org.jogamp.gluegen:gluegen-rt", version.ref = "jogamp" }
 jogamp-jogl-all = { module = "org.jogamp.jogl:jogl-all", version.ref = "jogamp" }
 javacv-platform = { module = "org.bytedeco:javacv-platform", version.ref = "javacvPlatform" }
+
+# Koin and Deveng networking
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+deveng-networking-kmp = { module = "global.deveng:networking-kmp", version.ref = "deveng-networking" }
 
 # RevenueCat
 purchases-kmp-core = { module = "com.revenuecat.purchases:purchases-kmp-core", version.ref = "purchases-kmp" }
