@@ -49,7 +49,7 @@ class RevealMotionParameterTest {
     @Test
     fun countUpText_whenModifierChanges_appliesNewModifier() = runDesktopComposeUiTest {
         var tag by mutableStateOf(TAG_A)
-        setContent { CountUpAll(value = 0, modifier = Modifier.testTag(tag)) }
+        setContent { CountUpText(value = 0, modifier = Modifier.testTag(tag)) }
 
         tag = TAG_B
         waitForIdle()
@@ -133,10 +133,11 @@ class RevealMotionParameterTest {
         assertEquals(34.sp, onNodeWithText("0").textStyle().fontSize)
     }
 
+
     @Test
     fun countUpText_whenStyleChanges_usesNewStyle() = runDesktopComposeUiTest {
         var style by mutableStateOf(TextStyle(fontSize = 20.sp))
-        setContent { CountUpAll(value = 0, style = style) }
+        setContent { CountUpText(value = 0, style = style) }
 
         style = TextStyle(fontSize = 24.sp)
         waitForIdle()
@@ -165,7 +166,7 @@ class RevealMotionParameterTest {
     @Test
     fun countUpText_whenColorChanges_usesNewColor() = runDesktopComposeUiTest {
         var color by mutableStateOf(Color.Red)
-        setContent { CountUpAll(value = 0, color = color) }
+        setContent { CountUpText(value = 0, color = color) }
 
         color = Color.Green
         waitForIdle()
@@ -261,7 +262,7 @@ class RevealMotionParameterTest {
     @Test
     fun countUpText_whenFormatterChanges_showsNewFormat() = runDesktopComposeUiTest {
         var suffix by mutableStateOf("a")
-        setContent { CountUpAll(value = 0, formatter = { "$it$suffix" }) }
+        setContent { CountUpText(value = 0, formatter = { "$it$suffix" }) }
 
         suffix = "b"
         waitForIdle()
@@ -275,7 +276,7 @@ class RevealMotionParameterTest {
         var secondCalls = 0
         var onStep by mutableStateOf<(Int) -> Unit>({ firstCalls++ })
         var value by mutableStateOf(0)
-        setContent { CountUpAll(value = value, stepDelayMillis = STEP_DELAY_MILLIS, onStep = onStep) }
+        setContent { CountUpText(value = value, stepDelayMillis = STEP_DELAY_MILLIS, onStep = onStep) }
 
         onStep = { secondCalls++ }
         waitForIdle()
@@ -295,7 +296,7 @@ class RevealMotionParameterTest {
         setContent {
             first = rememberJuiceState()
             second = rememberJuiceState()
-            CountUpAll(
+            CountUpText(
                 value = value,
                 stepDelayMillis = STEP_DELAY_MILLIS,
                 juiceState = if (useSecond) second else first
@@ -344,7 +345,14 @@ class RevealMotionParameterTest {
     @Test
     fun flipCard_whenModifierChanges_appliesNewModifier() = runDesktopComposeUiTest {
         var tag by mutableStateOf(TAG_A)
-        setContent { FlipCardLabeled(isFlipped = false, modifier = Modifier.testTag(tag)) }
+        setContent {
+            FlipCard(
+                front = { Text(FRONT_TEXT) },
+                back = { Text(BACK_TEXT) },
+                isFlipped = false,
+                modifier = Modifier.testTag(tag)
+            )
+        }
 
         tag = TAG_B
         waitForIdle()
@@ -355,17 +363,24 @@ class RevealMotionParameterTest {
 
     @Test
     fun flipCard_whenFacesChange_showsNewFaces() = runDesktopComposeUiTest {
-        var frontLabel by mutableStateOf("one")
-        var backLabel by mutableStateOf("one")
+        var label by mutableStateOf("one")
         var isFlipped by mutableStateOf(false)
-        setContent { FlipCardLabeled(isFlipped = isFlipped, frontLabel = frontLabel, backLabel = backLabel) }
-        backLabel = "two"
+        setContent {
+            val currentLabel = label
+            FlipCard(
+                front = { Text("front $currentLabel") },
+                back = { Text("back $currentLabel") },
+                isFlipped = isFlipped,
+                durationMillis = FLIP_DURATION_MILLIS
+            )
+        }
+        label = "two"
         waitForIdle()
         onNodeWithText("back two").assertExists()
 
         isFlipped = true
         mainClock.advanceTimeBy(FLIP_SETTLE_MILLIS)
-        frontLabel = "three"
+        label = "three"
         waitForIdle()
 
         onNodeWithText("front three").assertExists()
@@ -682,6 +697,81 @@ class RevealMotionParameterTest {
         mainClock.advanceTimeBy(MotionDefaults.POP_RISE_MILLIS.toLong())
 
         assertEquals(Color.White, onRoot().captureToImage().toPixelMap()[cornerX, cornerX])
+    }
+
+    @Test
+    fun countUpText_withAllParameters_whenModifierChanges_appliesNewModifier() = runDesktopComposeUiTest {
+        var tag by mutableStateOf(TAG_A)
+        setContent { CountUpAll(value = 0, modifier = Modifier.testTag(tag)) }
+
+        tag = TAG_B
+        waitForIdle()
+
+        onNodeWithTag(TAG_B).assertExists()
+        onNodeWithTag(TAG_A).assertDoesNotExist()
+    }
+
+    @Test
+    fun countUpText_withAllParameters_whenStyleChanges_usesNewStyle() = runDesktopComposeUiTest {
+        var style by mutableStateOf(TextStyle(fontSize = 20.sp))
+        setContent { CountUpAll(value = 0, style = style) }
+
+        style = TextStyle(fontSize = 24.sp)
+        waitForIdle()
+
+        assertEquals(24.sp, onNodeWithText("0").textStyle().fontSize)
+    }
+
+    @Test
+    fun countUpText_withAllParameters_whenColorChanges_usesNewColor() = runDesktopComposeUiTest {
+        var color by mutableStateOf(Color.Red)
+        setContent { CountUpAll(value = 0, color = color) }
+
+        color = Color.Green
+        waitForIdle()
+
+        assertEquals(Color.Green, onNodeWithText("0").textStyle().color)
+    }
+
+    @Test
+    fun countUpText_withAllParameters_whenFormatterChanges_showsNewFormat() = runDesktopComposeUiTest {
+        var suffix by mutableStateOf("a")
+        setContent { CountUpAll(value = 0, formatter = { "$it$suffix" }) }
+
+        suffix = "b"
+        waitForIdle()
+
+        onNodeWithText("0b").assertExists()
+    }
+
+    @Test
+    fun flipCard_withAllParameters_whenModifierChanges_appliesNewModifier() = runDesktopComposeUiTest {
+        var tag by mutableStateOf(TAG_A)
+        setContent { FlipCardLabeled(isFlipped = false, modifier = Modifier.testTag(tag)) }
+
+        tag = TAG_B
+        waitForIdle()
+
+        onNodeWithTag(TAG_B).assertExists()
+        onNodeWithTag(TAG_A).assertDoesNotExist()
+    }
+
+    @Test
+    fun flipCard_withAllParameters_whenFacesChange_showsNewFaces() = runDesktopComposeUiTest {
+        var frontLabel by mutableStateOf("one")
+        var backLabel by mutableStateOf("one")
+        var isFlipped by mutableStateOf(false)
+        setContent { FlipCardLabeled(isFlipped = isFlipped, frontLabel = frontLabel, backLabel = backLabel) }
+        backLabel = "two"
+        waitForIdle()
+        onNodeWithText("back two").assertExists()
+
+        isFlipped = true
+        mainClock.advanceTimeBy(FLIP_SETTLE_MILLIS)
+        frontLabel = "three"
+        waitForIdle()
+
+        onNodeWithText("front three").assertExists()
     }
 
     private fun androidx.compose.ui.test.ComposeUiTest.midTurnPixelCount(density: Float, cameraDistance: Float?): Int {
