@@ -10,8 +10,12 @@ import kotlinx.serialization.json.buildJsonObject
 private const val EVENT_FIELD = "event"
 private const val METADATA_FIELD = "metadata"
 private const val DETAIL_FIELD = "detail"
-private const val APP_VERSION_NAME_FIELD = "appVersionName"
+private const val APP_VERSION_NAME_KEY = "appVersionName"
 private const val DEVICE_UID_KEY = "deviceUid"
+private const val LOG_LEVEL_FIELD = "logLevel"
+private const val LEVEL_FIELD = "level"
+private const val DATE_FIELD = "date"
+private const val DEVICE_IDENTIFIER_FIELD = "deviceIdentifier"
 private const val DEVICE_NAME_KEY = "deviceName"
 
 object PinqloqRequestMappers {
@@ -21,16 +25,16 @@ object PinqloqRequestMappers {
      */
     val LogLevelWithDate: PinqloqRequestMapper = object : PinqloqRequestMapper {
         override fun platformMetadata(platformInfo: PinqloqPlatformInfo): Map<String, String> = mapOf(
-            APP_VERSION_NAME_FIELD to platformInfo.appVersionName,
+            APP_VERSION_NAME_KEY to platformInfo.appVersionName,
             DEVICE_UID_KEY to platformInfo.deviceUid,
             DEVICE_NAME_KEY to platformInfo.deviceName
         )
 
         override fun mapEntry(entry: PinqloqLogEntry): JsonObject = buildJsonObject {
             put(EVENT_FIELD, JsonPrimitive(entry.event))
-            put("logLevel", JsonPrimitive(entry.level.backendValue))
+            put(LOG_LEVEL_FIELD, JsonPrimitive(entry.level.backendValue))
             putTextMaps(entry)
-            put("date", JsonPrimitive(entry.occurredAt.toString()))
+            put(DATE_FIELD, JsonPrimitive(entry.occurredAt.toString()))
         }
     }
 
@@ -45,9 +49,9 @@ object PinqloqRequestMappers {
 
         override fun mapEntry(entry: PinqloqLogEntry): JsonObject = buildJsonObject {
             put(EVENT_FIELD, JsonPrimitive(entry.event))
-            put("deviceIdentifier", JsonPrimitive(entry.platformInfo.deviceUid))
-            put("level", JsonPrimitive(entry.level.backendValue))
-            put(APP_VERSION_NAME_FIELD, JsonPrimitive(entry.platformInfo.appVersionName))
+            put(DEVICE_IDENTIFIER_FIELD, JsonPrimitive(entry.platformInfo.deviceUid))
+            put(LEVEL_FIELD, JsonPrimitive(entry.level.backendValue))
+            put(APP_VERSION_NAME_KEY, JsonPrimitive(entry.platformInfo.appVersionName))
             putTextMaps(entry)
         }
     }

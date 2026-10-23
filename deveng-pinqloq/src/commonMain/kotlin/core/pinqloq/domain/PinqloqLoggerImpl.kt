@@ -61,9 +61,7 @@ class PinqloqLoggerImpl(
         clientOptions.enabled()
     } catch (exception: Exception) {
         rethrowCancellation(exception)
-        clientOptions.failureListener.onFailure(
-            PinqloqFailure(PinqloqFailureReason.ENTRY_REJECTED, droppedLogCount = 1, cause = exception)
-        )
+        reportFailure(PinqloqFailure(PinqloqFailureReason.ENTRY_REJECTED, droppedLogCount = 1, cause = exception))
         false
     }
 
@@ -88,9 +86,7 @@ class PinqloqLoggerImpl(
         )
     } catch (exception: Exception) {
         rethrowCancellation(exception)
-        clientOptions.failureListener.onFailure(
-            PinqloqFailure(PinqloqFailureReason.ENTRY_REJECTED, droppedLogCount = 1, cause = exception)
-        )
+        reportFailure(PinqloqFailure(PinqloqFailureReason.ENTRY_REJECTED, droppedLogCount = 1, cause = exception))
         null
     }
 
@@ -135,9 +131,7 @@ class PinqloqLoggerImpl(
         }
 
         if (droppedLogCount > 0) {
-            clientOptions.failureListener.onFailure(
-                PinqloqFailure(PinqloqFailureReason.QUEUE_OVERFLOW, droppedLogCount)
-            )
+            reportFailure(PinqloqFailure(PinqloqFailureReason.QUEUE_OVERFLOW, droppedLogCount))
         }
     }
 
@@ -187,9 +181,16 @@ class PinqloqLoggerImpl(
             send()
         } catch (exception: Exception) {
             rethrowCancellation(exception)
-            clientOptions.failureListener.onFailure(
-                PinqloqFailure(PinqloqFailureReason.DELIVERY_FAILED, droppedLogCount, exception)
-            )
+            reportFailure(PinqloqFailure(PinqloqFailureReason.DELIVERY_FAILED, droppedLogCount, exception))
+        }
+    }
+
+    private fun reportFailure(failure: PinqloqFailure) {
+        try {
+            clientOptions.failureListener.onFailure(failure)
+        } catch (exception: Exception) {
+            rethrowCancellation(exception)
+            CustomLogger.log("Pinqloq: the failure listener threw: ${exception.stackTraceToString()}")
         }
     }
 

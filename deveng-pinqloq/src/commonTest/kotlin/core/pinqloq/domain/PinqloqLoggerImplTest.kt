@@ -143,6 +143,16 @@ class PinqloqLoggerImplTest {
     }
 
     @Test
+    fun log_whenFailureListenerThrows_doesNotThrow() = runTest {
+        logRepository.failure = IllegalStateException("offline")
+        val logger = createLogger(
+            clientOptions = createOptions(failureListener = PinqloqFailureListener { error("listener failed") })
+        )
+
+        logger.log(PinqloqLevel.Error, EVENT)
+    }
+
+    @Test
     fun log_whenRepositoryIsCancelled_rethrowsCancellation() = runTest {
         logRepository.failure = CancellationException("cancelled")
 
@@ -348,7 +358,8 @@ class PinqloqLoggerImplTest {
     private fun createOptions(
         batchSize: Int = 1,
         queueCapacity: Int = 1000,
-        enabled: () -> Boolean = { true }
+        enabled: () -> Boolean = { true },
+        failureListener: PinqloqFailureListener = this.failureListener
     ): PinqloqClientOptions = PinqloqClientOptions(
         endpoint = "client-logs",
         batchEndpoint = "client-logs/bulk",

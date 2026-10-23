@@ -10,7 +10,7 @@ fun interface PinqloqFailureListener {
         val LogToConsole = PinqloqFailureListener { failure ->
             CustomLogger.log(
                 "Pinqloq ${failure.reason}: dropped ${failure.droppedLogCount} log(s)" +
-                    (failure.cause?.let { cause -> ", cause: $cause" } ?: "")
+                    (failure.cause?.let { cause -> ", cause: ${cause.stackTraceToString()}" } ?: "")
             )
         }
     }

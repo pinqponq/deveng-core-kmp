@@ -9,6 +9,7 @@ import kotlin.time.Duration.Companion.seconds
 private const val DEFAULT_MAX_EVENT_LENGTH = 1000
 private const val DEFAULT_BATCH_SIZE = 1
 private const val DEFAULT_QUEUE_CAPACITY = 1000
+private val DEFAULT_FLUSH_INTERVAL = 2.seconds
 
 /**
  * @param endpoint path that receives one log per request.
@@ -30,7 +31,7 @@ data class PinqloqClientOptions(
     val collectionName: String? = null,
     val maxEventLength: Int = DEFAULT_MAX_EVENT_LENGTH,
     val batchSize: Int = DEFAULT_BATCH_SIZE,
-    val flushInterval: Duration = 2.seconds,
+    val flushInterval: Duration = DEFAULT_FLUSH_INTERVAL,
     val queueCapacity: Int = DEFAULT_QUEUE_CAPACITY,
     val enabled: () -> Boolean = { true },
     val requestMapper: PinqloqRequestMapper = PinqloqRequestMappers.LevelWithDeviceIdentifier,

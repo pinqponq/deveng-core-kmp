@@ -9,6 +9,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
 private const val SECRET_KEY_HEADER = "X-Secret-Key"
+private const val COLLECTION_NAME_FIELD = "collectionName"
+private const val LOGS_FIELD = "logs"
 
 class PinqloqLogRepositoryImpl(
     private val clientOptions: PinqloqClientOptions,
@@ -40,8 +42,8 @@ class PinqloqLogRepositoryImpl(
 
     private fun buildBatchBody(entries: List<PinqloqLogEntry>): JsonObject = buildJsonObject {
         clientOptions.collectionName?.let { collectionName ->
-            put("collectionName", JsonPrimitive(collectionName))
+            put(COLLECTION_NAME_FIELD, JsonPrimitive(collectionName))
         }
-        put("logs", JsonArray(entries.map(clientOptions.requestMapper::mapEntry)))
+        put(LOGS_FIELD, JsonArray(entries.map(clientOptions.requestMapper::mapEntry)))
     }
 }
