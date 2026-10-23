@@ -102,6 +102,7 @@ kotlin {
             compileOnly(libs.install.referrer)
             compileOnly(libs.basic.ads)
             compileOnly(libs.google.play.services.ads)
+            api(libs.work.manager)
         }
 
         iosMain.dependencies {
