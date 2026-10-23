@@ -97,7 +97,6 @@ facebook-core = { module = "com.facebook.android:facebook-core", version.ref = "
 install-referrer = { module = "com.android.installreferrer:installreferrer", version.ref = "install-referrer" }
 basic-ads = { module = "app.lexilabs.basic:basic-ads", version.ref = "basic-ads" }
 google-play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "google-play-services-ads" }
-russhwolf-settings-test = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "russhwolfsettings" }
 
 material3-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
 androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "lifecycle-viewmodel" }
