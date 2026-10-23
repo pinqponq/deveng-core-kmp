@@ -9,6 +9,7 @@ class FakePermissionsController : PermissionsController {
     val permissionStates = mutableMapOf<Permission, PermissionState>()
     val providePermissionFailures = mutableMapOf<Permission, Exception>()
     val permissionStatesAfterFailure = mutableMapOf<Permission, PermissionState>()
+    val requestedPermissions = mutableListOf<Permission>()
 
     var openAppSettingsCount = 0
         private set
@@ -17,6 +18,7 @@ class FakePermissionsController : PermissionsController {
         private set
 
     override suspend fun providePermission(permission: Permission) {
+        requestedPermissions += permission
         providePermissionFailures[permission]?.let { failure ->
             permissionStatesAfterFailure[permission]?.let { state -> permissionStates[permission] = state }
             throw failure
