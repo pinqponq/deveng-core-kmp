@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -86,6 +87,16 @@ class PinqloqClientOptionsTest {
         val clientOptions = PinqloqClientOptions(endpoint = ENDPOINT, secretKey = "top-secret")
 
         assertFalse(clientOptions.toString().contains("top-secret"))
+    }
+
+    @Test
+    fun toString_withAndWithoutSecretKey_showsEndpointAndWhetherSecretKeyIsSet() {
+        val withSecretKey = PinqloqClientOptions(endpoint = ENDPOINT, secretKey = "top-secret").toString()
+        val withoutSecretKey = PinqloqClientOptions(endpoint = ENDPOINT).toString()
+
+        assertTrue(withSecretKey.contains("endpoint=$ENDPOINT"))
+        assertTrue(withSecretKey.contains("isSecretKeySet=true"))
+        assertTrue(withoutSecretKey.contains("isSecretKeySet=false"))
     }
 
     @Test
