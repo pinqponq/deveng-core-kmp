@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -1261,6 +1262,15 @@ private fun ThemingDemo(
                         CustomButton(
                             text = "Disabled Button",
                             enabled = false,
+                            onClick = { }
+                        )
+
+                        CustomButton(
+                            modifier = Modifier
+                                .width(120.dp)
+                                .height(40.dp),
+                            text = "Narrow, tight padding",
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                             onClick = { }
                         )
 

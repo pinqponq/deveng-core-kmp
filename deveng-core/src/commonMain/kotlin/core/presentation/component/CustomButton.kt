@@ -2,6 +2,7 @@ package core.presentation.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -49,6 +50,8 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  * @param leadingIconTint Color tint for the leading icon. Default is Color.Black.
  * @param leadingIconContentDescription Content description for accessibility for the leading icon.
  * @param contentArrangement Horizontal arrangement of button content (icons and text). Default is Center.
+ * @param contentPadding Space between the button's edge and its content. Default is Material's ButtonDefaults.ContentPadding
+ * (24.dp horizontal, 8.dp vertical). Pass a smaller value so the label fits on a narrow or short button.
  * @param onClick Callback invoked when the button is clicked.
  */
 @Composable
@@ -79,6 +82,7 @@ fun CustomButton(
     leadingIconTint: Color = Color.Black,
     leadingIconContentDescription: String? = null,
     contentArrangement: Arrangement.Horizontal = Arrangement.Center,
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     onClick: () -> Unit
 ) {
     val componentTheme = LocalComponentTheme.current
@@ -104,6 +108,7 @@ fun CustomButton(
         elevation = elevation,
         shape = shape,
         border = border,
+        contentPadding = contentPadding,
         onClick = onClick
     ) {
         Row(
