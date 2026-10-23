@@ -49,7 +49,7 @@ class RevealMotionParameterTest {
     @Test
     fun countUpText_whenModifierChanges_appliesNewModifier() = runDesktopComposeUiTest {
         var tag by mutableStateOf(TAG_A)
-        setContent { CountUpText(value = 0, modifier = Modifier.testTag(tag)) }
+        setContent { CountUpAll(value = 0, modifier = Modifier.testTag(tag)) }
 
         tag = TAG_B
         waitForIdle()
@@ -108,9 +108,35 @@ class RevealMotionParameterTest {
     }
 
     @Test
+    fun countUpText_withoutStyle_whenLocalTextStyleChanges_usesNewLocalStyle() = runDesktopComposeUiTest {
+        var fontSize by mutableStateOf(30.sp)
+        setContent {
+            CompositionLocalProvider(LocalTextStyle provides TextStyle(fontSize = fontSize)) {
+                CountUpText(
+                    value = 0,
+                    modifier = Modifier,
+                    startValue = 0,
+                    color = Color.Unspecified,
+                    stepDelayMillis = STEP_DELAY_MILLIS,
+                    maxStepCount = 12,
+                    maxTotalMillis = SETTLE_MILLIS,
+                    formatter = Int::toString,
+                    juiceState = null,
+                    onStep = {}
+                )
+            }
+        }
+
+        fontSize = 34.sp
+        waitForIdle()
+
+        assertEquals(34.sp, onNodeWithText("0").textStyle().fontSize)
+    }
+
+    @Test
     fun countUpText_whenStyleChanges_usesNewStyle() = runDesktopComposeUiTest {
         var style by mutableStateOf(TextStyle(fontSize = 20.sp))
-        setContent { CountUpText(value = 0, style = style) }
+        setContent { CountUpAll(value = 0, style = style) }
 
         style = TextStyle(fontSize = 24.sp)
         waitForIdle()
@@ -139,7 +165,7 @@ class RevealMotionParameterTest {
     @Test
     fun countUpText_whenColorChanges_usesNewColor() = runDesktopComposeUiTest {
         var color by mutableStateOf(Color.Red)
-        setContent { CountUpText(value = 0, color = color) }
+        setContent { CountUpAll(value = 0, color = color) }
 
         color = Color.Green
         waitForIdle()
@@ -235,7 +261,7 @@ class RevealMotionParameterTest {
     @Test
     fun countUpText_whenFormatterChanges_showsNewFormat() = runDesktopComposeUiTest {
         var suffix by mutableStateOf("a")
-        setContent { CountUpText(value = 0, formatter = { "$it$suffix" }) }
+        setContent { CountUpAll(value = 0, formatter = { "$it$suffix" }) }
 
         suffix = "b"
         waitForIdle()
@@ -249,7 +275,7 @@ class RevealMotionParameterTest {
         var secondCalls = 0
         var onStep by mutableStateOf<(Int) -> Unit>({ firstCalls++ })
         var value by mutableStateOf(0)
-        setContent { CountUpText(value = value, stepDelayMillis = STEP_DELAY_MILLIS, onStep = onStep) }
+        setContent { CountUpAll(value = value, stepDelayMillis = STEP_DELAY_MILLIS, onStep = onStep) }
 
         onStep = { secondCalls++ }
         waitForIdle()
@@ -269,7 +295,7 @@ class RevealMotionParameterTest {
         setContent {
             first = rememberJuiceState()
             second = rememberJuiceState()
-            CountUpText(
+            CountUpAll(
                 value = value,
                 stepDelayMillis = STEP_DELAY_MILLIS,
                 juiceState = if (useSecond) second else first
@@ -318,14 +344,7 @@ class RevealMotionParameterTest {
     @Test
     fun flipCard_whenModifierChanges_appliesNewModifier() = runDesktopComposeUiTest {
         var tag by mutableStateOf(TAG_A)
-        setContent {
-            FlipCard(
-                front = { Text(FRONT_TEXT) },
-                back = { Text(BACK_TEXT) },
-                isFlipped = false,
-                modifier = Modifier.testTag(tag)
-            )
-        }
+        setContent { FlipCardLabeled(isFlipped = false, modifier = Modifier.testTag(tag)) }
 
         tag = TAG_B
         waitForIdle()
@@ -336,24 +355,17 @@ class RevealMotionParameterTest {
 
     @Test
     fun flipCard_whenFacesChange_showsNewFaces() = runDesktopComposeUiTest {
-        var label by mutableStateOf("one")
+        var frontLabel by mutableStateOf("one")
+        var backLabel by mutableStateOf("one")
         var isFlipped by mutableStateOf(false)
-        setContent {
-            val currentLabel = label
-            FlipCard(
-                front = { Text("front $currentLabel") },
-                back = { Text("back $currentLabel") },
-                isFlipped = isFlipped,
-                durationMillis = FLIP_DURATION_MILLIS
-            )
-        }
-        label = "two"
+        setContent { FlipCardLabeled(isFlipped = isFlipped, frontLabel = frontLabel, backLabel = backLabel) }
+        backLabel = "two"
         waitForIdle()
         onNodeWithText("back two").assertExists()
 
         isFlipped = true
         mainClock.advanceTimeBy(FLIP_SETTLE_MILLIS)
-        label = "three"
+        frontLabel = "three"
         waitForIdle()
 
         onNodeWithText("front three").assertExists()
@@ -543,7 +555,9 @@ class RevealMotionParameterTest {
         mainClock.autoAdvance = false
 
         juiceState.pop()
-        mainClock.advanceTimeBy(MotionDefaults.POP_RISE_MILLIS + MotionDefaults.POP_SETTLE_MILLIS.toLong() + FRAME_MILLIS)
+        mainClock.advanceTimeBy(MotionDefaults.POP_RISE_MILLIS + MotionDefaults.POP_SETTLE_MILLIS.toLong() / 2)
+        assertTrue(juiceState.scale.value > 1.01f, "scale ${juiceState.scale.value}")
+        mainClock.advanceTimeBy(MotionDefaults.POP_SETTLE_MILLIS.toLong())
 
         assertEquals(1f, juiceState.scale.value, absoluteTolerance = TOLERANCE)
     }
@@ -711,6 +725,53 @@ class RevealMotionParameterTest {
     }
 
     @androidx.compose.runtime.Composable
+    private fun FlipCardLabeled(
+        isFlipped: Boolean,
+        modifier: Modifier = Modifier,
+        frontLabel: String = "one",
+        backLabel: String = "one"
+    ) {
+        FlipCard(
+            front = { Text("front $frontLabel") },
+            back = { Text("back $backLabel") },
+            isFlipped = isFlipped,
+            modifier = modifier,
+            durationMillis = FLIP_DURATION_MILLIS,
+            delayMillis = 0,
+            cameraDistance = MotionDefaults.FLIP_CAMERA_DISTANCE
+        )
+    }
+
+    @androidx.compose.runtime.Composable
+    private fun CountUpAll(
+        value: Int,
+        modifier: Modifier = Modifier,
+        startValue: Int = 0,
+        style: TextStyle = LocalTextStyle.current,
+        color: Color = Color.Unspecified,
+        stepDelayMillis: Long = MotionDefaults.COUNT_UP_STEP_DELAY_MILLIS,
+        maxStepCount: Int = MotionDefaults.COUNT_UP_MAX_STEP_COUNT,
+        maxTotalMillis: Long = MotionDefaults.COUNT_UP_MAX_TOTAL_MILLIS,
+        formatter: (Int) -> String = Int::toString,
+        juiceState: JuiceState? = null,
+        onStep: (Int) -> Unit = {}
+    ) {
+        CountUpText(
+            value = value,
+            modifier = modifier,
+            startValue = startValue,
+            style = style,
+            color = color,
+            stepDelayMillis = stepDelayMillis,
+            maxStepCount = maxStepCount,
+            maxTotalMillis = maxTotalMillis,
+            formatter = formatter,
+            juiceState = juiceState,
+            onStep = onStep
+        )
+    }
+
+    @androidx.compose.runtime.Composable
     private fun FlipCardSquare(
         isFlipped: Boolean,
         delayMillis: Int = 0,
@@ -720,6 +781,7 @@ class RevealMotionParameterTest {
         Box(modifier = Modifier.background(Color.White).size(ROOT_DP.dp), contentAlignment = Alignment.Center) {
             FlipCard(
                 isFlipped = isFlipped,
+                modifier = Modifier,
                 delayMillis = delayMillis,
                 durationMillis = durationMillis,
                 cameraDistance = cameraDistance,
