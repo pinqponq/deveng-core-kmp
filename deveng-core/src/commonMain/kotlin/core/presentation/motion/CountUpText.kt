@@ -85,7 +85,6 @@ fun CountUpText(
 
 internal fun countUpValues(startValue: Int, endValue: Int, maxStepCount: Int): List<Int> {
     val distance = endValue.toLong() - startValue
-    if (distance == 0L) return emptyList()
     val stepCount = min(abs(distance), maxStepCount.toLong()).toInt()
     return (1..stepCount).map { stepNumber -> (startValue + distance * stepNumber / stepCount).toInt() }
 }
