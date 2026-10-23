@@ -45,6 +45,7 @@ Replace `VERSION` with the [latest release](https://central.sonatype.com/artifac
 - [Auth Session](#auth-session)
 - [Pagination](#pagination)
 - [BaseViewModel and interceptors](#baseviewmodel-and-interceptors)
+- [Client Logs (deveng-pinqloq)](#client-logs-deveng-pinqloq)
 - [Sample App](#sample-app)
 - [Building](#building)
 - [License](#license)
@@ -867,6 +868,67 @@ App rules such as logging or ending the session live in a `ViewModelInterceptor`
 - `onSilentError` when a `launch` with `notifyError = false` fails. The user is not shown this failure.
 
 The sample app's "BaseViewModel Demo" screen shows each case.
+
+---
+
+## Client Logs (deveng-pinqloq)
+
+The `deveng-pinqloq` module sends client logs to a log service. The app gives it an endpoint and options, and gets back a `PinqloqLogger`. The module builds the request, adds the app version and device values, cuts long events, and never throws from `log`.
+
+```kotlin
+implementation("global.deveng:pinqloq-kmp:VERSION")
+```
+
+The app registers `DevengNetworkingModule` and `MultiPlatformUtils` in Koin, then adds the module:
+
+```kotlin
+val clientLogModule = pinqloqClientModule(
+    clientOptions = PinqloqClientOptions(
+        endpoint = "client-logs",
+        requestMapper = PinqloqRequestMappers.LevelWithDeviceIdentifier,
+        enabled = { authSessionManager.isLoggedIn.value },
+    ),
+    metadataProvider = PinqloqMetadataProvider { mapOf("userId" to currentUserId()) },
+)
+
+val logger: PinqloqLogger by inject()
+logger.log(PinqloqLevel.Warning, "Profile photo upload failed", detail = mapOf("status" to "503"))
+```
+
+### Options
+
+| Option | Default | Meaning |
+|--------|---------|---------|
+| `endpoint` | none | Path that receives one log per request. Required. |
+| `batchEndpoint` | `null` | Path that receives a batch. Required when `batchSize` is above 1. |
+| `secretKey` | `null` | Sent as the `X-Secret-Key` header when set. |
+| `collectionName` | `null` | Sent as `collectionName` in batch requests only. |
+| `maxEventLength` | `1000` | A longer event is cut to this length and ends with `...(truncated)`. |
+| `batchSize` | `1` | `1` sends every log at once. A larger value buffers logs and sends them together. |
+| `flushInterval` | `2.seconds` | Longest time a buffered log waits before it is sent. |
+| `queueCapacity` | `1000` | Most logs that can wait. When the queue is full, the oldest log is dropped. |
+| `enabled` | `{ true }` | Checked on every log. When it returns `false`, the log is not built or sent. |
+| `requestMapper` | `LevelWithDeviceIdentifier` | Wire shape of one log. |
+| `failureListener` | `LogToConsole` | Called with a `PinqloqFailure` when a log is dropped. |
+
+A batch request body is `{"collectionName": …, "logs": […]}`, and each item in `logs` is the shape the `requestMapper` writes for one log.
+
+### Request shapes
+
+- `PinqloqRequestMappers.LevelWithDeviceIdentifier`: `event`, `deviceIdentifier`, `level`, `appVersionName`, `metadata`, `detail`. `metadata` also carries `deviceName`.
+- `PinqloqRequestMappers.LogLevelWithDate`: `event`, `logLevel`, `metadata`, `detail`, `date`. `metadata` also carries `appVersionName`, `deviceUid` and `deviceName`.
+
+An empty `metadata` or `detail` is left out of the request. For another shape, implement `PinqloqRequestMapper`.
+
+### Metadata keys
+
+`metadata` is merged in this order, and a later source replaces an earlier one with the same key: the map passed to `log`, then the `PinqloqMetadataProvider` map, then the device values of the `requestMapper`. Every replaced key is written to `CustomLogger`.
+
+### Failures
+
+`log` does not throw. A failure goes to `failureListener` with a reason: `ENTRY_REJECTED` (the `enabled` check or the metadata provider threw), `DELIVERY_FAILED` (the request failed; a failed batch is dropped, not retried) or `QUEUE_OVERFLOW`. Only coroutine cancellation is rethrown.
+
+The sample app's "Pinqloq Client Log Demo" screen shows an immediate logger, a batching logger, the `enabled` check and truncation. It records requests in memory instead of sending them.
 
 ---
 
