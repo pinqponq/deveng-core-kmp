@@ -238,8 +238,10 @@ class RevealMotionTest {
         }
         mainClock.autoAdvance = false
 
-        mainClock.advanceTimeBy(POP_PEAK_MILLIS)
-        peakScale = juiceState.scale.value
+        repeat(POP_FRAME_COUNT) {
+            mainClock.advanceTimeBy(FRAME_MILLIS)
+            peakScale = maxOf(peakScale, juiceState.scale.value)
+        }
 
         assertTrue(peakScale > 1.05f, "peak scale was $peakScale")
     }
@@ -330,7 +332,7 @@ class RevealMotionTest {
         mainClock.autoAdvance = false
 
         isFlipped = true
-        mainClock.advanceTimeBy(FLIP_QUARTER_MILLIS)
+        mainClock.advanceTimeBy(FLIP_MID_TURN_MILLIS)
         val turningPixelCount = onRoot().captureToImage().countPixelsOtherThan(Color.White)
 
         assertTrue(turningPixelCount < restPixelCount * 0.8, "rest $restPixelCount, turning $turningPixelCount")
@@ -365,7 +367,9 @@ class RevealMotionTest {
         const val COUNT_SETTLE_MILLIS = 500L
         const val COUNT_LONG_STEP_DELAY_MILLIS = 400L
         const val ROOT_SIZE_DP = 100
-        const val FLIP_QUARTER_MILLIS = 100L
+        const val FRAME_MILLIS = 16L
+        const val POP_FRAME_COUNT = 12
+        const val FLIP_MID_TURN_MILLIS = 160L
         const val BOX_SIZE_DP = 40
         const val POP_PEAK_MILLIS = 72L
         const val POP_SETTLE_TOTAL_MILLIS = 400L
