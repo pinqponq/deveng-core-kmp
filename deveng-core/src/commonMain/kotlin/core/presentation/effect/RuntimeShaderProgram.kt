@@ -24,4 +24,4 @@ internal fun RuntimeShaderProgram.apply(uniforms: List<ShaderUniform>) {
 }
 
 /** Whether the effects use runtime shaders. Tests and previews can provide false to see the simpler look. */
-internal val LocalRuntimeShaderEnabled = compositionLocalOf { isRuntimeShaderSupported() }
+val LocalRuntimeShaderEnabled = compositionLocalOf { isRuntimeShaderSupported() }
