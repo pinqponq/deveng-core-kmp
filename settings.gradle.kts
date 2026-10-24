@@ -47,6 +47,8 @@ include(":deveng-core")
 include(":deveng-billing")
 include(":deveng-pinqloq")
 include(":deveng-widget")
+include(":deveng-core-testing")
+include(":deveng-testing-gradle-plugin")
 
 include(":figma-sync")
 include(":figma-sync:tools:schema-cli")
