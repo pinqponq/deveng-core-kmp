@@ -323,6 +323,18 @@ AppTheme(
 
 When you use `overlayContent`, prefer a backdrop sized to your logo's natural aspect ratio (a rounded pill or circle) rather than filling the whole overlay square — this hides only the QR pixels actually under the logo and reads cleaner. See the sample app's `QrGeneratorDemoScreen` for a worked example.
 
+### Atmosphere: CRT screen, swirl background and vortex
+
+Package `core.presentation.effect` (runtime shaders: AGSL on Android 13+, SkSL on iOS, desktop and web; ports of Balatro's CRT and background shaders):
+
+| Need | Use |
+|------|-----|
+| Old TV look over a screen (curvature, scanlines, color fringing, grain, bloom, vignette) | `Modifier.crtScreen(CrtConfig())` on a container that paints an opaque background |
+| Slowly moving paint swirl in three colors | `SwirlBackground(SwirlPalette(base, accent, shade), spinAmount, contrast)` |
+| Short vortex and flash between two stages | `VortexFlash(progress, palette)` with `progress` 0 to 1 over the change |
+
+Below Android 13 `crtScreen` draws plain scanlines and a vignette and `SwirlBackground` two soft moving gradients; nothing crashes. While `LocalReduceMotion` is on, the grain and the swirl stand still. The sample app's "Atmosphere Demo" shows all three.
+
 ### Motion, press feedback, shimmer and haptics
 
 Package `core.presentation.motion` (plus `core.presentation.haptics` and `core.presentation.component.shimmer`):

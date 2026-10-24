@@ -363,6 +363,7 @@ internal fun App() {
         var showNavigationBarScreen by remember { mutableStateOf(false) }
         var showServerDrivenScreen by remember { mutableStateOf(false) }
         var showMotionScreen by remember { mutableStateOf(false) }
+        var showAtmosphereScreen by remember { mutableStateOf(false) }
         var showPushNotificationsScreen by remember { mutableStateOf(false) }
         var showJwtClaimsScreen by remember { mutableStateOf(false) }
         var showAuthSessionScreen by remember { mutableStateOf(false) }
@@ -374,6 +375,7 @@ internal fun App() {
             showBaseViewModelScreen -> BaseViewModelDemoScreen(onBack = { showBaseViewModelScreen = false })
             showPinqloqScreen -> PinqloqDemoScreen(onBack = { showPinqloqScreen = false })
             showMotionScreen -> MotionDemoScreen(onBack = { showMotionScreen = false })
+            showAtmosphereScreen -> AtmosphereDemoScreen(onBack = { showAtmosphereScreen = false })
             showPushNotificationsScreen -> PushNotificationsDemoScreen(onBack = { showPushNotificationsScreen = false })
             showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
             showMediaViewerScreen -> MediaViewerDemoScreen(onBack = { showMediaViewerScreen = false })
@@ -391,6 +393,7 @@ internal fun App() {
                 onOpenNavigationBar = { showNavigationBarScreen = true },
                 onOpenServerDriven = { showServerDrivenScreen = true },
                 onOpenMotion = { showMotionScreen = true },
+                onOpenAtmosphere = { showAtmosphereScreen = true },
                 onOpenPushNotifications = { showPushNotificationsScreen = true },
                 onOpenJwtClaims = { showJwtClaimsScreen = true },
                 onOpenAuthSession = { showAuthSessionScreen = true },
@@ -661,6 +664,7 @@ private fun ThemingDemo(
     onOpenNavigationBar: () -> Unit = {},
     onOpenServerDriven: () -> Unit = {},
     onOpenMotion: () -> Unit = {},
+    onOpenAtmosphere: () -> Unit = {},
     onOpenPushNotifications: () -> Unit = {},
     onOpenJwtClaims: () -> Unit = {},
     onOpenAuthSession: () -> Unit = {},
@@ -1080,6 +1084,12 @@ private fun ThemingDemo(
                             text = "Open Motion Demo",
                             containerColor = Color(0xFFAD1457),
                             onClick = onOpenMotion
+                        )
+
+                        CustomButton(
+                            text = "Open Atmosphere Demo",
+                            containerColor = Color(0xFF6A1B9A),
+                            onClick = onOpenAtmosphere
                         )
 
                         CustomButton(
