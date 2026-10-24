@@ -138,6 +138,21 @@ class AtmospherePixelTest {
         assertEquals(palette.accent.green * 0.6f, pixel.green, absoluteTolerance = 0.02f)
     }
 
+    @Test
+    fun runtimeShaders_areSupportedOnDesktop() {
+        assertTrue(isRuntimeShaderSupported())
+    }
+
+    @Test
+    fun swirlBackground_withoutShader_putsTheAccentGlowAboveCenterAndTheShadeGlowBelow() {
+        val image = render(isShaderEnabled = false) { SwirlBackground(palette = palette) }
+
+        val accentSpot = image.pixel(WIDTH / 2, (HEIGHT * 0.35f).toInt())
+        val shadeSpot = image.pixel(WIDTH / 2, (HEIGHT * 0.75f).toInt())
+        assertTrue(accentSpot.red > shadeSpot.red)
+        assertTrue(shadeSpot.blue > accentSpot.blue)
+    }
+
     private fun render(
         isShaderEnabled: Boolean = true,
         isReduceMotion: Boolean = true,

@@ -96,6 +96,8 @@ internal fun fallbackLineOffsets(height: Float): List<Float> {
     return offsets
 }
 
+internal fun fallbackVignetteRadius(width: Float, height: Float): Float = maxOf(width, height) * 0.75f
+
 private fun Modifier.crtFallback(): Modifier = drawWithContent {
     drawContent()
     fallbackLineOffsets(height = size.height).forEach { y ->
@@ -110,7 +112,7 @@ private fun Modifier.crtFallback(): Modifier = drawWithContent {
         brush = Brush.radialGradient(
             colors = listOf(Color.Transparent, Color.Black.copy(alpha = FALLBACK_VIGNETTE_ALPHA)),
             center = center,
-            radius = size.maxDimension * 0.75f
+            radius = fallbackVignetteRadius(width = size.width, height = size.height)
         )
     )
 }

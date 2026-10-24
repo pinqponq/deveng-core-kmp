@@ -1,5 +1,6 @@
 package core.presentation.effect
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -75,5 +76,34 @@ class AtmosphereLogicTest {
     @Test
     fun fallbackLineOffsets_areEmptyForNoHeight() {
         assertContentEquals(emptyList(), fallbackLineOffsets(height = 0f))
+    }
+
+    @Test
+    fun vortexUniforms_scaleTimeAndSpinByProgressAndWindFully() {
+        val uniforms = vortexUniforms(palette = palette, width = 100f, height = 300f, progress = 0.5f).associate { it.name to it.values.toList() }
+
+        assertEquals(listOf(3f), uniforms["time"])
+        assertEquals(listOf(20f), uniforms["spinTime"])
+        assertEquals(listOf(1f), uniforms["spinAmount"])
+        assertEquals(listOf(1f), uniforms["contrast"])
+        assertEquals(listOf(100f, 300f), uniforms["resolution"])
+    }
+
+    @Test
+    fun fallbackGlow_movesTheTwoGlowsInOppositeDirections() {
+        val start = fallbackGlow(width = 100f, height = 200f, phase = 0f)
+        val end = fallbackGlow(width = 100f, height = 200f, phase = 1f)
+
+        assertEquals(Offset(25f, 70f), start.accentCenter)
+        assertEquals(Offset(75f, 150f), start.shadeCenter)
+        assertEquals(Offset(75f, 70f), end.accentCenter)
+        assertEquals(Offset(25f, 150f), end.shadeCenter)
+        assertEquals(140f, start.radius, absoluteTolerance = 0.001f)
+    }
+
+    @Test
+    fun fallbackVignetteRadius_followsTheLongerSide() {
+        assertEquals(150f, fallbackVignetteRadius(width = 100f, height = 200f), absoluteTolerance = 0.001f)
+        assertEquals(150f, fallbackVignetteRadius(width = 200f, height = 100f), absoluteTolerance = 0.001f)
     }
 }

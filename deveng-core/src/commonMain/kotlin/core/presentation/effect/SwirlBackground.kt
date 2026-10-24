@@ -97,22 +97,22 @@ fun VortexFlash(
 
     val program = remember { RuntimeShaderProgram(SWIRL_SHADER) }
     Canvas(modifier = modifier.fillMaxSize()) {
-        program.apply(
-            uniforms = swirlUniforms(
-                palette = palette,
-                width = size.width,
-                height = size.height,
-                time = progress * VORTEX_TIME_FACTOR,
-                spinTime = progress * VORTEX_SPIN_FACTOR,
-                spinAmount = 1f,
-                contrast = 1f
-            )
-        )
+        program.apply(uniforms = vortexUniforms(palette = palette, width = size.width, height = size.height, progress = progress))
         drawRect(brush = program.toBrush(), alpha = strength)
     }
 }
 
 internal fun vortexStrength(progress: Float): Float = sin(progress.coerceIn(0f, 1f) * PI.toFloat())
+
+internal fun vortexUniforms(palette: SwirlPalette, width: Float, height: Float, progress: Float): List<ShaderUniform> = swirlUniforms(
+    palette = palette,
+    width = width,
+    height = height,
+    time = progress * VORTEX_TIME_FACTOR,
+    spinTime = progress * VORTEX_SPIN_FACTOR,
+    spinAmount = 1f,
+    contrast = 1f
+)
 
 internal fun swirlUniforms(
     palette: SwirlPalette,
@@ -166,20 +166,29 @@ private fun SwirlFallback(palette: SwirlPalette, modifier: Modifier) {
         )
     }
     Canvas(modifier = modifier.fillMaxSize()) {
+        val glow = fallbackGlow(width = size.width, height = size.height, phase = phase.value)
         drawRect(color = palette.base)
         drawRect(
             brush = Brush.radialGradient(
                 colors = listOf(palette.accent.copy(alpha = 0.55f), Color.Transparent),
-                center = Offset(x = size.width * (0.25f + 0.5f * phase.value), y = size.height * 0.35f),
-                radius = size.maxDimension * 0.7f
+                center = glow.accentCenter,
+                radius = glow.radius
             )
         )
         drawRect(
             brush = Brush.radialGradient(
                 colors = listOf(palette.shade.copy(alpha = 0.5f), Color.Transparent),
-                center = Offset(x = size.width * (0.75f - 0.5f * phase.value), y = size.height * 0.75f),
-                radius = size.maxDimension * 0.7f
+                center = glow.shadeCenter,
+                radius = glow.radius
             )
         )
     }
 }
+
+internal class FallbackGlow(val accentCenter: Offset, val shadeCenter: Offset, val radius: Float)
+
+internal fun fallbackGlow(width: Float, height: Float, phase: Float): FallbackGlow = FallbackGlow(
+    accentCenter = Offset(x = width * (0.25f + 0.5f * phase), y = height * 0.35f),
+    shadeCenter = Offset(x = width * (0.75f - 0.5f * phase), y = height * 0.75f),
+    radius = maxOf(width, height) * 0.7f
+)
