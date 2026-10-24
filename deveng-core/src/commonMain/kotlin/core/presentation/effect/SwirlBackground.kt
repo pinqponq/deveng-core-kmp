@@ -52,7 +52,7 @@ fun SwirlBackground(
     spinAmount: Float = 0f,
     contrast: Float = 1f
 ) {
-    if (!isRuntimeShaderSupported()) {
+    if (!LocalRuntimeShaderEnabled.current) {
         SwirlFallback(palette = palette, modifier = modifier)
         return
     }
@@ -88,7 +88,7 @@ fun VortexFlash(
     val strength = vortexStrength(progress = progress)
     if (strength <= 0f) return
 
-    if (!isRuntimeShaderSupported()) {
+    if (!LocalRuntimeShaderEnabled.current) {
         Canvas(modifier = modifier.fillMaxSize()) {
             drawRect(color = palette.accent.copy(alpha = strength * VORTEX_FALLBACK_ALPHA))
         }

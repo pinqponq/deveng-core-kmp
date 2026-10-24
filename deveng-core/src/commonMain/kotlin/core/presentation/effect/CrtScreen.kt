@@ -51,7 +51,7 @@ data class CrtConfig(
  */
 @Composable
 fun Modifier.crtScreen(config: CrtConfig = CrtConfig()): Modifier {
-    if (!isRuntimeShaderSupported()) return this.crtFallback()
+    if (!LocalRuntimeShaderEnabled.current) return this.crtFallback()
 
     val program = remember { RuntimeShaderProgram(CRT_SHADER) }
     val noiseTime = rememberNoiseTime()
