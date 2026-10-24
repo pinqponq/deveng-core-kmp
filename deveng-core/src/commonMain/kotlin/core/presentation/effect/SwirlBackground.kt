@@ -24,6 +24,9 @@ import kotlin.math.sin
 private const val SWIRL_LOOP_MILLIS = 600_000
 private const val SWIRL_LOOP_SECONDS = 600f
 private const val FALLBACK_LOOP_MILLIS = 12_000
+private const val VORTEX_TIME_FACTOR = 6f
+private const val VORTEX_SPIN_FACTOR = 40f
+private const val VORTEX_FALLBACK_ALPHA = 0.6f
 
 /**
  * The three colors of [SwirlBackground]: [base] fills most of the picture, [accent] and [shade] mark the paint swirls.
@@ -57,14 +60,17 @@ fun SwirlBackground(
     val program = remember { RuntimeShaderProgram(SWIRL_SHADER) }
     val time = rememberSwirlTime()
     Canvas(modifier = modifier.fillMaxSize()) {
-        program.setFloats("resolution", size.width, size.height)
-        program.setFloats("time", time.value)
-        program.setFloats("spinTime", time.value)
-        program.setFloats("spinAmount", spinAmount)
-        program.setFloats("contrast", contrast)
-        program.setFloats("colour1", palette.base.red, palette.base.green, palette.base.blue, palette.base.alpha)
-        program.setFloats("colour2", palette.accent.red, palette.accent.green, palette.accent.blue, palette.accent.alpha)
-        program.setFloats("colour3", palette.shade.red, palette.shade.green, palette.shade.blue, palette.shade.alpha)
+        program.apply(
+            uniforms = swirlUniforms(
+                palette = palette,
+                width = size.width,
+                height = size.height,
+                time = time.value,
+                spinTime = time.value,
+                spinAmount = spinAmount,
+                contrast = contrast
+            )
+        )
         drawRect(brush = program.toBrush())
     }
 }
@@ -79,29 +85,55 @@ fun VortexFlash(
     palette: SwirlPalette,
     modifier: Modifier = Modifier
 ) {
-    val strength = sin(progress.coerceIn(0f, 1f) * PI.toFloat())
+    val strength = vortexStrength(progress = progress)
     if (strength <= 0f) return
 
     if (!isRuntimeShaderSupported()) {
         Canvas(modifier = modifier.fillMaxSize()) {
-            drawRect(color = palette.accent.copy(alpha = strength * 0.6f))
+            drawRect(color = palette.accent.copy(alpha = strength * VORTEX_FALLBACK_ALPHA))
         }
         return
     }
 
     val program = remember { RuntimeShaderProgram(SWIRL_SHADER) }
     Canvas(modifier = modifier.fillMaxSize()) {
-        program.setFloats("resolution", size.width, size.height)
-        program.setFloats("time", progress * 6f)
-        program.setFloats("spinTime", progress * 40f)
-        program.setFloats("spinAmount", 1f)
-        program.setFloats("contrast", 1f)
-        program.setFloats("colour1", palette.base.red, palette.base.green, palette.base.blue, 1f)
-        program.setFloats("colour2", palette.accent.red, palette.accent.green, palette.accent.blue, 1f)
-        program.setFloats("colour3", palette.shade.red, palette.shade.green, palette.shade.blue, 1f)
+        program.apply(
+            uniforms = swirlUniforms(
+                palette = palette,
+                width = size.width,
+                height = size.height,
+                time = progress * VORTEX_TIME_FACTOR,
+                spinTime = progress * VORTEX_SPIN_FACTOR,
+                spinAmount = 1f,
+                contrast = 1f
+            )
+        )
         drawRect(brush = program.toBrush(), alpha = strength)
     }
 }
+
+internal fun vortexStrength(progress: Float): Float = sin(progress.coerceIn(0f, 1f) * PI.toFloat())
+
+internal fun swirlUniforms(
+    palette: SwirlPalette,
+    width: Float,
+    height: Float,
+    time: Float,
+    spinTime: Float,
+    spinAmount: Float,
+    contrast: Float
+): List<ShaderUniform> = listOf(
+    ShaderUniform(name = "resolution", values = floatArrayOf(width, height)),
+    ShaderUniform(name = "time", values = floatArrayOf(time)),
+    ShaderUniform(name = "spinTime", values = floatArrayOf(spinTime)),
+    ShaderUniform(name = "spinAmount", values = floatArrayOf(spinAmount)),
+    ShaderUniform(name = "contrast", values = floatArrayOf(contrast)),
+    ShaderUniform(name = "colour1", values = palette.base.toFloats()),
+    ShaderUniform(name = "colour2", values = palette.accent.toFloats()),
+    ShaderUniform(name = "colour3", values = palette.shade.toFloats())
+)
+
+private fun Color.toFloats(): FloatArray = floatArrayOf(red, green, blue, alpha)
 
 @Composable
 private fun rememberSwirlTime(): State<Float> {

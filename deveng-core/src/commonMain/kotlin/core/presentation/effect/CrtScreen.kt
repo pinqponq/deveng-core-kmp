@@ -56,13 +56,7 @@ fun Modifier.crtScreen(config: CrtConfig = CrtConfig()): Modifier {
     val program = remember { RuntimeShaderProgram(CRT_SHADER) }
     val noiseTime = rememberNoiseTime()
     return this.graphicsLayer {
-        program.setFloats("resolution", size.width, size.height)
-        program.setFloats("time", noiseTime.value)
-        program.setFloats("intensity", config.intensity)
-        program.setFloats("noiseAmount", config.noiseAmount)
-        program.setFloats("bloomAmount", config.bloomAmount)
-        program.setFloats("scanlineCount", size.height * config.scanlinesPerHeight)
-        program.setFloats("vignette", config.vignette)
+        program.apply(uniforms = crtUniforms(config = config, width = size.width, height = size.height, time = noiseTime.value))
         renderEffect = program.toRenderEffect(contentName = "content")
     }
 }
@@ -82,17 +76,35 @@ private fun rememberNoiseTime(): State<Float> {
     )
 }
 
+internal fun crtUniforms(config: CrtConfig, width: Float, height: Float, time: Float): List<ShaderUniform> = listOf(
+    ShaderUniform(name = "resolution", values = floatArrayOf(width, height)),
+    ShaderUniform(name = "time", values = floatArrayOf(time)),
+    ShaderUniform(name = "intensity", values = floatArrayOf(config.intensity)),
+    ShaderUniform(name = "noiseAmount", values = floatArrayOf(config.noiseAmount)),
+    ShaderUniform(name = "bloomAmount", values = floatArrayOf(config.bloomAmount)),
+    ShaderUniform(name = "scanlineCount", values = floatArrayOf(height * config.scanlinesPerHeight)),
+    ShaderUniform(name = "vignette", values = floatArrayOf(config.vignette))
+)
+
+internal fun fallbackLineOffsets(height: Float): List<Float> {
+    val offsets = mutableListOf<Float>()
+    var y = 0f
+    while (y < height) {
+        offsets += y
+        y += FALLBACK_LINE_STEP_PX
+    }
+    return offsets
+}
+
 private fun Modifier.crtFallback(): Modifier = drawWithContent {
     drawContent()
-    var y = 0f
-    while (y < size.height) {
+    fallbackLineOffsets(height = size.height).forEach { y ->
         drawLine(
             color = Color.Black.copy(alpha = FALLBACK_LINE_ALPHA),
             start = Offset(x = 0f, y = y),
             end = Offset(x = size.width, y = y),
             strokeWidth = 1f
         )
-        y += FALLBACK_LINE_STEP_PX
     }
     drawRect(
         brush = Brush.radialGradient(

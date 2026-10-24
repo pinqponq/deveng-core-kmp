@@ -15,3 +15,9 @@ internal expect class RuntimeShaderProgram(source: String) {
 
 /** False on Android below 13, where callers draw a simpler look instead. */
 internal expect fun isRuntimeShaderSupported(): Boolean
+
+internal class ShaderUniform(val name: String, val values: FloatArray)
+
+internal fun RuntimeShaderProgram.apply(uniforms: List<ShaderUniform>) {
+    uniforms.forEach { uniform -> setFloats(uniform.name, *uniform.values) }
+}
