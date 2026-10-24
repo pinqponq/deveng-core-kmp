@@ -27,6 +27,14 @@ private const val FALLBACK_LOOP_MILLIS = 12_000
 private const val VORTEX_TIME_FACTOR = 6f
 private const val VORTEX_SPIN_FACTOR = 40f
 private const val VORTEX_FALLBACK_ALPHA = 0.6f
+private const val GLOW_ACCENT_ALPHA = 0.55f
+private const val GLOW_SHADE_ALPHA = 0.5f
+private const val GLOW_START_X = 0.25f
+private const val GLOW_END_X = 0.75f
+private const val GLOW_TRAVEL_X = 0.5f
+private const val GLOW_ACCENT_Y = 0.35f
+private const val GLOW_SHADE_Y = 0.75f
+private const val GLOW_RADIUS_FACTOR = 0.7f
 
 /**
  * The three colors of [SwirlBackground]: [base] fills most of the picture, [accent] and [shade] mark the paint swirls.
@@ -42,6 +50,10 @@ data class SwirlPalette(
  * A slowly moving, pixelated paint swirl in the three [palette] colors.
  * While [LocalReduceMotion] is on the picture stands still.
  *
+ * It fills the space its parent gives it.
+ *
+ * @param palette The three paint colors.
+ * @param modifier Modifier for the background.
  * @param spinAmount How strongly the swirl winds around the center (0 to 1).
  * @param contrast Contrast of the paint (1 is the default look).
  */
@@ -77,7 +89,11 @@ fun SwirlBackground(
 
 /**
  * A short full-screen vortex and flash for changing between two stages.
- * [progress] goes 0 to 1; the effect peaks halfway and is invisible at both ends.
+ * [progress] goes 0 to 1; the effect peaks halfway and is invisible at both ends. It fills the space its parent gives it.
+ *
+ * @param progress How far the change between stages has come (0 to 1).
+ * @param palette The three colors of the vortex.
+ * @param modifier Modifier for the effect.
  */
 @Composable
 fun VortexFlash(
@@ -165,19 +181,20 @@ private fun SwirlFallback(palette: SwirlPalette, modifier: Modifier) {
             label = "swirlFallbackPhase"
         )
     }
+
     Canvas(modifier = modifier.fillMaxSize()) {
         val glow = fallbackGlow(width = size.width, height = size.height, phase = phase.value)
         drawRect(color = palette.base)
         drawRect(
             brush = Brush.radialGradient(
-                colors = listOf(palette.accent.copy(alpha = 0.55f), Color.Transparent),
+                colors = listOf(palette.accent.copy(alpha = GLOW_ACCENT_ALPHA), Color.Transparent),
                 center = glow.accentCenter,
                 radius = glow.radius
             )
         )
         drawRect(
             brush = Brush.radialGradient(
-                colors = listOf(palette.shade.copy(alpha = 0.5f), Color.Transparent),
+                colors = listOf(palette.shade.copy(alpha = GLOW_SHADE_ALPHA), Color.Transparent),
                 center = glow.shadeCenter,
                 radius = glow.radius
             )
@@ -188,7 +205,7 @@ private fun SwirlFallback(palette: SwirlPalette, modifier: Modifier) {
 internal class FallbackGlow(val accentCenter: Offset, val shadeCenter: Offset, val radius: Float)
 
 internal fun fallbackGlow(width: Float, height: Float, phase: Float): FallbackGlow = FallbackGlow(
-    accentCenter = Offset(x = width * (0.25f + 0.5f * phase), y = height * 0.35f),
-    shadeCenter = Offset(x = width * (0.75f - 0.5f * phase), y = height * 0.75f),
-    radius = maxOf(width, height) * 0.7f
+    accentCenter = Offset(x = width * (GLOW_START_X + GLOW_TRAVEL_X * phase), y = height * GLOW_ACCENT_Y),
+    shadeCenter = Offset(x = width * (GLOW_END_X - GLOW_TRAVEL_X * phase), y = height * GLOW_SHADE_Y),
+    radius = maxOf(width, height) * GLOW_RADIUS_FACTOR
 )

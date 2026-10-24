@@ -25,6 +25,7 @@ private const val NOISE_TIME_LOOP = 1000f
 private const val FALLBACK_LINE_STEP_PX = 4f
 private const val FALLBACK_LINE_ALPHA = 0.07f
 private const val FALLBACK_VIGNETTE_ALPHA = 0.35f
+private const val FALLBACK_VIGNETTE_RADIUS_FACTOR = 0.75f
 
 /**
  * Look of [crtScreen]. The defaults are Balatro's at its default CRT setting.
@@ -48,6 +49,8 @@ data class CrtConfig(
  * Gives the content an old TV look: barrel curvature, scanlines, color fringing, grain, bloom and a vignette.
  * The content must paint an opaque background. While [LocalReduceMotion] is on the grain stays still.
  * Where runtime shaders are unavailable (Android below 13) it draws plain scanlines and a vignette instead.
+ *
+ * @param config Strength of each part of the look.
  */
 @Composable
 fun Modifier.crtScreen(config: CrtConfig = CrtConfig()): Modifier {
@@ -96,7 +99,7 @@ internal fun fallbackLineOffsets(height: Float): List<Float> {
     return offsets
 }
 
-internal fun fallbackVignetteRadius(width: Float, height: Float): Float = maxOf(width, height) * 0.75f
+internal fun fallbackVignetteRadius(width: Float, height: Float): Float = maxOf(width, height) * FALLBACK_VIGNETTE_RADIUS_FACTOR
 
 private fun Modifier.crtFallback(): Modifier = drawWithContent {
     drawContent()
