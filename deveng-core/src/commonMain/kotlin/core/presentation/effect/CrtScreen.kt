@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import core.presentation.motion.LocalReduceMotion
 
@@ -58,9 +59,28 @@ fun Modifier.crtScreen(config: CrtConfig = CrtConfig()): Modifier {
 
     val program = remember { RuntimeShaderProgram(CRT_SHADER) }
     val noiseTime = rememberNoiseTime()
+    val cache = remember { CrtEffectCache() }
     return this.graphicsLayer {
-        program.apply(uniforms = crtUniforms(config = config, width = size.width, height = size.height, time = noiseTime.value))
-        renderEffect = program.toRenderEffect(contentName = "content")
+        val uniforms = crtUniforms(config = config, width = size.width, height = size.height, time = noiseTime.value)
+        renderEffect = cache.effectFor(uniforms = uniforms) {
+            program.apply(uniforms = uniforms)
+            program.toRenderEffect(contentName = "content")
+        }
+    }
+}
+
+private class CrtEffectCache {
+    private var key: List<List<Float>>? = null
+    private var effect: RenderEffect? = null
+
+    fun effectFor(uniforms: List<ShaderUniform>, create: () -> RenderEffect): RenderEffect {
+        val newKey = uniforms.map { uniform -> uniform.values.toList() }
+        val cached = effect
+        if (cached != null && newKey == key) return cached
+        return create().also { created ->
+            key = newKey
+            effect = created
+        }
     }
 }
 
