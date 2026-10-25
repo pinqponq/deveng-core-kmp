@@ -127,7 +127,7 @@ internal object PlatformFilePicker {
  * Resolves [FilePickerFileType] to a list of file extensions for the native dialog filter.
  * Returns null when no filter should be applied (All, Folder).
  */
-private fun resolveExtensions(type: FilePickerFileType): List<String>? {
+internal fun resolveExtensions(type: FilePickerFileType): List<String>? {
     return when (type) {
         is FilePickerFileType.All,
         is FilePickerFileType.Folder -> null
