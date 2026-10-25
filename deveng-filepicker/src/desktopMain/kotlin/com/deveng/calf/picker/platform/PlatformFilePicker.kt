@@ -10,8 +10,10 @@ import java.io.File
 
 internal object PlatformFilePicker {
 
+    internal var native: NativeDialogs = JniNativeDialogs
+
     fun warmup() {
-        NativeFilePickerBridge.init()
+        native.init()
     }
 
     /**
@@ -30,7 +32,7 @@ internal object PlatformFilePicker {
     ): Long {
         val extensions = resolveExtensions(type)
 
-        return NativeFilePickerBridge.createFileDialog(
+        return native.createFileDialog(
             title = title,
             initialDirectory = initialDirectory,
             extensions = extensions?.toTypedArray(),
@@ -48,7 +50,7 @@ internal object PlatformFilePicker {
         title: String?,
         parentWindow: ComposeWindow? = null,
     ): Long {
-        return NativeFilePickerBridge.createDirectoryDialog(
+        return native.createDirectoryDialog(
             title = title,
             initialDirectory = initialDirectory,
             parentWindow = parentWindow?.windowHandle ?: 0L,
@@ -66,7 +68,7 @@ internal object PlatformFilePicker {
         title: String? = null,
         parentWindow: ComposeWindow? = null,
     ): Long {
-        return NativeFilePickerBridge.createSaveDialog(
+        return native.createSaveDialog(
             title = title,
             initialDirectory = initialDirectory,
             defaultName = "$baseName.$extension",
@@ -78,7 +80,7 @@ internal object PlatformFilePicker {
     /** Show a previously created file picker dialog. */
     suspend fun showFilePicker(handle: Long): List<File> {
         val paths = withContext(Dispatchers.IO) {
-            NativeFilePickerBridge.showFileDialog(handle)
+            native.showFileDialog(handle)
         }
         return paths.map { File(it) }
     }
@@ -86,7 +88,7 @@ internal object PlatformFilePicker {
     /** Show a previously created directory picker dialog. */
     suspend fun showDirectoryPicker(handle: Long): File? {
         val path = withContext(Dispatchers.IO) {
-            NativeFilePickerBridge.showDirectoryDialog(handle)
+            native.showDirectoryDialog(handle)
         }
         return path?.let { File(it) }
     }
@@ -94,7 +96,7 @@ internal object PlatformFilePicker {
     /** Show a previously created save dialog and write bytes to the selected file. */
     suspend fun showSaveDialog(handle: Long, bytes: ByteArray?): File? {
         return withContext(Dispatchers.IO) {
-            val path = NativeFilePickerBridge.showSaveDialog(handle) ?: return@withContext null
+            val path = native.showSaveDialog(handle) ?: return@withContext null
 
             val file = File(path)
             if (bytes != null) {
@@ -109,7 +111,7 @@ internal object PlatformFilePicker {
     /** Show a previously created save dialog and copy a source file to the selected location. */
     suspend fun showSaveDialogWithFile(handle: Long, sourceFile: File): File? {
         return withContext(Dispatchers.IO) {
-            val path = NativeFilePickerBridge.showSaveDialog(handle) ?: return@withContext null
+            val path = native.showSaveDialog(handle) ?: return@withContext null
 
             val destFile = File(path)
             sourceFile.copyTo(destFile, overwrite = true)
@@ -119,7 +121,7 @@ internal object PlatformFilePicker {
 
     /** Free the native memory for a dialog handle. */
     fun destroyDialog(handle: Long) {
-        NativeFilePickerBridge.destroyDialog(handle)
+        native.destroyDialog(handle)
     }
 }
 
