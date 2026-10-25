@@ -236,4 +236,78 @@ class FilePickerLauncherDesktopTest {
         assertEquals("payload", target.readText())
         assertEquals(target, result!!.file)
     }
+
+    @Test
+    fun saver_withFileAndSettings_usesSettingsTitleAndDirectory() = runComposeUiTest {
+        val source = File(dir, "source.txt").apply { writeText("payload") }
+        fake.savePath = File(dir, "copy.txt").path
+        var result: KmpFile? = null
+        var launcher: FileSaverLauncher? = null
+        setContent {
+            launcher = rememberFileSaverLauncher(
+                settings = FilePickerSettings(title = "Save copy", initialDirectory = "/docs", parentWindow = null),
+                onResult = { result = it },
+            )
+        }
+
+        launcher!!.launch(source, baseName = "copy", extension = "txt")
+        waitUntil { result != null }
+
+        assertEquals("Save copy", fake.lastTitle)
+        assertEquals("/docs", fake.lastInitialDirectory)
+        assertEquals("copy.txt", fake.lastDefaultName)
+        assertTrue(fake.calls.contains("destroy:7"))
+    }
+
+    @Test
+    fun saver_withFileAndExplicitDirectory_overridesSettingsDirectory() = runComposeUiTest {
+        val source = File(dir, "source.txt").apply { writeText("payload") }
+        var called = false
+        var launcher: FileSaverLauncher? = null
+        setContent {
+            launcher = rememberFileSaverLauncher(
+                settings = FilePickerSettings(initialDirectory = "/docs", parentWindow = null),
+                onResult = { called = true },
+            )
+        }
+
+        launcher!!.launch(source, baseName = "copy", extension = "txt", initialDirectory = "/other")
+        waitUntil { called }
+
+        assertEquals("/other", fake.lastInitialDirectory)
+    }
+
+    @Test
+    fun saver_withFileWhenCancelled_reportsNullAndDestroysTheHandle() = runComposeUiTest {
+        val source = File(dir, "source.txt").apply { writeText("payload") }
+        var called = false
+        var result: KmpFile? = KmpFile(File("sentinel"))
+        var launcher: FileSaverLauncher? = null
+        setContent {
+            launcher = rememberFileSaverLauncher(onResult = { called = true; result = it })
+        }
+
+        launcher!!.launch(source, baseName = "copy", extension = "txt")
+        waitUntil { called }
+
+        assertNull(result)
+        assertTrue(fake.calls.contains("destroy:7"))
+    }
+
+    @Test
+    fun saver_withBytes_usesSettingsTitle() = runComposeUiTest {
+        var called = false
+        var launcher: FileSaverLauncher? = null
+        setContent {
+            launcher = rememberFileSaverLauncher(
+                settings = FilePickerSettings(title = "Save bytes", parentWindow = null),
+                onResult = { called = true },
+            )
+        }
+
+        launcher!!.launch(bytes = byteArrayOf(1), baseName = "x", extension = "txt")
+        waitUntil { called }
+
+        assertEquals("Save bytes", fake.lastTitle)
+    }
 }

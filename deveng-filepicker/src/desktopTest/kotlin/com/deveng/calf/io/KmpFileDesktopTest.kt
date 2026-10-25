@@ -36,6 +36,25 @@ class KmpFileDesktopTest {
     }
 
     @Test
+    fun readMetadata_withoutContext_matchesTheContextOverloads() {
+        val file = createTempFile(CONTENT).toKmpFile()
+        val folder = Files.createTempDirectory("kmpfile").toFile().toKmpFile()
+
+        assertTrue(file.exists())
+        assertFalse(file.isDirectory())
+        assertTrue(file.isFile())
+        assertTrue(folder.isDirectory())
+        assertFalse(folder.isFile())
+    }
+
+    @Test
+    fun checkExistsWithoutContext_ofMissingFile_isFalse() {
+        val missing = File(Files.createTempDirectory("kmpfile").toFile(), "missing.bin")
+
+        assertFalse(missing.toKmpFile().exists())
+    }
+
+    @Test
     fun checkExists_ofMissingFile_isFalse() {
         val missing = File(Files.createTempDirectory("kmpfile").toFile(), "missing.bin")
 

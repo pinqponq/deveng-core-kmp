@@ -2,6 +2,7 @@ package com.deveng.calf.picker
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 
 class FilePickerSettingsTest {
@@ -44,6 +45,28 @@ class FilePickerSettingsTest {
             FilePickerSettings(title = TITLE, maxFileSizeBytes = MAX_FILE_SIZE_BYTES),
             FilePickerSettings(title = TITLE, maxFileSizeBytes = MAX_FILE_SIZE_BYTES),
         )
+    }
+
+    @Test
+    fun compareSettings_withSameValues_haveSameHashCode() {
+        assertEquals(
+            FilePickerSettings(title = TITLE, maxFileSizeBytes = MAX_FILE_SIZE_BYTES).hashCode(),
+            FilePickerSettings(title = TITLE, maxFileSizeBytes = MAX_FILE_SIZE_BYTES).hashCode(),
+        )
+    }
+
+    @Test
+    fun compareSettings_withOneDifferentValue_areNotEqual() {
+        val base = FilePickerSettingsImpl(title = TITLE, initialDirectory = INITIAL_DIRECTORY, maxFileSizeBytes = MAX_FILE_SIZE_BYTES)
+
+        assertNotEquals(base, base.copy(title = "Other"))
+        assertNotEquals(base, base.copy(initialDirectory = "/other"))
+        assertNotEquals(base, base.copy(imageRepresentationMode = ImageRepresentationMode.Current))
+        assertNotEquals(base, base.copy(maxFileSizeBytes = 1L))
+        assertNotEquals(base.hashCode(), base.copy(title = "Other").hashCode())
+        assertNotEquals(base.hashCode(), base.copy(initialDirectory = "/other").hashCode())
+        assertNotEquals(base.hashCode(), base.copy(imageRepresentationMode = ImageRepresentationMode.Current).hashCode())
+        assertNotEquals(base.hashCode(), base.copy(maxFileSizeBytes = 1L).hashCode())
     }
 
     private companion object {
