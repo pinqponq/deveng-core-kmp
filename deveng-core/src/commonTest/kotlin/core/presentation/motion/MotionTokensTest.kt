@@ -51,17 +51,29 @@ class MotionTokensTest {
     }
 
     @Test
-    fun easings_haveTheNamedCurvePoints() {
+    fun accelerateDecelerateEasing_atMidpoint_isHalfway() {
         assertEquals(0.5f, MotionTokens.AccelerateDecelerateEasing.transform(0.5f), 0.001f)
+    }
+
+    @Test
+    fun decelerateEasing_atMidpoint_isPastHalfway() {
         assertTrue(MotionTokens.DecelerateEasing.transform(0.5f) > 0.5f)
+    }
+
+    @Test
+    fun distanceScaledEndingEasing_endsFasterThanDecelerate() {
         assertTrue(MotionTokens.DistanceScaledEndingEasing.transform(0.5f) > MotionTokens.DecelerateEasing.transform(0.5f))
+    }
+
+    @Test
+    fun distanceScaledEndingEasing_startsAtZeroAndEndsAtOne() {
         assertEquals(0f, MotionTokens.DistanceScaledEndingEasing.transform(0f), 0.001f)
         assertEquals(1f, MotionTokens.DistanceScaledEndingEasing.transform(1f), 0.001f)
     }
 
     @Test
     fun distanceScaledDuration_forFullDistance_returnsMax() {
-        assertEquals(320, MotionTokens.distanceScaledDurationMillis(remainingFraction = 1f))
+        assertEquals(MotionTokens.DISTANCE_SCALED_SNAP_BACK_MAX_MILLIS, MotionTokens.distanceScaledDurationMillis(remainingFraction = 1f))
     }
 
     @Test
@@ -71,13 +83,13 @@ class MotionTokensTest {
 
     @Test
     fun distanceScaledDuration_forShortDistance_returnsMin() {
-        assertEquals(120, MotionTokens.distanceScaledDurationMillis(remainingFraction = 0.1f))
+        assertEquals(MotionTokens.DISTANCE_SCALED_SNAP_BACK_MIN_MILLIS, MotionTokens.distanceScaledDurationMillis(remainingFraction = 0.1f))
     }
 
     @Test
     fun distanceScaledDuration_outsideRange_isClamped() {
-        assertEquals(320, MotionTokens.distanceScaledDurationMillis(remainingFraction = 2f))
-        assertEquals(120, MotionTokens.distanceScaledDurationMillis(remainingFraction = -1f))
+        assertEquals(MotionTokens.DISTANCE_SCALED_SNAP_BACK_MAX_MILLIS, MotionTokens.distanceScaledDurationMillis(remainingFraction = 2f))
+        assertEquals(MotionTokens.DISTANCE_SCALED_SNAP_BACK_MIN_MILLIS, MotionTokens.distanceScaledDurationMillis(remainingFraction = -1f))
     }
 
     @Test
