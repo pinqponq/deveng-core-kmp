@@ -94,7 +94,6 @@ class SwipeToReplyState internal constructor(
     }
 
     internal fun returnToRest() {
-        returnJob?.cancel()
         returnJob = coroutineScope.launch {
             animate(
                 initialValue = offset,

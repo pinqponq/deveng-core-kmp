@@ -9,6 +9,10 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -27,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import core.presentation.haptics.fake.FakeHapticFeedback
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
@@ -185,6 +190,98 @@ class SwipeToReplyTest {
         assertEquals(0, triggerCount)
     }
 
+    @Test
+    fun newSwipe_whileRowIsReturning_keepsRowUnderTheFinger() = runDesktopComposeUiTest {
+        setSwipeableContent()
+        onNodeWithTag(ROW_TAG).performTouchInput { swipeSideways(LONG_SWIPE_PX) }
+        mainClock.advanceTimeBy(FRAME_MILLIS)
+
+        onNodeWithTag(ROW_TAG).performTouchInput {
+            down(centerLeft + Offset(EDGE_INSET_PX, 0f))
+            moveInSteps(LONG_SWIPE_PX)
+        }
+        mainClock.advanceTimeBy(SETTLE_TIME_MILLIS)
+
+        val rowLeft = onNodeWithTag(ROW_TAG).fetchSemanticsNode().boundsInRoot.left
+        assertTrue(rowLeft >= TRIGGER_DISTANCE_DP, "row returned while held: $rowLeft")
+    }
+
+    @Test
+    fun sidewaysSwipeWithVerticalDrift_insideList_keepsListStillAndCallsOnTrigger() = runDesktopComposeUiTest {
+        lateinit var listState: LazyListState
+        setContentWithFakes {
+            listState = rememberLazyListState()
+            LazyColumn(state = listState, modifier = Modifier.size(LIST_SIZE_DP.dp).testTag(LIST_TAG)) {
+                items(LIST_ITEM_COUNT) {
+                    val swipeState = rememberSwipeToReplyState()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(LIST_ITEM_HEIGHT_DP.dp)
+                            .swipeToReply(state = swipeState, onTrigger = { triggerCount++ })
+                    )
+                }
+            }
+        }
+
+        onNodeWithTag(LIST_TAG).performTouchInput {
+            down(centerLeft + Offset(EDGE_INSET_PX, 0f))
+            repeat(MOVE_STEP_COUNT) { moveBy(Offset(DRIFT_STEP_X_PX, -DRIFT_STEP_Y_PX)) }
+            up()
+        }
+        waitForIdle()
+
+        assertEquals(0, listState.firstVisibleItemIndex)
+        assertEquals(0, listState.firstVisibleItemScrollOffset)
+        assertEquals(1, triggerCount)
+    }
+
+    @Test
+    fun rememberSwipeToReplyState_withMaximumNotLargerThanTrigger_throws() {
+        assertFailsWith<IllegalArgumentException> {
+            runDesktopComposeUiTest {
+                setContent { rememberSwipeToReplyState(triggerDistance = 64.dp, maxDistance = 64.dp) }
+            }
+        }
+    }
+
+    @Test
+    fun rememberSwipeToReplyState_acrossRecomposition_keepsStateUntilASettingChanges() = runDesktopComposeUiTest {
+        var recompositionCount by mutableStateOf(0)
+        var settings by mutableStateOf(SwipeToReplySettings())
+        val rememberedStates = mutableListOf<SwipeToReplyState>()
+        setContent {
+            CompositionLocalProvider(LocalDensity provides Density(settings.density)) {
+                if (recompositionCount >= 0) {
+                    val state = rememberSwipeToReplyState(
+                        triggerDistance = settings.triggerDistanceDp.dp,
+                        maxDistance = settings.maxDistanceDp.dp,
+                        resistanceExponent = settings.resistanceExponent,
+                        returnMillis = settings.returnMillis
+                    )
+                    SideEffect { rememberedStates += state }
+                }
+            }
+        }
+
+        recompositionCount++
+        waitForIdle()
+        assertEquals(1, rememberedStates.distinct().size)
+
+        val changedSettings = listOf(
+            settings.copy(density = 2f),
+            settings.copy(density = 2f, triggerDistanceDp = 50f),
+            settings.copy(density = 2f, triggerDistanceDp = 50f, maxDistanceDp = 80f),
+            settings.copy(density = 2f, triggerDistanceDp = 50f, maxDistanceDp = 80f, resistanceExponent = 2f),
+            settings.copy(density = 2f, triggerDistanceDp = 50f, maxDistanceDp = 80f, resistanceExponent = 2f, returnMillis = 300)
+        )
+        changedSettings.forEachIndexed { index, changed ->
+            settings = changed
+            waitForIdle()
+            assertEquals(index + 2, rememberedStates.distinct().size, "no new state after setting change $index")
+        }
+    }
+
     private fun ComposeUiTest.setSwipeableContent(
         direction: SwipeToReplyDirection = SwipeToReplyDirection.StartToEnd,
         enabled: Boolean = true
@@ -227,6 +324,14 @@ class SwipeToReplyTest {
         repeat(MOVE_STEP_COUNT) { moveBy(Offset(distancePx / MOVE_STEP_COUNT, 0f)) }
     }
 
+    private data class SwipeToReplySettings(
+        val density: Float = 1f,
+        val triggerDistanceDp: Float = 64f,
+        val maxDistanceDp: Float = 96f,
+        val resistanceExponent: Float = 1.5f,
+        val returnMillis: Int = 200
+    )
+
     private companion object {
         const val ROW_TAG = "swipeRow"
         const val LIST_TAG = "list"
@@ -244,6 +349,9 @@ class SwipeToReplyTest {
         const val DIAGONAL_STEP_X_PX = 4f
         const val DIAGONAL_STEP_Y_PX = 20f
         const val MOVE_STEP_COUNT = 10
+        const val DRIFT_STEP_X_PX = 20f
+        const val DRIFT_STEP_Y_PX = 5f
+        const val FRAME_MILLIS = 16L
         const val TOLERANCE_PX = 0.5f
         const val SETTLE_TIME_MILLIS = 1_000L
     }
