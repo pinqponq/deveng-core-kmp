@@ -1,6 +1,8 @@
 package global.deveng.core
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -31,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +44,7 @@ import core.presentation.component.LabeledSwitch
 import core.presentation.component.shimmer.ShimmerBox
 import core.presentation.haptics.rememberAppHaptics
 import core.presentation.motion.LocalReduceMotion
+import core.presentation.motion.MotionTokens
 import core.presentation.motion.NavTransitions
 import core.presentation.motion.pressScale
 import core.presentation.theme.CoreMediumTextStyle
@@ -93,6 +98,8 @@ internal fun MotionDemoScreen(onBack: () -> Unit) {
             MotionDemoShimmer()
 
             MotionRevealDemo()
+
+            MotionDemoTokens(isReduceMotionEnabled = isReduceMotionEnabled)
 
             MotionDemoTransitions(isReduceMotionEnabled = isReduceMotionEnabled)
         }
@@ -163,6 +170,67 @@ private fun MotionDemoShimmer() {
                 }
             }
         }
+    }
+}
+
+private class MotionDemoTokenRow(val name: String, val durationMillis: Int, val easing: Easing)
+
+private val MotionDemoTokenRows = listOf(
+    MotionDemoTokenRow("MICRO 50 ms, Standard", MotionTokens.DURATION_MICRO_MILLIS, MotionTokens.StandardEasing),
+    MotionDemoTokenRow("QUICK 100 ms, Standard", MotionTokens.DURATION_QUICK_MILLIS, MotionTokens.StandardEasing),
+    MotionDemoTokenRow("SHORT 150 ms, AccelerateDecelerate", MotionTokens.DURATION_SHORT_MILLIS, MotionTokens.AccelerateDecelerateEasing),
+    MotionDemoTokenRow("REGULAR 200 ms, Decelerate", MotionTokens.DURATION_REGULAR_MILLIS, MotionTokens.DecelerateEasing),
+    MotionDemoTokenRow("MEDIUM 300 ms, DistanceScaledEnding", MotionTokens.DURATION_MEDIUM_MILLIS, MotionTokens.DistanceScaledEndingEasing),
+)
+
+@Composable
+private fun MotionDemoTokens(isReduceMotionEnabled: Boolean) {
+    var isMoved by remember { mutableStateOf(false) }
+    var remainingFraction by remember { mutableStateOf(1f) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(space = 8.dp)) {
+        Text(text = "MotionTokens", style = CoreMediumTextStyle().copy(fontSize = 16.sp))
+
+        CustomButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = if (isMoved) "Move back" else "Move all",
+            onClick = { isMoved = !isMoved },
+        )
+
+        MotionDemoTokenRows.forEach { row ->
+            val position by animateFloatAsState(
+                targetValue = if (isMoved) 1f else 0f,
+                animationSpec = MotionTokens.tweenOrSnap(
+                    isReduceMotionEnabled = isReduceMotionEnabled,
+                    durationMillis = row.durationMillis,
+                    easing = row.easing,
+                ),
+            )
+            Text(text = row.name, style = CoreMediumTextStyle().copy(fontSize = 12.sp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(20.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(color = Color(0xFFE0E0E0)),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(fraction = 0.1f)
+                        .height(20.dp)
+                        .graphicsLayer { translationX = position * size.width * 9f }
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(color = Color(0xFF1976D2)),
+                )
+            }
+        }
+
+        Text(
+            text = "distanceScaledDurationMillis(${(remainingFraction * 100).toInt()} % left) = " +
+                "${MotionTokens.distanceScaledDurationMillis(remainingFraction)} ms",
+            style = CoreMediumTextStyle().copy(fontSize = 14.sp),
+        )
+        Slider(value = remainingFraction, onValueChange = { remainingFraction = it })
     }
 }
 

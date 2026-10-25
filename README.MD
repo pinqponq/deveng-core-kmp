@@ -354,7 +354,7 @@ Package `core.presentation.motion` (plus `core.presentation.haptics` and `core.p
 
 | Need | Use |
 |------|-----|
-| Shared durations, easings, springs | `MotionTokens` (`DURATION_SHORT_MILLIS` / `MEDIUM` / `LONG`, `StandardEasing`, `EmphasizedDecelerateEasing`, `defaultSpring()`, `bouncySpring()`, `pressSpring()`, `tweenOrSnap(isReduceMotionEnabled)`) |
+| Shared durations, easings, springs | `MotionTokens` (durations `DURATION_MICRO_MILLIS` 50 / `QUICK` 100 / `SHORT` 150 / `REGULAR` 200 / `MEDIUM` 300 / `LONG` 500, `StandardEasing`, `AccelerateDecelerateEasing`, `DecelerateEasing`, `DistanceScaledEndingEasing`, `EmphasizedDecelerateEasing`, `distanceScaledDurationMillis(remainingFraction)`, `defaultSpring()`, `bouncySpring()`, `pressSpring()`, `tweenOrSnap(isReduceMotionEnabled)`) |
 | Scale down slightly while pressed | `Modifier.pressScale(interactionSource)`; pass the same `interactionSource` to `clickable` |
 | Loading placeholder | `ShimmerBox(modifier)` or `Modifier.shimmer()`; colors and corner radius from `ComponentTheme.shimmer` (`ShimmerTheme`) |
 | Screen transitions | `NavTransitions.enter` / `exit` / `popEnter` / `popExit(isReduceMotionEnabled)` for NavHost or `AnimatedContent` |
@@ -365,7 +365,7 @@ Package `core.presentation.motion` (plus `core.presentation.haptics` and `core.p
 | Number that counts up step by step | `CountUpText(value, startValue, formatter, juiceState, onStep)`: at most `maxStepCount` steps and `maxTotalMillis` in total, `onStep` per step |
 | Haptic ticks of three strengths | `rememberHapticTicker()` returns a ticker with `light()` (dropped when faster than `minLightIntervalMillis`), `medium()`, `strong()` |
 
-Everything that animates respects `LocalReduceMotion`: `pressScale` stays at full size, `shimmer` shows the static base color, `NavTransitions` return no transition, `pop()` does nothing, `FlipCard` swaps faces at once and `CountUpText` shows the final number at once. Defaults of the pop, flip and count-up are in `MotionDefaults`.
+Everything that animates respects `LocalReduceMotion`: `pressScale` stays at full size, `shimmer` shows the static base color, `NavTransitions` return no transition, `pop()` does nothing, `FlipCard` swaps faces at once and `CountUpText` shows the final number at once. Defaults of the pop, flip and count-up are in `MotionDefaults`. `distanceScaledDurationMillis` gives a gesture ending that follows the distance left: `max(maxMillis × remainingFraction, minMillis)`, with the snap-back (320 / 120 ms) and finish (200 / 50 ms) values as defaults; pair it with `DistanceScaledEndingEasing`. The sample app's "Motion Demo" shows every duration and easing.
 
 ```kotlin
 val isReduceMotionEnabled = LocalReduceMotion.current
