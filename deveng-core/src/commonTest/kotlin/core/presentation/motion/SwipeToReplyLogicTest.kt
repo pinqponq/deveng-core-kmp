@@ -77,14 +77,14 @@ class SwipeToReplyLogicTest {
 
     @Test
     fun swipeToReplyOffset_pastMaximum_staysAtMaximum() {
-        assertEquals(MAX_DISTANCE, offsetAfter(currentOffset = 95f, dragDelta = 500f))
+        assertEquals(MAX_DISTANCE, offsetAfter(currentOffset = NEAR_MAX_OFFSET, dragDelta = LARGE_DRAG))
         assertEquals(MAX_DISTANCE, offsetAfter(currentOffset = MAX_DISTANCE, dragDelta = SMALL_DRAG))
     }
 
     @Test
     fun swipeToReplyOffset_withManySmallMoves_neverPassesMaximum() {
         var offset = 0f
-        repeat(1_000) { offset = offsetAfter(currentOffset = offset, dragDelta = 2f) }
+        repeat(TINY_MOVE_COUNT) { offset = offsetAfter(currentOffset = offset, dragDelta = TINY_DRAG) }
 
         assertTrue(offset <= MAX_DISTANCE)
         assertTrue(offset > TRIGGER_DISTANCE)
@@ -115,6 +115,10 @@ class SwipeToReplyLogicTest {
         const val SMALL_OFFSET = 10f
         const val SMALL_DRAG = 30f
         const val PAST_TRIGGER_OFFSET = 80f
+        const val NEAR_MAX_OFFSET = 95f
+        const val LARGE_DRAG = 500f
+        const val TINY_DRAG = 2f
+        const val TINY_MOVE_COUNT = 1_000
         const val GATE_DISTANCE = 30f
         const val JUST_PAST_GATE_DISTANCE = 31f
         const val BACKWARD_DISTANCE = -40f

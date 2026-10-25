@@ -218,7 +218,7 @@ class SwipeToReplyTest {
     }
 
     @Test
-    fun swipe_againstTheDirection_doesNotMoveRowOrCallOnTrigger() = runDesktopComposeUiTest {
+    fun swipe_againstTheDirection_doesNotCallOnTrigger() = runDesktopComposeUiTest {
         setSwipeableContent(direction = SwipeToReplyDirection.EndToStart)
 
         onNodeWithTag(ROW_TAG).performTouchInput { swipeSideways(LONG_SWIPE_PX) }
@@ -342,13 +342,12 @@ class SwipeToReplyTest {
         waitForIdle()
         assertEquals(1, rememberedStates.distinct().size)
 
-        val changedSettings = listOf(
-            settings.copy(density = 2f),
-            settings.copy(density = 2f, triggerDistanceDp = 50f),
-            settings.copy(density = 2f, triggerDistanceDp = 50f, maxDistanceDp = 80f),
-            settings.copy(density = 2f, triggerDistanceDp = 50f, maxDistanceDp = 80f, resistanceExponent = 2f),
-            settings.copy(density = 2f, triggerDistanceDp = 50f, maxDistanceDp = 80f, resistanceExponent = 2f, returnMillis = 300)
-        )
+        val withDensity = settings.copy(density = CHANGED_DENSITY)
+        val withTrigger = withDensity.copy(triggerDistanceDp = CHANGED_TRIGGER_DISTANCE_DP)
+        val withMaximum = withTrigger.copy(maxDistanceDp = CHANGED_MAX_DISTANCE_DP)
+        val withResistance = withMaximum.copy(resistanceExponent = CHANGED_RESISTANCE_EXPONENT)
+        val withReturnTime = withResistance.copy(returnMillis = CHANGED_RETURN_MILLIS)
+        val changedSettings = listOf(withDensity, withTrigger, withMaximum, withResistance, withReturnTime)
         changedSettings.forEachIndexed { index, changed ->
             settings = changed
             waitForIdle()
@@ -437,6 +436,11 @@ class SwipeToReplyTest {
         const val LIST_SIZE_DP = 300
         const val LIST_ITEM_HEIGHT_DP = 60
         const val LIST_ITEM_COUNT = 30
+        const val CHANGED_DENSITY = 2f
+        const val CHANGED_TRIGGER_DISTANCE_DP = 50f
+        const val CHANGED_MAX_DISTANCE_DP = 80f
+        const val CHANGED_RESISTANCE_EXPONENT = 2f
+        const val CHANGED_RETURN_MILLIS = 300
         const val TRIGGER_DISTANCE_DP = MotionDefaults.SWIPE_TO_REPLY_TRIGGER_DISTANCE_DP.toFloat()
         const val MAX_DISTANCE_DP = MotionDefaults.SWIPE_TO_REPLY_MAX_DISTANCE_DP.toFloat()
         const val EDGE_INSET_PX = 20f
