@@ -18,6 +18,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -49,6 +50,31 @@ class SwipeToReplyTest {
 
         assertEquals(1, triggerCount)
         assertEquals(listOf(HapticFeedbackType.VirtualKey), hapticFeedback.performedTypes)
+    }
+
+    @Test
+    fun swipe_reachingTouchSlopExactly_startsAndCountsTheNextMove() = runDesktopComposeUiTest {
+        var touchSlop = 0f
+        setContentWithFakes {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            val swipeState = rememberSwipeToReplyState()
+            Box(
+                modifier = Modifier
+                    .size(width = ROW_WIDTH_DP.dp, height = ROW_HEIGHT_DP.dp)
+                    .swipeToReply(state = swipeState, onTrigger = { triggerCount++ })
+                    .testTag(ROW_TAG)
+            )
+        }
+
+        onNodeWithTag(ROW_TAG).performTouchInput {
+            down(centerLeft + Offset(EDGE_INSET_PX, 0f))
+            moveBy(Offset(touchSlop, 0f))
+            moveBy(Offset(TRIGGER_DISTANCE_DP, 0f))
+            up()
+        }
+        waitForIdle()
+
+        assertEquals(1, triggerCount)
     }
 
     @Test
@@ -193,6 +219,7 @@ class SwipeToReplyTest {
     @Test
     fun newSwipe_whileRowIsReturning_keepsRowUnderTheFinger() = runDesktopComposeUiTest {
         setSwipeableContent()
+        mainClock.autoAdvance = false
         onNodeWithTag(ROW_TAG).performTouchInput { swipeSideways(LONG_SWIPE_PX) }
         mainClock.advanceTimeBy(FRAME_MILLIS)
 
