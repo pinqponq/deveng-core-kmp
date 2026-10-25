@@ -16,6 +16,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -125,6 +127,93 @@ class SwipeToReplyTest {
         onNodeWithTag(ROW_TAG).performTouchInput { swipeSideways(LONG_SWIPE_PX) }
         mainClock.advanceTimeBy(SETTLE_TIME_MILLIS)
 
+        assertEquals(0f, onNodeWithTag(ROW_TAG).fetchSemanticsNode().boundsInRoot.left, absoluteTolerance = TOLERANCE_PX)
+    }
+
+    @Test
+    fun release_withReduceMotion_returnsRowAtOnce() = runDesktopComposeUiTest {
+        setSwipeableContent(isReduceMotionEnabled = true)
+        mainClock.autoAdvance = false
+
+        onNodeWithTag(ROW_TAG).performTouchInput { swipeSideways(LONG_SWIPE_PX) }
+        mainClock.advanceTimeBy(FRAME_MILLIS * 2)
+
+        assertEquals(0f, onNodeWithTag(ROW_TAG).fetchSemanticsNode().boundsInRoot.left, absoluteTolerance = TOLERANCE_PX)
+    }
+
+    @Test
+    fun release_withMotionAllowed_isStillMovingAfterOneFrame() = runDesktopComposeUiTest {
+        setSwipeableContent()
+        mainClock.autoAdvance = false
+
+        onNodeWithTag(ROW_TAG).performTouchInput { swipeSideways(LONG_SWIPE_PX) }
+        mainClock.advanceTimeBy(FRAME_MILLIS * 2)
+
+        assertTrue(onNodeWithTag(ROW_TAG).fetchSemanticsNode().boundsInRoot.left > TOLERANCE_PX)
+    }
+
+    @Test
+    fun cancelledDrag_pastTrigger_returnsRowWithoutTrigger() = runDesktopComposeUiTest {
+        var isParentConsumingMoves by mutableStateOf(false)
+        setContentWithFakes {
+            val swipeState = rememberSwipeToReplyState()
+            Box(
+                modifier = Modifier.pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            if (isParentConsumingMoves) event.changes.forEach { it.consume() }
+                        }
+                    }
+                }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(width = ROW_WIDTH_DP.dp, height = ROW_HEIGHT_DP.dp)
+                        .swipeToReply(state = swipeState, onTrigger = { triggerCount++ })
+                        .testTag(ROW_TAG)
+                )
+            }
+        }
+
+        onNodeWithTag(ROW_TAG).performTouchInput {
+            down(centerLeft + Offset(EDGE_INSET_PX, 0f))
+            moveInSteps(LONG_SWIPE_PX)
+        }
+        isParentConsumingMoves = true
+        onNodeWithTag(ROW_TAG).performTouchInput {
+            moveBy(Offset(EDGE_INSET_PX, 0f))
+            up()
+        }
+        mainClock.advanceTimeBy(SETTLE_TIME_MILLIS)
+
+        assertEquals(0, triggerCount)
+        assertEquals(0f, onNodeWithTag(ROW_TAG).fetchSemanticsNode().boundsInRoot.left, absoluteTolerance = TOLERANCE_PX)
+    }
+
+    @Test
+    fun disablingDuringDrag_pastTrigger_returnsRowWithoutTrigger() = runDesktopComposeUiTest {
+        var isSwipeEnabled by mutableStateOf(true)
+        setContentWithFakes {
+            val swipeState = rememberSwipeToReplyState()
+            Box(
+                modifier = Modifier
+                    .size(width = ROW_WIDTH_DP.dp, height = ROW_HEIGHT_DP.dp)
+                    .swipeToReply(state = swipeState, onTrigger = { triggerCount++ }, enabled = isSwipeEnabled)
+                    .testTag(ROW_TAG)
+            )
+        }
+
+        onNodeWithTag(ROW_TAG).performTouchInput {
+            down(centerLeft + Offset(EDGE_INSET_PX, 0f))
+            moveInSteps(LONG_SWIPE_PX)
+        }
+        isSwipeEnabled = false
+        mainClock.advanceTimeBy(SETTLE_TIME_MILLIS)
+        onNodeWithTag(ROW_TAG).performTouchInput { up() }
+        mainClock.advanceTimeBy(SETTLE_TIME_MILLIS)
+
+        assertEquals(0, triggerCount)
         assertEquals(0f, onNodeWithTag(ROW_TAG).fetchSemanticsNode().boundsInRoot.left, absoluteTolerance = TOLERANCE_PX)
     }
 
@@ -267,7 +356,7 @@ class SwipeToReplyTest {
     fun rememberSwipeToReplyState_withMaximumNotLargerThanTrigger_throws() {
         assertFailsWith<IllegalArgumentException> {
             runDesktopComposeUiTest {
-                setContent { rememberSwipeToReplyState(triggerDistance = 64.dp, maxDistance = 64.dp) }
+                setContent { rememberSwipeToReplyState(triggerDistance = TRIGGER_DISTANCE_DP.dp, maxDistance = TRIGGER_DISTANCE_DP.dp) }
             }
         }
     }
@@ -311,9 +400,10 @@ class SwipeToReplyTest {
 
     private fun ComposeUiTest.setSwipeableContent(
         direction: SwipeToReplyDirection = SwipeToReplyDirection.StartToEnd,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        isReduceMotionEnabled: Boolean = false
     ) {
-        setContentWithFakes {
+        setContentWithFakes(isReduceMotionEnabled = isReduceMotionEnabled) {
             val swipeState = rememberSwipeToReplyState()
             Box(
                 modifier = Modifier
@@ -329,12 +419,15 @@ class SwipeToReplyTest {
         }
     }
 
-    private fun ComposeUiTest.setContentWithFakes(content: @Composable () -> Unit) {
+    private fun ComposeUiTest.setContentWithFakes(
+        isReduceMotionEnabled: Boolean = false,
+        content: @Composable () -> Unit
+    ) {
         setContent {
             CompositionLocalProvider(
                 LocalHapticFeedback provides hapticFeedback,
                 LocalDensity provides Density(1f),
-                LocalReduceMotion provides false
+                LocalReduceMotion provides isReduceMotionEnabled
             ) {
                 content()
             }
@@ -353,10 +446,10 @@ class SwipeToReplyTest {
 
     private data class SwipeToReplySettings(
         val density: Float = 1f,
-        val triggerDistanceDp: Float = 64f,
-        val maxDistanceDp: Float = 96f,
-        val resistanceExponent: Float = 1.5f,
-        val returnMillis: Int = 200
+        val triggerDistanceDp: Float = MotionDefaults.SWIPE_TO_REPLY_TRIGGER_DISTANCE_DP.toFloat(),
+        val maxDistanceDp: Float = MotionDefaults.SWIPE_TO_REPLY_MAX_DISTANCE_DP.toFloat(),
+        val resistanceExponent: Float = MotionDefaults.SWIPE_TO_REPLY_RESISTANCE_EXPONENT,
+        val returnMillis: Int = MotionDefaults.SWIPE_TO_REPLY_RETURN_MILLIS
     )
 
     private companion object {
@@ -367,8 +460,8 @@ class SwipeToReplyTest {
         const val LIST_SIZE_DP = 300
         const val LIST_ITEM_HEIGHT_DP = 60
         const val LIST_ITEM_COUNT = 30
-        const val TRIGGER_DISTANCE_DP = 64f
-        const val MAX_DISTANCE_DP = 96f
+        const val TRIGGER_DISTANCE_DP = MotionDefaults.SWIPE_TO_REPLY_TRIGGER_DISTANCE_DP.toFloat()
+        const val MAX_DISTANCE_DP = MotionDefaults.SWIPE_TO_REPLY_MAX_DISTANCE_DP.toFloat()
         const val EDGE_INSET_PX = 20f
         const val SHORT_SWIPE_PX = 50f
         const val LONG_SWIPE_PX = 150f

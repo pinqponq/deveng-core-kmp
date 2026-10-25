@@ -10,23 +10,23 @@ class SwipeToReplyLogicTest {
 
     @Test
     fun isSwipeToReplyStart_withSidewaysMoveMoreThanThreeTimesVertical_isTrue() {
-        assertTrue(isSwipeToReplyStart(directionalDistance = 31f, verticalDistance = 10f))
+        assertTrue(isSwipeToReplyStart(directionalDistance = JUST_PAST_GATE_DISTANCE, verticalDistance = VERTICAL_DISTANCE))
     }
 
     @Test
     fun isSwipeToReplyStart_withSidewaysMoveExactlyThreeTimesVertical_isFalse() {
-        assertFalse(isSwipeToReplyStart(directionalDistance = 30f, verticalDistance = 10f))
+        assertFalse(isSwipeToReplyStart(directionalDistance = GATE_DISTANCE, verticalDistance = VERTICAL_DISTANCE))
     }
 
     @Test
     fun isSwipeToReplyStart_withUpwardMove_comparesAgainstItsLength() {
-        assertFalse(isSwipeToReplyStart(directionalDistance = 30f, verticalDistance = -10f))
-        assertTrue(isSwipeToReplyStart(directionalDistance = 31f, verticalDistance = -10f))
+        assertFalse(isSwipeToReplyStart(directionalDistance = GATE_DISTANCE, verticalDistance = -VERTICAL_DISTANCE))
+        assertTrue(isSwipeToReplyStart(directionalDistance = JUST_PAST_GATE_DISTANCE, verticalDistance = -VERTICAL_DISTANCE))
     }
 
     @Test
     fun isSwipeToReplyStart_withMoveAgainstTheDirection_isFalse() {
-        assertFalse(isSwipeToReplyStart(directionalDistance = -40f, verticalDistance = 0f))
+        assertFalse(isSwipeToReplyStart(directionalDistance = BACKWARD_DISTANCE, verticalDistance = 0f))
     }
 
     @Test
@@ -105,6 +105,10 @@ class SwipeToReplyLogicTest {
     )
 
     private companion object {
+        const val VERTICAL_DISTANCE = 10f
+        const val GATE_DISTANCE = 30f
+        const val JUST_PAST_GATE_DISTANCE = 31f
+        const val BACKWARD_DISTANCE = -40f
         const val TRIGGER_DISTANCE = 64f
         const val MAX_DISTANCE = 96f
         const val RESISTANCE_EXPONENT = 1.5f

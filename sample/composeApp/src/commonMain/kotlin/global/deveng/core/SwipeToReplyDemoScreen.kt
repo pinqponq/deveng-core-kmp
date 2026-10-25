@@ -42,6 +42,7 @@ private const val SWIPE_TO_REPLY_DEMO_MESSAGE_COUNT = 60
 private const val SWIPE_TO_REPLY_DEMO_ICON_EXTRA_SCALE = 0.2f
 private val SWIPE_TO_REPLY_DEMO_SENT_COLOR = Color(0xFFD9F2E6)
 private val SWIPE_TO_REPLY_DEMO_RECEIVED_COLOR = Color(0xFFEDEDED)
+private val SWIPE_TO_REPLY_DEMO_ICON_COLOR = Color(0xFF00897B)
 
 /**
  * Playground for `Modifier.swipeToReply`: a long chat-like list where every message can be swiped
@@ -115,7 +116,7 @@ private fun SwipeToReplyDemoMessage(
         Icon(
             painter = painterResource(Res.drawable.ic_reply),
             contentDescription = null,
-            tint = Color(0xFF00897B),
+            tint = SWIPE_TO_REPLY_DEMO_ICON_COLOR,
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .size(24.dp)

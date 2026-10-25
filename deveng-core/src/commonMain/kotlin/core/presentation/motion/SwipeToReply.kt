@@ -39,7 +39,7 @@ import kotlin.math.pow
 private const val REST_OFFSET = 0f
 private const val HORIZONTAL_GATE_RATIO = 3f
 
-/** The edge a swipe to reply starts from. Both follow the layout direction, so right-to-left layouts are mirrored. */
+/** The direction a swipe to reply moves the element in. Both follow the layout direction, so right-to-left layouts are mirrored. */
 enum class SwipeToReplyDirection {
     StartToEnd,
     EndToStart
@@ -62,6 +62,8 @@ class SwipeToReplyState internal constructor(
     private val resistanceExponent: Float,
     private val returnMillis: Int
 ) {
+    private var returnJob: Job? = null
+
     /** Distance in pixels the element is moved in the swipe direction, from 0 to the maximum distance. */
     var offset by mutableFloatStateOf(REST_OFFSET)
         private set
@@ -73,8 +75,6 @@ class SwipeToReplyState internal constructor(
     /** True while a release would call `onTrigger`. */
     val isPastTrigger: Boolean
         get() = isTriggerReached(offset = offset, triggerDistance = triggerDistancePx)
-
-    private var returnJob: Job? = null
 
     internal fun startDrag() {
         returnJob?.cancel()
@@ -142,14 +142,14 @@ fun rememberSwipeToReplyState(
 
 /**
  * Lets the user swipe the element sideways to reply, as in chat apps. The swipe starts only when
- * the finger moves from [direction]'s start edge and mostly sideways (the sideways distance divided
+ * the finger moves towards [direction]'s end edge and mostly sideways (the sideways distance divided
  * by 3 is larger than the up or down distance), so a scrolling list around the element still
  * scrolls. [AppHaptics.tap] plays when the element crosses the trigger distance. On release past
  * the trigger distance [onTrigger] is called, and the element always returns to its place.
  *
  * @param state State from [rememberSwipeToReplyState]; it also holds the distances.
  * @param onTrigger Called once per swipe that is released past the trigger distance.
- * @param direction Edge the swipe starts from.
+ * @param direction Direction the swipe moves the element in.
  * @param enabled When false, the element ignores swipes.
  */
 fun Modifier.swipeToReply(
@@ -185,13 +185,16 @@ private suspend fun PointerInputScope.detectSwipeToReply(
         val down = awaitFirstDown(requireUnconsumed = false)
         val swipeStartChange = awaitSwipeStart(pointerId = down.id, directionSign = directionSign) ?: return@awaitEachGesture
         state.startDrag()
-        val isReleased = horizontalDrag(swipeStartChange.id) { change ->
-            val hasCrossedTrigger = state.dragBy(change.positionChange().x * directionSign)
-            if (hasCrossedTrigger) onTriggerCrossed()
-            change.consume()
+        try {
+            val isReleased = horizontalDrag(swipeStartChange.id) { change ->
+                val hasCrossedTrigger = state.dragBy(change.positionChange().x * directionSign)
+                if (hasCrossedTrigger) onTriggerCrossed()
+                change.consume()
+            }
+            if (isReleased && state.isPastTrigger) onTrigger()
+        } finally {
+            state.returnToRest()
         }
-        if (isReleased && state.isPastTrigger) onTrigger()
-        state.returnToRest()
     }
 }
 
