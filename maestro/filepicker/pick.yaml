@@ -10,14 +10,26 @@ appId: io.deveng.core.androidApp
 - startRecording: build/maestro/android/filepicker
 - tapOn: "Pick photos and videos"
 - extendedWaitUntil:
-    visible: "Photo picker"
+    visible: "Media grid"
     timeout: 8000
 - takeScreenshot: build/maestro/android/filepicker-02-system-picker
-- tapOn:
-    point: "20%,35%"
-- tapOn: "Add"
+# the emulator needs small_pick.png (touch -t 202102020000) and big_pick.png (> 2 MB, touch -t 202001010000)
+# in /sdcard/Pictures, media-scanned; the dates make them findable (new recordings change the grid order)
+- tapOn: "Photo taken on .*2021.*"
+- tapOn: "Done"
 - extendedWaitUntil:
-    notVisible: "Nothing picked yet"
+    visible: ".*: [0-9]+ KB"
     timeout: 8000
+- assertNotVisible: "Nothing picked yet"
 - takeScreenshot: build/maestro/android/filepicker-03-picked
+- tapOn: "Pick photos and videos"
+- extendedWaitUntil:
+    visible: "Media grid"
+    timeout: 8000
+- tapOn: "Photo taken on .*2020.*"
+- tapOn: "Done"
+- extendedWaitUntil:
+    visible: ".*too large.*"
+    timeout: 8000
+- takeScreenshot: build/maestro/android/filepicker-04-too-large
 - stopRecording
