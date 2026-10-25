@@ -4,7 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -92,30 +92,30 @@ internal fun ScrollToEdgeDemoScreen(onBack: () -> Unit) {
                 .padding(all = 16.dp),
         )
 
-        Row(
+        Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(all = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(space = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(space = 8.dp),
         ) {
             CustomButton(
                 modifier = Modifier
                     .height(40.dp)
-                    .width(80.dp),
+                    .width(110.dp),
                 text = "+400",
                 onClick = { unreadCount += SCROLL_TO_EDGE_DEMO_BADGE_STEP },
             )
             CustomButton(
                 modifier = Modifier
                     .height(40.dp)
-                    .width(80.dp),
+                    .width(110.dp),
                 text = "1000",
                 onClick = { unreadCount = SCROLL_TO_EDGE_DEMO_BADGE_OVER_CAP },
             )
             CustomButton(
                 modifier = Modifier
                     .height(40.dp)
-                    .width(80.dp),
+                    .width(110.dp),
                 text = "Reset",
                 onClick = { unreadCount = 0 },
             )

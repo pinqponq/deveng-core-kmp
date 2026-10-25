@@ -1,0 +1,30 @@
+appId: io.deveng.core.androidApp
+---
+- launchApp:
+    clearState: true
+- scrollUntilVisible:
+    element: "Open Scroll-to-Edge Demo"
+- tapOn: "Open Scroll-to-Edge Demo"
+- swipe:
+    direction: UP
+    duration: 400
+- swipe:
+    direction: UP
+    duration: 400
+- takeScreenshot: badge-01-no-badge
+- startRecording: badge
+- tapOn: "+400"
+- assertVisible: "400"
+- takeScreenshot: badge-02-400
+- tapOn: "+400"
+- tapOn: "+400"
+- assertVisible: "999+"
+- takeScreenshot: badge-03-cap
+- tapOn: "Reset"
+- assertNotVisible: "999+"
+- takeScreenshot: badge-04-reset
+- tapOn: "1000"
+- assertVisible: "999+"
+- tapOn: "Sona git|Scroll to bottom"
+- takeScreenshot: badge-05-scrolled-to-bottom
+- stopRecording
