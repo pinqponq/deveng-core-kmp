@@ -98,9 +98,10 @@ internal external fun readPageHostname(): String
     }
 
     function showConsentBanner() {
-        if (!consent || consentBanner !== null || !document.body) return;
+        if (!consent || consentBanner !== null) return;
         consentBanner = createConsentBanner();
-        document.body.appendChild(consentBanner);
+        // Compose makes document.body a shadow host without a slot, so a child of the body is never drawn.
+        document.documentElement.appendChild(consentBanner);
     }
 
     gtag('consent', 'default', {
