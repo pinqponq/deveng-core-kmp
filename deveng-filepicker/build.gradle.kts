@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
@@ -14,6 +15,11 @@ version = generateVersionName()
 
 kotlin {
     jvm("desktop")
+
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+    }
 
     androidTarget {
         publishLibraryVariants("release")

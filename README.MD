@@ -46,6 +46,7 @@ Replace `VERSION` with the [latest release](https://central.sonatype.com/artifac
 - [Pagination](#pagination)
 - [BaseViewModel and interceptors](#baseviewmodel-and-interceptors)
 - [Client Logs (deveng-pinqloq)](#client-logs-deveng-pinqloq)
+- [File picker (deveng-filepicker)](#file-picker-deveng-filepicker)
 - [Web analytics (Google Analytics 4)](#web-analytics-google-analytics-4)
 - [Sample App](#sample-app)
 - [Building](#building)
@@ -957,6 +958,33 @@ An empty `metadata` or `detail` is left out of the request. For another shape, i
 `log` does not throw. A failure goes to `failureListener` with a reason: `ENTRY_REJECTED` (the `enabled` check or the metadata provider threw), `DELIVERY_FAILED` (the request failed; a failed batch is dropped, not retried) or `QUEUE_OVERFLOW`. Only coroutine cancellation is rethrown.
 
 The sample app's "Pinqloq Client Log Demo" screen shows an immediate logger, a batching logger, the `enabled` check and truncation. It records requests in memory instead of sending them.
+
+---
+
+## File picker (deveng-filepicker)
+
+`deveng-filepicker` (artifact `global.deveng:filepicker-kmp`) picks photos, videos and documents on Android, iOS, desktop and web. It is its own module so apps that do not pick files do not pull in its dependencies. The package is `com.deveng.calf`.
+
+```kotlin
+val pickerLauncher = rememberFilePickerLauncher(
+    type = FilePickerFileType.ImageVideo,
+    selectionMode = FilePickerSelectionMode.Multiple(maxItems = 5),
+    settings = FilePickerSettings(maxFileSizeBytes = 260L * 1024 * 1024),
+    onResult = { files -> /* List<KmpFile> */ },
+)
+
+CustomButton(text = "Pick", onClick = pickerLauncher::launch)
+```
+
+- `FilePickerFileType` chooses what can be picked (`Image`, `Video`, `ImageVideo`, `Pdf`, `Custom`, `Extension`, `All`, …).
+- `FilePickerSelectionMode.Single` or `Multiple(maxItems)`.
+- `FilePickerSettings.maxFileSizeBytes` applies on iOS only: a picked asset over the limit is returned without a local copy, with its size, so the app can reject it. On the other platforms the app checks `KmpFile.getSize()` itself.
+- `KmpFile` gives the name, size and bytes of a picked file (`getName()`, `getSize()`, `readByteArray()`).
+- `rememberFileSaverLauncher` saves a file; on the web it starts a browser download.
+- The fork has no camera source. Taking a photo stays with the core camera APIs (see [Camera](#camera)).
+- On desktop the picker loads a native library from the app's resources (`native/<os>-<arch>/`); the module does not ship it.
+
+Sample: the **Open File Picker Demo** screen in `sample/composeApp`.
 
 ---
 
