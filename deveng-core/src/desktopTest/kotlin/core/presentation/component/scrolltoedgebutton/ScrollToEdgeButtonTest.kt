@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -95,6 +96,44 @@ class ScrollToEdgeButtonTest {
         waitUntil(timeoutMillis = 5_000) { listState.firstVisibleItemIndex == 0 }
 
         assertEquals(0, listState.firstVisibleItemIndex)
+    }
+
+    @Test
+    fun scrolledAway_withUnreadCount_describesBadgeForAccessibility() = runDesktopComposeUiTest {
+        lateinit var listState: LazyListState
+        setContent { ButtonHost(unreadCount = 5, onState = { listState = it }) }
+        runOnIdle { runBlocking { listState.scrollToItem(index = FAR_INDEX) } }
+        waitForIdle()
+
+        onNode(hasContentDescription(value = "5", substring = true) and !hasContentDescription(BUTTON_DESCRIPTION))
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun clickButton_withBottomTarget_scrollsListToLastItem() = runDesktopComposeUiTest {
+        lateinit var listState: LazyListState
+        setContent {
+            AppTheme(darkTheme = false) {
+                val state = rememberLazyListState()
+                listState = state
+                Box(modifier = Modifier.fillMaxSize()) {
+                    ItemsList(state = state)
+                    ScrollToEdgeButton(
+                        listState = state,
+                        target = ScrollTarget.Bottom,
+                        threshold = THRESHOLD,
+                        contentDescription = BUTTON_DESCRIPTION,
+                        unreadCount = 2,
+                    )
+                }
+            }
+        }
+        waitForIdle()
+
+        onNodeWithContentDescription(BUTTON_DESCRIPTION).performClick()
+        waitUntil(timeoutMillis = 5_000) { listState.layoutInfo.visibleItemsInfo.any { it.index == ITEM_COUNT - 1 } }
+
+        assertEquals(ITEM_COUNT - 1, listState.layoutInfo.visibleItemsInfo.last().index)
     }
 
     @Test

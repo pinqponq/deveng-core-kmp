@@ -20,6 +20,9 @@ import global.deveng.deveng_core.generated.resources.shared_content_desc_unread_
 import org.jetbrains.compose.resources.stringResource
 
 internal const val SCROLL_EDGE_BADGE_MAX_COUNT = 999
+private val SCROLL_EDGE_BADGE_OFFSET_X = 4.dp
+private val SCROLL_EDGE_BADGE_OFFSET_Y = (-4).dp
+private val SCROLL_EDGE_BADGE_HORIZONTAL_PADDING = 5.dp
 
 internal fun scrollToEdgeBadgeText(count: Int): String =
     if (count > SCROLL_EDGE_BADGE_MAX_COUNT) "$SCROLL_EDGE_BADGE_MAX_COUNT+" else count.toString()
@@ -31,10 +34,10 @@ internal fun ScrollToEdgeBadge(count: Int, modifier: Modifier = Modifier) {
     val description = stringResource(Res.string.shared_content_desc_unread_count, text)
     Box(
         modifier = modifier
-            .offset(x = 4.dp, y = (-4).dp)
+            .offset(x = SCROLL_EDGE_BADGE_OFFSET_X, y = SCROLL_EDGE_BADGE_OFFSET_Y)
             .defaultMinSize(minWidth = theme.badgeMinSize, minHeight = theme.badgeMinSize)
             .background(color = theme.badgeBackgroundColor, shape = CircleShape)
-            .padding(horizontal = 5.dp)
+            .padding(horizontal = SCROLL_EDGE_BADGE_HORIZONTAL_PADDING)
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {

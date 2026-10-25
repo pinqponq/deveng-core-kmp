@@ -36,13 +36,14 @@ import deveng_core_kmp.sample.composeapp.generated.resources.ic_arrow_left
 
 private const val SCROLL_TO_EDGE_DEMO_ITEM_COUNT = 100
 private const val SCROLL_TO_EDGE_DEMO_BADGE_STEP = 400
+private const val SCROLL_TO_EDGE_DEMO_BADGE_OVER_CAP = 1000
 private val SCROLL_TO_EDGE_DEMO_THRESHOLD = 300.dp
 
 /**
  * Simple playground for [ScrollToEdgeButton]: a long scrollable list with a scroll-to-top button in
  * the bottom-end corner and a scroll-to-bottom button in the bottom-start corner, so both directions
- * can be tried on one screen. "Add unread" raises the count on the bottom button's badge; "Reset"
- * hides it.
+ * can be tried on one screen. "+400" raises the count on the bottom button's badge, "1000" shows the
+ * "999+" cap and "Reset" hides it.
  */
 @Composable
 internal fun ScrollToEdgeDemoScreen(onBack: () -> Unit) {
@@ -100,9 +101,16 @@ internal fun ScrollToEdgeDemoScreen(onBack: () -> Unit) {
             CustomButton(
                 modifier = Modifier
                     .height(40.dp)
-                    .width(110.dp),
-                text = "Add unread",
+                    .width(80.dp),
+                text = "+400",
                 onClick = { unreadCount += SCROLL_TO_EDGE_DEMO_BADGE_STEP },
+            )
+            CustomButton(
+                modifier = Modifier
+                    .height(40.dp)
+                    .width(80.dp),
+                text = "1000",
+                onClick = { unreadCount = SCROLL_TO_EDGE_DEMO_BADGE_OVER_CAP },
             )
             CustomButton(
                 modifier = Modifier
