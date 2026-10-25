@@ -7,7 +7,7 @@ import core.analytics.domain.model.AnalyticsEvent
  * in [enabledHostnames], so a development server never sends data.
  *
  * @property eventName picks which name of an [AnalyticsEvent] Google Analytics receives. A name that does
- * not match [GoogleTagEventFormatter.EVENT_NAME_PATTERN] is dropped.
+ * is not 1-40 characters of lower case letters, digits and underscores starting with a letter is dropped.
  * @property globalObjectName name of the object the client adds to `window`. A product page can call
  * `window.<globalObjectName>.showConsentBanner()` from its own "cookie settings" link.
  * @property numericParameterNames parameters whose values Google Analytics expects as numbers.

@@ -10,9 +10,9 @@ internal external fun readPageHostname(): String
     var configuration = JSON.parse(configurationJson);
     var consent = configuration.consent;
     var text = consent ? consent.texts : null;
-    var CONSENT_GRANTED = 'granted';
-    var CONSENT_DENIED = 'denied';
-    var ANALYTICS_COOKIE_PREFIX = '_ga';
+    var CONSENT_GRANTED = configuration.grantedValue;
+    var CONSENT_DENIED = configuration.deniedValue;
+    var ANALYTICS_COOKIE_PREFIX = configuration.analyticsCookiePrefix;
     var rememberedConsent = null;
     var consentBanner = null;
 

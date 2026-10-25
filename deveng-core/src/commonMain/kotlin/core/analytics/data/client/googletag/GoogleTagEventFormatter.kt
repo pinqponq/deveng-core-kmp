@@ -3,7 +3,7 @@ package core.analytics.data.client.googletag
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
-object GoogleTagEventFormatter {
+internal object GoogleTagEventFormatter {
     const val MAXIMUM_EVENT_NAME_LENGTH = 40
     val EVENT_NAME_PATTERN = Regex("^[a-z][a-z0-9_]{0,${MAXIMUM_EVENT_NAME_LENGTH - 1}}$")
 

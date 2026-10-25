@@ -49,6 +49,9 @@ class GoogleTagConversionAnalyticsClient(
             mapOf(
                 "measurementId" to JsonPrimitive(options.measurementId),
                 "globalObjectName" to JsonPrimitive(options.globalObjectName),
+                "grantedValue" to JsonPrimitive(ConsentChoice.GRANTED.storageValue),
+                "deniedValue" to JsonPrimitive(ConsentChoice.DENIED.storageValue),
+                "analyticsCookiePrefix" to JsonPrimitive(ConsentChoice.ANALYTICS_COOKIE_PREFIX),
                 "consent" to if (consent == null) JsonNull else JsonObject(
                     mapOf(
                         "storageKey" to JsonPrimitive(consent.storageKey),
