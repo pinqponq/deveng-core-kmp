@@ -58,6 +58,7 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":deveng-core"))
             implementation(project(":deveng-pinqloq"))
+            implementation(project(":deveng-filepicker"))
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)

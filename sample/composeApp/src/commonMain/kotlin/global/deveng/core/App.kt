@@ -370,11 +370,13 @@ internal fun App() {
         var showAuthSessionScreen by remember { mutableStateOf(false) }
         var showBaseViewModelScreen by remember { mutableStateOf(false) }
         var showPinqloqScreen by remember { mutableStateOf(false) }
+        var showFilePickerScreen by remember { mutableStateOf(false) }
         when {
             showJwtClaimsScreen -> JwtClaimsDemoScreen(onBack = { showJwtClaimsScreen = false })
             showAuthSessionScreen -> AuthSessionDemoScreen(onBack = { showAuthSessionScreen = false })
             showBaseViewModelScreen -> BaseViewModelDemoScreen(onBack = { showBaseViewModelScreen = false })
             showPinqloqScreen -> PinqloqDemoScreen(onBack = { showPinqloqScreen = false })
+            showFilePickerScreen -> FilePickerDemoScreen(onBack = { showFilePickerScreen = false })
             showMotionScreen -> MotionDemoScreen(onBack = { showMotionScreen = false })
             showAtmosphereScreen -> AtmosphereDemoScreen(onBack = { showAtmosphereScreen = false })
             showPushNotificationsScreen -> PushNotificationsDemoScreen(onBack = { showPushNotificationsScreen = false })
@@ -400,6 +402,7 @@ internal fun App() {
                 onOpenAuthSession = { showAuthSessionScreen = true },
                 onOpenBaseViewModel = { showBaseViewModelScreen = true },
                 onOpenPinqloq = { showPinqloqScreen = true },
+                onOpenFilePicker = { showFilePickerScreen = true },
             )
         }
     }
@@ -671,6 +674,7 @@ private fun ThemingDemo(
     onOpenAuthSession: () -> Unit = {},
     onOpenBaseViewModel: () -> Unit = {},
     onOpenPinqloq: () -> Unit = {},
+    onOpenFilePicker: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1121,6 +1125,12 @@ private fun ThemingDemo(
                             text = "Open Pinqloq Client Log Demo",
                             containerColor = Color(0xFF6A1B9A),
                             onClick = onOpenPinqloq
+                        )
+
+                        CustomButton(
+                            text = "Open File Picker Demo",
+                            containerColor = Color(0xFF1565C0),
+                            onClick = onOpenFilePicker
                         )
 
                         RatingRow(

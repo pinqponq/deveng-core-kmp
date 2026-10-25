@@ -1,0 +1,148 @@
+package com.deveng.calf.picker.platform
+
+import androidx.compose.ui.awt.ComposeWindow
+import com.deveng.calf.picker.FilePickerFileType
+import com.deveng.calf.picker.FilePickerSelectionMode
+import jodd.net.MimeTypes
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
+
+internal object PlatformFilePicker {
+
+    internal var native: NativeDialogs = JniNativeDialogs
+
+    fun warmup() {
+        native.init()
+    }
+
+    /**
+     * Create a native file picker dialog handle.
+     * The handle stores all configuration (title, filters, selection mode)
+     * so that [showFilePicker] only needs to display it.
+     *
+     * Must be paired with [destroyDialog] when no longer needed.
+     */
+    fun createFilePickerHandle(
+        initialDirectory: String?,
+        type: FilePickerFileType,
+        selectionMode: FilePickerSelectionMode,
+        title: String?,
+        parentWindow: ComposeWindow? = null,
+    ): Long {
+        val extensions = resolveExtensions(type)
+
+        return native.createFileDialog(
+            title = title,
+            initialDirectory = initialDirectory,
+            extensions = extensions?.toTypedArray(),
+            multiple = selectionMode is FilePickerSelectionMode.Multiple,
+            parentWindow = parentWindow?.windowHandle ?: 0L,
+        )
+    }
+
+    /**
+     * Create a native directory picker dialog handle.
+     * Must be paired with [destroyDialog] when no longer needed.
+     */
+    fun createDirectoryPickerHandle(
+        initialDirectory: String?,
+        title: String?,
+        parentWindow: ComposeWindow? = null,
+    ): Long {
+        return native.createDirectoryDialog(
+            title = title,
+            initialDirectory = initialDirectory,
+            parentWindow = parentWindow?.windowHandle ?: 0L,
+        )
+    }
+
+    /**
+     * Create a native save-file dialog handle.
+     * Must be paired with [destroyDialog] when no longer needed.
+     */
+    fun createSaveDialogHandle(
+        initialDirectory: String?,
+        baseName: String,
+        extension: String,
+        title: String? = null,
+        parentWindow: ComposeWindow? = null,
+    ): Long {
+        return native.createSaveDialog(
+            title = title,
+            initialDirectory = initialDirectory,
+            defaultName = "$baseName.$extension",
+            extension = extension,
+            parentWindow = parentWindow?.windowHandle ?: 0L,
+        )
+    }
+
+    /** Show a previously created file picker dialog. */
+    suspend fun showFilePicker(handle: Long): List<File> {
+        val paths = withContext(Dispatchers.IO) {
+            native.showFileDialog(handle)
+        }
+        return paths.map { File(it) }
+    }
+
+    /** Show a previously created directory picker dialog. */
+    suspend fun showDirectoryPicker(handle: Long): File? {
+        val path = withContext(Dispatchers.IO) {
+            native.showDirectoryDialog(handle)
+        }
+        return path?.let { File(it) }
+    }
+
+    /** Show a previously created save dialog and write bytes to the selected file. */
+    suspend fun showSaveDialog(handle: Long, bytes: ByteArray?): File? {
+        return withContext(Dispatchers.IO) {
+            val path = native.showSaveDialog(handle) ?: return@withContext null
+
+            val file = File(path)
+            if (bytes != null) {
+                file.writeBytes(bytes)
+            } else {
+                file.createNewFile()
+            }
+            file
+        }
+    }
+
+    /** Show a previously created save dialog and copy a source file to the selected location. */
+    suspend fun showSaveDialogWithFile(handle: Long, sourceFile: File): File? {
+        return withContext(Dispatchers.IO) {
+            val path = native.showSaveDialog(handle) ?: return@withContext null
+
+            val destFile = File(path)
+            sourceFile.copyTo(destFile, overwrite = true)
+            destFile
+        }
+    }
+
+    /** Free the native memory for a dialog handle. */
+    fun destroyDialog(handle: Long) {
+        native.destroyDialog(handle)
+    }
+}
+
+/**
+ * Resolves [FilePickerFileType] to a list of file extensions for the native dialog filter.
+ * Returns null when no filter should be applied (All, Folder).
+ */
+internal fun resolveExtensions(type: FilePickerFileType): List<String>? {
+    return when (type) {
+        is FilePickerFileType.All,
+        is FilePickerFileType.Folder -> null
+
+        is FilePickerFileType.Extension -> type.extensions
+
+        else -> {
+            type.value
+                .flatMap { mimeType ->
+                    MimeTypes.findExtensionsByMimeTypes(mimeType, mimeType.contains('*')).toList()
+                }
+                .distinct()
+                .ifEmpty { null }
+        }
+    }
+}
