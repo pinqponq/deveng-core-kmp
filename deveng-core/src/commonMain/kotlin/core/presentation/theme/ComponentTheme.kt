@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.alexzhirkevich.qrose.options.QrBallShape
@@ -88,7 +89,8 @@ data class IconButtonTheme(
 
 /**
  * Theme for ScrollToEdgeButton: the default scroll distance before the button appears and the icon
- * size. The button container (size, background, tint, elevation, shape) comes from [IconButtonTheme].
+ * size, and the unread count badge. The button container (size, background, tint, elevation, shape)
+ * comes from [IconButtonTheme].
  */
 data class ScrollToEdgeButtonTheme(
     val buttonSize: Dp = 48.dp,
@@ -97,7 +99,11 @@ data class ScrollToEdgeButtonTheme(
     val backgroundColor: Color = CoreCustomBlackColor,
     val iconTint: Color = CoreCustomGrayHintColor,
     val shadowElevation: Dp = 0.dp,
-    val shape: Shape = CircleShape
+    val shape: Shape = CircleShape,
+    val badgeBackgroundColor: Color = CoreErrorColor,
+    val badgeTextColor: Color = Color.White,
+    val badgeMinSize: Dp = 20.dp,
+    val badgeTextSize: TextUnit = 11.sp,
 )
 
 /**

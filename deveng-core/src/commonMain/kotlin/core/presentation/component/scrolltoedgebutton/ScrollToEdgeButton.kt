@@ -5,11 +5,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
@@ -51,6 +53,8 @@ private const val SCROLL_EDGE_SLIDE_FRACTION = 2
  * @param iconTint optional icon tint override; falls back to the icon button theme.
  * @param buttonSize optional button size override; falls back to the icon button theme.
  * @param shadowElevation optional shadow elevation override; falls back to the icon button theme.
+ * @param unreadCount number shown in a badge on the button, for example the messages that arrived
+ * while the user scrolled away. The badge is hidden when it is 0 or less and reads "999+" above 999.
  */
 @Composable
 fun ScrollToEdgeButton(
@@ -66,6 +70,7 @@ fun ScrollToEdgeButton(
     iconTint: Color? = null,
     buttonSize: Dp? = null,
     shadowElevation: Dp? = null,
+    unreadCount: Int = 0,
 ) {
     val componentTheme = LocalComponentTheme.current
     val scrollToEdgeButtonTheme = componentTheme.scrollToEdgeButton
@@ -93,26 +98,34 @@ fun ScrollToEdgeButton(
         enter = fadeIn() + slideInVertically { fullHeight -> fullHeight / SCROLL_EDGE_SLIDE_FRACTION },
         exit = fadeOut() + slideOutVertically { fullHeight -> fullHeight / SCROLL_EDGE_SLIDE_FRACTION },
     ) {
-        CustomIconButton(
-            buttonSize = finalButtonSize,
-            backgroundColor = finalBackgroundColor,
-            shadowElevation = finalShadowElevation,
-            icon = finalIcon,
-            iconDescription = finalContentDescription,
-            iconTint = finalIconTint,
-            iconModifier = Modifier
-                .size(size = finalIconSize),
-            onClick = onScrollClick ?: {
-                coroutineScope.launch {
-                    val targetIndex = when (target) {
-                        ScrollTarget.Top -> 0
-                        ScrollTarget.Bottom -> (listState.layoutInfo.totalItemsCount - 1).coerceAtLeast(0)
+        Box {
+            CustomIconButton(
+                buttonSize = finalButtonSize,
+                backgroundColor = finalBackgroundColor,
+                shadowElevation = finalShadowElevation,
+                icon = finalIcon,
+                iconDescription = finalContentDescription,
+                iconTint = finalIconTint,
+                iconModifier = Modifier
+                    .size(size = finalIconSize),
+                onClick = onScrollClick ?: {
+                    coroutineScope.launch {
+                        val targetIndex = when (target) {
+                            ScrollTarget.Top -> 0
+                            ScrollTarget.Bottom -> (listState.layoutInfo.totalItemsCount - 1).coerceAtLeast(0)
+                        }
+                        listState.animateScrollToItem(index = targetIndex)
                     }
-                    listState.animateScrollToItem(index = targetIndex)
-                }
-                Unit
-            },
-        )
+                    Unit
+                },
+            )
+            if (unreadCount > 0) {
+                ScrollToEdgeBadge(
+                    count = unreadCount,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                )
+            }
+        }
     }
 }
 

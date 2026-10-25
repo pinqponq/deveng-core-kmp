@@ -216,7 +216,7 @@ CustomButton(
 - **Navigation:** `NavigationMenu` (horizontal, expanded, collapsed, bottom bar, side bar; see [NavigationMenu bar modes](#navigationmenu-bar-modes))
 - **Feedback:** `RatingRow`, `ProgressIndicatorBars`, `JsonViewer`, `CustomQrCodeView` (see [CustomQrCodeView](#customqrcodeview))
 - **Swipe stack:** `SwipeCards`, `SwipeCardsState`, `rememberSwipeCardsState`, `SwipeCardsScope`; optional left/right/revert icon buttons; use `pendingRevertKey` when the list updates so the revert button stays visible (see [SwipeCards](#swipecards))
-- **Scrolling:** `PaginatedListView`, `ScrollbarWithScrollState`, `ScrollbarWithLazyListState`
+- **Scrolling:** `PaginatedListView`, `ScrollbarWithScrollState`, `ScrollbarWithLazyListState`, `ScrollToEdgeButton` (optional `unreadCount` badge: hidden at 0, shows `999+` above 999; badge colors and size in `scrollToEdgeButton` theme; demo: "Scroll To Edge" in the sample app)
 
 ### Complete UI Example
 
@@ -354,7 +354,7 @@ Package `core.presentation.motion` (plus `core.presentation.haptics` and `core.p
 
 | Need | Use |
 |------|-----|
-| Shared durations, easings, springs | `MotionTokens` (`DURATION_SHORT_MILLIS` / `MEDIUM` / `LONG`, `StandardEasing`, `EmphasizedDecelerateEasing`, `defaultSpring()`, `bouncySpring()`, `pressSpring()`, `tweenOrSnap(isReduceMotionEnabled)`) |
+| Shared durations, easings, springs | `MotionTokens` (durations `DURATION_MICRO_MILLIS` 50 / `QUICK` 100 / `SHORT` 150 / `REGULAR` 200 / `MEDIUM` 300 / `LONG` 500, `StandardEasing`, `AccelerateDecelerateEasing`, `DecelerateEasing`, `DistanceScaledEndingEasing`, `EmphasizedDecelerateEasing`, `distanceScaledDurationMillis(remainingFraction)`, `defaultSpring()`, `bouncySpring()`, `pressSpring()`, `tweenOrSnap(isReduceMotionEnabled)`) |
 | Scale down slightly while pressed | `Modifier.pressScale(interactionSource)`; pass the same `interactionSource` to `clickable` |
 | Loading placeholder | `ShimmerBox(modifier)` or `Modifier.shimmer()`; colors and corner radius from `ComponentTheme.shimmer` (`ShimmerTheme`) |
 | Screen transitions | `NavTransitions.enter` / `exit` / `popEnter` / `popExit(isReduceMotionEnabled)` for NavHost or `AnimatedContent` |
@@ -366,7 +366,7 @@ Package `core.presentation.motion` (plus `core.presentation.haptics` and `core.p
 | Haptic ticks of three strengths | `rememberHapticTicker()` returns a ticker with `light()` (dropped when faster than `minLightIntervalMillis`), `medium()`, `strong()` |
 | Swipe a row sideways to reply | `rememberSwipeToReplyState()` + `Modifier.swipeToReply(state, onTrigger, direction = SwipeToReplyDirection.StartToEnd)`. The row follows the finger up to 64 dp (the trigger distance), then gets harder to pull and stops at 96 dp. The swipe starts only when the move is mostly sideways (sideways distance divided by 3 is larger than the vertical distance), so a list around the row still scrolls. `AppHaptics.tap()` plays when the row crosses the trigger distance, `onTrigger` runs when it is released past it, and the row returns to its place in 200 ms. Read `state.triggerProgress` (0 to 1) to grow a reply icon |
 
-Everything that animates respects `LocalReduceMotion`: `pressScale` stays at full size, `shimmer` shows the static base color, `NavTransitions` return no transition, `pop()` does nothing, `FlipCard` swaps faces at once, `CountUpText` shows the final number at once and a released `swipeToReply` row jumps back to its place. Defaults of the pop, flip, count-up and swipe to reply are in `MotionDefaults`.
+Everything that animates respects `LocalReduceMotion`: `pressScale` stays at full size, `shimmer` shows the static base color, `NavTransitions` return no transition, `pop()` does nothing, `FlipCard` swaps faces at once, `CountUpText` shows the final number at once and a released `swipeToReply` row jumps back to its place. Defaults of the pop, flip, count-up and swipe to reply are in `MotionDefaults`. `distanceScaledDurationMillis` gives a gesture ending that follows the distance left: `max(maxMillis × remainingFraction, minMillis)`, with the snap-back (320 / 120 ms) and finish (200 / 50 ms) values as defaults; pair it with `DistanceScaledEndingEasing`. The sample app's "Motion Demo" shows the 50 to 300 ms durations and the new easings.
 
 ```kotlin
 val isReduceMotionEnabled = LocalReduceMotion.current

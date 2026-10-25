@@ -5,6 +5,7 @@ import androidx.compose.animation.core.TweenSpec
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class MotionTokensTest {
 
@@ -34,5 +35,71 @@ class MotionTokensTest {
 
         assertEquals(MotionTokens.DURATION_MEDIUM_MILLIS, tweenSpec.durationMillis)
         assertEquals(MotionTokens.StandardEasing, tweenSpec.easing)
+    }
+
+    @Test
+    fun durations_followTheStudyScaleInOrder() {
+        val durations = listOf(
+            MotionTokens.DURATION_MICRO_MILLIS,
+            MotionTokens.DURATION_QUICK_MILLIS,
+            MotionTokens.DURATION_SHORT_MILLIS,
+            MotionTokens.DURATION_REGULAR_MILLIS,
+            MotionTokens.DURATION_MEDIUM_MILLIS
+        )
+
+        assertEquals(listOf(50, 100, 150, 200, 300), durations)
+    }
+
+    @Test
+    fun accelerateDecelerateEasing_atMidpoint_isHalfway() {
+        assertEquals(0.5f, MotionTokens.AccelerateDecelerateEasing.transform(0.5f), 0.001f)
+    }
+
+    @Test
+    fun decelerateEasing_atMidpoint_isPastHalfway() {
+        assertTrue(MotionTokens.DecelerateEasing.transform(0.5f) > 0.5f)
+    }
+
+    @Test
+    fun distanceScaledEndingEasing_endsFasterThanDecelerate() {
+        assertTrue(MotionTokens.DistanceScaledEndingEasing.transform(0.5f) > MotionTokens.DecelerateEasing.transform(0.5f))
+    }
+
+    @Test
+    fun distanceScaledEndingEasing_startsAtZeroAndEndsAtOne() {
+        assertEquals(0f, MotionTokens.DistanceScaledEndingEasing.transform(0f), 0.001f)
+        assertEquals(1f, MotionTokens.DistanceScaledEndingEasing.transform(1f), 0.001f)
+    }
+
+    @Test
+    fun distanceScaledDuration_forFullDistance_returnsMax() {
+        assertEquals(MotionTokens.DISTANCE_SCALED_SNAP_BACK_MAX_MILLIS, MotionTokens.distanceScaledDurationMillis(remainingFraction = 1f))
+    }
+
+    @Test
+    fun distanceScaledDuration_forHalfDistance_returnsHalfOfMax() {
+        assertEquals(160, MotionTokens.distanceScaledDurationMillis(remainingFraction = 0.5f))
+    }
+
+    @Test
+    fun distanceScaledDuration_forShortDistance_returnsMin() {
+        assertEquals(MotionTokens.DISTANCE_SCALED_SNAP_BACK_MIN_MILLIS, MotionTokens.distanceScaledDurationMillis(remainingFraction = 0.1f))
+    }
+
+    @Test
+    fun distanceScaledDuration_outsideRange_isClamped() {
+        assertEquals(MotionTokens.DISTANCE_SCALED_SNAP_BACK_MAX_MILLIS, MotionTokens.distanceScaledDurationMillis(remainingFraction = 2f))
+        assertEquals(MotionTokens.DISTANCE_SCALED_SNAP_BACK_MIN_MILLIS, MotionTokens.distanceScaledDurationMillis(remainingFraction = -1f))
+    }
+
+    @Test
+    fun distanceScaledDuration_withFinishValues_usesTheFinishScale() {
+        val millis = MotionTokens.distanceScaledDurationMillis(
+            remainingFraction = 0.5f,
+            maxMillis = MotionTokens.DISTANCE_SCALED_FINISH_MAX_MILLIS,
+            minMillis = MotionTokens.DISTANCE_SCALED_FINISH_MIN_MILLIS
+        )
+
+        assertEquals(100, millis)
     }
 }

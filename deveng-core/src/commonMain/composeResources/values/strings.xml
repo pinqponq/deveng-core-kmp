@@ -5,6 +5,7 @@
     <string name="shared_content_desc_icon_left">Geri dön ikonu</string>
     <string name="shared_content_desc_scroll_to_top">Başa dön</string>
     <string name="shared_content_desc_scroll_to_bottom">Sona git</string>
+    <string name="shared_content_desc_unread_count">%1$s okunmamış</string>
     <string name="shared_currency_text">TL</string>
     <string name="shared_understand">Anladım</string>
     <string name="shared_phone_number">Telefon Numarası</string>
