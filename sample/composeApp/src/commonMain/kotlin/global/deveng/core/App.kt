@@ -360,6 +360,7 @@ internal fun App() {
         var showQrGeneratorScreen by remember { mutableStateOf(false) }
         var showQrScannerScreen by remember { mutableStateOf(false) }
         var showScrollToEdgeScreen by remember { mutableStateOf(false) }
+        var showSwipeToReplyScreen by remember { mutableStateOf(false) }
         var showMediaViewerScreen by remember { mutableStateOf(false) }
         var showNavigationBarScreen by remember { mutableStateOf(false) }
         var showServerDrivenScreen by remember { mutableStateOf(false) }
@@ -381,6 +382,7 @@ internal fun App() {
             showAtmosphereScreen -> AtmosphereDemoScreen(onBack = { showAtmosphereScreen = false })
             showPushNotificationsScreen -> PushNotificationsDemoScreen(onBack = { showPushNotificationsScreen = false })
             showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
+            showSwipeToReplyScreen -> SwipeToReplyDemoScreen(onBack = { showSwipeToReplyScreen = false })
             showMediaViewerScreen -> MediaViewerDemoScreen(onBack = { showMediaViewerScreen = false })
             showNavigationBarScreen -> NavigationBarDemoScreen(onBack = { showNavigationBarScreen = false })
             showServerDrivenScreen -> ServerDrivenDemoScreen(onBack = { showServerDrivenScreen = false })
@@ -392,6 +394,7 @@ internal fun App() {
                 onOpenQrGenerator = { showQrGeneratorScreen = true },
                 onOpenQrScanner = { showQrScannerScreen = true },
                 onOpenScrollToEdge = { showScrollToEdgeScreen = true },
+                onOpenSwipeToReply = { showSwipeToReplyScreen = true },
                 onOpenMediaViewer = { showMediaViewerScreen = true },
                 onOpenNavigationBar = { showNavigationBarScreen = true },
                 onOpenServerDriven = { showServerDrivenScreen = true },
@@ -664,6 +667,7 @@ private fun ThemingDemo(
     onOpenQrGenerator: () -> Unit = {},
     onOpenQrScanner: () -> Unit = {},
     onOpenScrollToEdge: () -> Unit = {},
+    onOpenSwipeToReply: () -> Unit = {},
     onOpenMediaViewer: () -> Unit = {},
     onOpenNavigationBar: () -> Unit = {},
     onOpenServerDriven: () -> Unit = {},
@@ -1065,6 +1069,12 @@ private fun ThemingDemo(
                             text = "Open Scroll-to-Edge Demo",
                             containerColor = Color(0xFF00897B),
                             onClick = onOpenScrollToEdge
+                        )
+
+                        CustomButton(
+                            text = "Open Swipe-to-Reply Demo",
+                            containerColor = Color(0xFF00796B),
+                            onClick = onOpenSwipeToReply
                         )
 
                         CustomButton(
