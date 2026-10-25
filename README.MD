@@ -46,6 +46,7 @@ Replace `VERSION` with the [latest release](https://central.sonatype.com/artifac
 - [Pagination](#pagination)
 - [BaseViewModel and interceptors](#baseviewmodel-and-interceptors)
 - [Client Logs (deveng-pinqloq)](#client-logs-deveng-pinqloq)
+- [Web analytics (Google Analytics 4)](#web-analytics-google-analytics-4)
 - [Sample App](#sample-app)
 - [Building](#building)
 - [License](#license)
@@ -956,6 +957,35 @@ An empty `metadata` or `detail` is left out of the request. For another shape, i
 `log` does not throw. A failure goes to `failureListener` with a reason: `ENTRY_REJECTED` (the `enabled` check or the metadata provider threw), `DELIVERY_FAILED` (the request failed; a failed batch is dropped, not retried) or `QUEUE_OVERFLOW`. Only coroutine cancellation is rethrown.
 
 The sample app's "Pinqloq Client Log Demo" screen shows an immediate logger, a batching logger, the `enabled` check and truncation. It records requests in memory instead of sending them.
+
+---
+
+## Web analytics (Google Analytics 4)
+
+On Android and iOS the conversion analytics (`ConversionEventTracker`, `ConversionAnalyticsClient`) reach Firebase and Meta. On the web (wasmJs) `GoogleTagConversionAnalyticsClient` (`core.analytics.data.client.googletag`) is the Google Analytics 4 sink. It loads the Google tag script itself, so a page needs no script tag.
+
+```kotlin
+// wasmJsMain of the product
+val webAnalytics = GoogleTagConversionAnalyticsClient(
+    GoogleTagOptions(
+        measurementId = "G-XXXXXXXXXX",
+        enabledHostnames = setOf("app.example.com"),
+        consent = ConsentOptions(storageKey = "app.analytics.consent", privacyUrl = "privacy.html#storage"),
+        screenView = ScreenViewOptions(pathPrefix = "/app/", titlePrefix = "App · "),
+        eventName = { event -> event.firebaseName }
+    )
+)
+// Koin: single<ConversionAnalyticsClient> { webAnalytics }
+webAnalytics.trackScreenView("Home") // from the product's navigation listener
+```
+
+- **Hostnames.** The client does nothing, and loads no script, on a page whose hostname is not in `enabledHostnames`. The default is no hostname, so a development server never sends data.
+- **Consent.** Analytics storage stays denied until the visitor grants it, and `ConsentOptions` is what lets the visitor grant it. The banner texts are in English by default; pass `ConsentTexts` for another language. The banner uses the CSS classes `<cssClassPrefix>`, `__text`, `__actions`, `__button` and `__button--accept` (prefix `analytics-consent` by default), which the product styles. A declined choice removes the `_ga` cookies. With `showBanner = false` the product shows its own banner and calls `window.<globalObjectName>.grantConsent()` or `denyConsent()`; `showConsentBanner()` opens the banner again from a "cookie settings" link.
+- **Event names.** `eventName` picks which name of the `AnalyticsEvent` Google Analytics receives. A name that is not 1-40 characters of lower case letters, digits and underscores starting with a letter is dropped. The parameters in `numericParameterNames` (`value` and `tax` by default) are sent as numbers when their value is a number.
+- **Global object.** The client adds `window.devengGoogleTag`; change the name with `globalObjectName`.
+- **Desktop** keeps `NoOpConversionAnalyticsClient`.
+
+The sample app's wasm entry point (`WebAnalyticsSample.kt`) shows the wiring and sends a `page_view` and one conversion event on `localhost`.
 
 ---
 
