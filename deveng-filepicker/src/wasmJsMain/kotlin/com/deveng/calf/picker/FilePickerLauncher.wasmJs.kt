@@ -58,18 +58,15 @@ actual fun rememberFilePickerLauncher(
 
                     onchange = { event ->
                         try {
-                            // Get the selected files
                             val files = event.target
                                 ?.unsafeCast<HTMLInputElement>()
                                 ?.files
                                 ?.asList()
                                 .orEmpty()
 
-                            // Apply maxItems limit if set
                             val maxItems = (currentSelectionMode as? FilePickerSelectionMode.Multiple)?.maxItems
                             val limitedFiles = if (maxItems != null) files.take(maxItems) else files
 
-                            // Return the result
                             currentOnResult(limitedFiles.map { KmpFile(it) })
                             fileDialogVisible = false
                         } catch (_: Throwable) {

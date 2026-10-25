@@ -67,7 +67,7 @@ internal fun loadNativeLibrary() {
             }
         } catch (e: Exception) {
             Files.deleteIfExists(tempFile)
-            error("Failed to extract native file picker library to '$targetFile': ${e.message}")
+            throw IllegalStateException("Failed to extract native file picker library to '$targetFile': ${e.message}", e)
         }
     }
 
