@@ -1,0 +1,23 @@
+appId: io.deveng.core.androidApp
+---
+- launchApp:
+    clearState: true
+- scrollUntilVisible:
+    element: "Open File Picker Demo"
+- tapOn: "Open File Picker Demo"
+- assertVisible: "Nothing picked yet"
+- takeScreenshot: build/maestro/android/filepicker-01-before
+- startRecording: build/maestro/android/filepicker
+- tapOn: "Pick photos and videos"
+- extendedWaitUntil:
+    visible: "Photo picker"
+    timeout: 8000
+- takeScreenshot: build/maestro/android/filepicker-02-system-picker
+- tapOn:
+    point: "20%,35%"
+- tapOn: "Add"
+- extendedWaitUntil:
+    notVisible: "Nothing picked yet"
+    timeout: 8000
+- takeScreenshot: build/maestro/android/filepicker-03-picked
+- stopRecording
