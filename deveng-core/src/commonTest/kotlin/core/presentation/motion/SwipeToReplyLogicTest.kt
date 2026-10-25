@@ -46,18 +46,24 @@ class SwipeToReplyLogicTest {
 
     @Test
     fun swipeToReplyOffset_belowTrigger_followsTheFinger() {
-        assertEquals(40f, offsetAfter(currentOffset = 10f, dragDelta = 30f))
+        assertEquals(SMALL_OFFSET + SMALL_DRAG, offsetAfter(currentOffset = SMALL_OFFSET, dragDelta = SMALL_DRAG))
     }
 
     @Test
-    fun swipeToReplyOffset_movingBack_followsTheFingerAndStopsAtRest() {
-        assertEquals(70f, offsetAfter(currentOffset = 80f, dragDelta = -10f))
-        assertEquals(0f, offsetAfter(currentOffset = 10f, dragDelta = -30f))
+    fun swipeToReplyOffset_movingBack_followsTheFinger() {
+        assertEquals(PAST_TRIGGER_OFFSET - SMALL_DRAG, offsetAfter(currentOffset = PAST_TRIGGER_OFFSET, dragDelta = -SMALL_DRAG))
+    }
+
+    @Test
+    fun swipeToReplyOffset_movingBackPastRest_stopsAtRest() {
+        assertEquals(0f, offsetAfter(currentOffset = SMALL_OFFSET, dragDelta = -(SMALL_OFFSET + SMALL_DRAG)))
     }
 
     @Test
     fun swipeToReplyOffset_crossingTrigger_movesFreelyUpToTheTriggerAndResistsTheRest() {
-        assertEquals(TRIGGER_DISTANCE + 10f, offsetAfter(currentOffset = 60f, dragDelta = 14f))
+        val dragDelta = TRIGGER_DISTANCE - SMALL_OFFSET + SMALL_DRAG
+
+        assertEquals(TRIGGER_DISTANCE + SMALL_DRAG, offsetAfter(currentOffset = SMALL_OFFSET, dragDelta = dragDelta))
     }
 
     @Test
@@ -72,7 +78,7 @@ class SwipeToReplyLogicTest {
     @Test
     fun swipeToReplyOffset_pastMaximum_staysAtMaximum() {
         assertEquals(MAX_DISTANCE, offsetAfter(currentOffset = 95f, dragDelta = 500f))
-        assertEquals(MAX_DISTANCE, offsetAfter(currentOffset = MAX_DISTANCE, dragDelta = 10f))
+        assertEquals(MAX_DISTANCE, offsetAfter(currentOffset = MAX_DISTANCE, dragDelta = SMALL_DRAG))
     }
 
     @Test
@@ -106,6 +112,9 @@ class SwipeToReplyLogicTest {
 
     private companion object {
         const val VERTICAL_DISTANCE = 10f
+        const val SMALL_OFFSET = 10f
+        const val SMALL_DRAG = 30f
+        const val PAST_TRIGGER_OFFSET = 80f
         const val GATE_DISTANCE = 30f
         const val JUST_PAST_GATE_DISTANCE = 31f
         const val BACKWARD_DISTANCE = -40f

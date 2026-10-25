@@ -26,7 +26,7 @@ class SwipeToReplyStateTest {
         val state = createState()
 
         val hasCrossedTrigger = state.dragBy(TRIGGER_DISTANCE_PX)
-        val hasCrossedAgain = state.dragBy(10f)
+        val hasCrossedAgain = state.dragBy(SMALL_DRAG_PX)
 
         assertTrue(hasCrossedTrigger)
         assertFalse(hasCrossedAgain)
@@ -37,10 +37,10 @@ class SwipeToReplyStateTest {
     @Test
     fun dragBy_backBelowTriggerAndPastAgain_reportsSecondCrossing() {
         val state = createState()
-        state.dragBy(TRIGGER_DISTANCE_PX + 5f)
+        state.dragBy(TRIGGER_DISTANCE_PX + SMALL_DRAG_PX / 2f)
 
-        state.dragBy(-20f)
-        val hasCrossedAgain = state.dragBy(20f)
+        state.dragBy(-SMALL_DRAG_PX)
+        val hasCrossedAgain = state.dragBy(SMALL_DRAG_PX)
 
         assertTrue(hasCrossedAgain)
     }
@@ -49,7 +49,7 @@ class SwipeToReplyStateTest {
     fun offset_pastMaximum_staysAtMaximum() {
         val state = createState()
 
-        state.dragBy(1_000f)
+        state.dragBy(LARGE_DRAG_PX)
 
         assertEquals(MAX_DISTANCE_PX, state.offset)
     }
@@ -66,5 +66,7 @@ class SwipeToReplyStateTest {
     private companion object {
         const val TRIGGER_DISTANCE_PX = 64f
         const val MAX_DISTANCE_PX = 96f
+        const val SMALL_DRAG_PX = 10f
+        const val LARGE_DRAG_PX = 1_000f
     }
 }

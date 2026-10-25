@@ -253,21 +253,7 @@ class SwipeToReplyTest {
 
     @Test
     fun verticalSwipe_insideList_scrollsListWithoutTrigger() = runDesktopComposeUiTest {
-        lateinit var listState: LazyListState
-        setContentWithFakes {
-            listState = rememberLazyListState()
-            LazyColumn(state = listState, modifier = Modifier.size(LIST_SIZE_DP.dp).testTag(LIST_TAG)) {
-                items(LIST_ITEM_COUNT) {
-                    val swipeState = rememberSwipeToReplyState()
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(LIST_ITEM_HEIGHT_DP.dp)
-                            .swipeToReply(state = swipeState, onTrigger = { triggerCount++ })
-                    )
-                }
-            }
-        }
+        val listState = setSwipeableListContent()
 
         onNodeWithTag(LIST_TAG).performTouchInput { swipeUp() }
         waitForIdle()
@@ -278,21 +264,7 @@ class SwipeToReplyTest {
 
     @Test
     fun diagonalSwipe_insideList_scrollsListWithoutTrigger() = runDesktopComposeUiTest {
-        lateinit var listState: LazyListState
-        setContentWithFakes {
-            listState = rememberLazyListState()
-            LazyColumn(state = listState, modifier = Modifier.size(LIST_SIZE_DP.dp).testTag(LIST_TAG)) {
-                items(LIST_ITEM_COUNT) {
-                    val swipeState = rememberSwipeToReplyState()
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(LIST_ITEM_HEIGHT_DP.dp)
-                            .swipeToReply(state = swipeState, onTrigger = { triggerCount++ })
-                    )
-                }
-            }
-        }
+        val listState = setSwipeableListContent()
 
         onNodeWithTag(LIST_TAG).performTouchInput {
             down(center)
@@ -324,21 +296,7 @@ class SwipeToReplyTest {
 
     @Test
     fun sidewaysSwipeWithVerticalDrift_insideList_keepsListStillAndCallsOnTrigger() = runDesktopComposeUiTest {
-        lateinit var listState: LazyListState
-        setContentWithFakes {
-            listState = rememberLazyListState()
-            LazyColumn(state = listState, modifier = Modifier.size(LIST_SIZE_DP.dp).testTag(LIST_TAG)) {
-                items(LIST_ITEM_COUNT) {
-                    val swipeState = rememberSwipeToReplyState()
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(LIST_ITEM_HEIGHT_DP.dp)
-                            .swipeToReply(state = swipeState, onTrigger = { triggerCount++ })
-                    )
-                }
-            }
-        }
+        val listState = setSwipeableListContent()
 
         onNodeWithTag(LIST_TAG).performTouchInput {
             down(centerLeft + Offset(EDGE_INSET_PX, 0f))
@@ -417,6 +375,25 @@ class SwipeToReplyTest {
                     .testTag(ROW_TAG)
             )
         }
+    }
+
+    private fun ComposeUiTest.setSwipeableListContent(): LazyListState {
+        lateinit var listState: LazyListState
+        setContentWithFakes {
+            listState = rememberLazyListState()
+            LazyColumn(state = listState, modifier = Modifier.size(LIST_SIZE_DP.dp).testTag(LIST_TAG)) {
+                items(LIST_ITEM_COUNT) {
+                    val swipeState = rememberSwipeToReplyState()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(LIST_ITEM_HEIGHT_DP.dp)
+                            .swipeToReply(state = swipeState, onTrigger = { triggerCount++ })
+                    )
+                }
+            }
+        }
+        return listState
     }
 
     private fun ComposeUiTest.setContentWithFakes(

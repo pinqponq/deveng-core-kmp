@@ -142,7 +142,7 @@ fun rememberSwipeToReplyState(
 
 /**
  * Lets the user swipe the element sideways to reply, as in chat apps. The swipe starts only when
- * the finger moves towards [direction]'s end edge and mostly sideways (the sideways distance divided
+ * the finger moves the way [direction] points and mostly sideways (the sideways distance divided
  * by 3 is larger than the up or down distance), so a scrolling list around the element still
  * scrolls. [AppHaptics.tap] plays when the element crosses the trigger distance. On release past
  * the trigger distance [onTrigger] is called, and the element always returns to its place.
