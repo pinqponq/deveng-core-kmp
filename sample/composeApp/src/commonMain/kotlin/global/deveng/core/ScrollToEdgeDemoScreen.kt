@@ -4,21 +4,29 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import core.presentation.component.CustomButton
 import core.presentation.component.CustomIconButton
 import core.presentation.component.scrolltoedgebutton.ScrollTarget
 import core.presentation.component.scrolltoedgebutton.ScrollToEdgeButton
@@ -27,16 +35,19 @@ import deveng_core_kmp.sample.composeapp.generated.resources.Res
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_arrow_left
 
 private const val SCROLL_TO_EDGE_DEMO_ITEM_COUNT = 100
+private const val SCROLL_TO_EDGE_DEMO_BADGE_STEP = 400
 private val SCROLL_TO_EDGE_DEMO_THRESHOLD = 300.dp
 
 /**
  * Simple playground for [ScrollToEdgeButton]: a long scrollable list with a scroll-to-top button in
  * the bottom-end corner and a scroll-to-bottom button in the bottom-start corner, so both directions
- * can be tried on one screen.
+ * can be tried on one screen. "Add unread" raises the count on the bottom button's badge; "Reset"
+ * hides it.
  */
 @Composable
 internal fun ScrollToEdgeDemoScreen(onBack: () -> Unit) {
     val listState = rememberLazyListState()
+    var unreadCount by remember { mutableIntStateOf(0) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -74,10 +85,33 @@ internal fun ScrollToEdgeDemoScreen(onBack: () -> Unit) {
             listState = listState,
             target = ScrollTarget.Bottom,
             threshold = SCROLL_TO_EDGE_DEMO_THRESHOLD,
+            unreadCount = unreadCount,
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(all = 16.dp),
         )
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(all = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(space = 8.dp),
+        ) {
+            CustomButton(
+                modifier = Modifier
+                    .height(40.dp)
+                    .width(110.dp),
+                text = "Add unread",
+                onClick = { unreadCount += SCROLL_TO_EDGE_DEMO_BADGE_STEP },
+            )
+            CustomButton(
+                modifier = Modifier
+                    .height(40.dp)
+                    .width(80.dp),
+                text = "Reset",
+                onClick = { unreadCount = 0 },
+            )
+        }
 
         CustomIconButton(
             modifier = Modifier

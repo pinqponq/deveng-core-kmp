@@ -216,7 +216,7 @@ CustomButton(
 - **Navigation:** `NavigationMenu` (horizontal, expanded, collapsed, bottom bar, side bar; see [NavigationMenu bar modes](#navigationmenu-bar-modes))
 - **Feedback:** `RatingRow`, `ProgressIndicatorBars`, `JsonViewer`, `CustomQrCodeView` (see [CustomQrCodeView](#customqrcodeview))
 - **Swipe stack:** `SwipeCards`, `SwipeCardsState`, `rememberSwipeCardsState`, `SwipeCardsScope`; optional left/right/revert icon buttons; use `pendingRevertKey` when the list updates so the revert button stays visible (see [SwipeCards](#swipecards))
-- **Scrolling:** `PaginatedListView`, `ScrollbarWithScrollState`, `ScrollbarWithLazyListState`
+- **Scrolling:** `PaginatedListView`, `ScrollbarWithScrollState`, `ScrollbarWithLazyListState`, `ScrollToEdgeButton` (optional `unreadCount` badge: hidden at 0, shows `999+` above 999; badge colors and size in `scrollToEdgeButton` theme; demo: "Scroll To Edge" in the sample app)
 
 ### Complete UI Example
 
