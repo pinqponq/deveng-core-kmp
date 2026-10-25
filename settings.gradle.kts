@@ -47,6 +47,7 @@ include(":deveng-core")
 include(":deveng-billing")
 include(":deveng-pinqloq")
 include(":deveng-widget")
+include(":deveng-filepicker")
 
 include(":figma-sync")
 include(":figma-sync:tools:schema-cli")
