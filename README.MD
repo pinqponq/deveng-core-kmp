@@ -419,7 +419,7 @@ utils.shareText("Share this")
 val (lat, lng) = utils.getCurrentLocation() ?: (0.0 to 0.0)
 ```
 
-`PlatformConfig.operatingSystemVersion` is the operating system version the platform reports: `Build.VERSION.RELEASE` on Android (for example `15`), `UIDevice.systemVersion` on iOS (for example `18.2`) and the JVM `os.version` property on desktop. It is null on the web, and on desktop when that property is blank. The sample app shows these values in "Open Platform Config Demo" (all fields except `uuid`, so the device identifier does not appear in screenshots).
+`PlatformConfig.operatingSystemVersion` is the operating system version the platform reports: `Build.VERSION.RELEASE` on Android (for example `15`), `UIDevice.systemVersion` on iOS (for example `18.2`) and the JVM `os.version` property on desktop. It is null on the web, and on desktop when that property is blank. The sample app shows these values in "Open Platform Config" (all fields except `uuid`, so the device identifier does not appear in screenshots).
 
 **Date/time** — Format and selectable dates:
 
