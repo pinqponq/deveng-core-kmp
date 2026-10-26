@@ -170,6 +170,10 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
+private val launcherButtonModifier = Modifier
+    .width(200.dp)
+    .heightIn(min = 50.dp)
+
 @Preview
 @Composable
 internal fun App() {
@@ -1053,119 +1057,119 @@ private fun ThemingDemo(
                         SectionTitle("RatingRowComponent Examples")
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open Camera",
                             containerColor = Color(0xFF4CAF50),
                             onClick = onOpenCamera
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open QR Generator",
                             containerColor = Color(0xFF9C27B0),
                             onClick = onOpenQrGenerator
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open QR Scanner",
                             containerColor = Color(0xFF2196F3),
                             onClick = onOpenQrScanner
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open Scroll-to-Edge Demo",
                             containerColor = Color(0xFF00897B),
                             onClick = onOpenScrollToEdge
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open Swipe-to-Reply Demo",
                             containerColor = Color(0xFF00796B),
                             onClick = onOpenSwipeToReply
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open MediaViewer (Vertical) Demo",
                             containerColor = Color(0xFF7C3AED),
                             onClick = onOpenMediaViewer
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open Navigation Bar Demo",
                             containerColor = Color(0xFF0E0E0E),
                             onClick = onOpenNavigationBar
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open Server-driven UI Demo",
                             containerColor = Color(0xFF00695C),
                             onClick = onOpenServerDriven
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open Motion Demo",
                             containerColor = Color(0xFFAD1457),
                             onClick = onOpenMotion
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open Atmosphere Demo",
                             containerColor = Color(0xFF6A1B9A),
                             onClick = onOpenAtmosphere
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open Push Notifications Demo",
                             containerColor = Color(0xFF4527A0),
                             onClick = onOpenPushNotifications
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open JWT Claims Demo",
                             containerColor = Color(0xFF37474F),
                             onClick = onOpenJwtClaims
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open Platform Config Demo",
                             containerColor = Color(0xFF455A64),
                             onClick = onOpenPlatformConfig
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open Auth Session Demo",
                             containerColor = Color(0xFF00695C),
                             onClick = onOpenAuthSession
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open BaseViewModel Demo",
                             containerColor = Color(0xFF00695C),
                             onClick = onOpenBaseViewModel
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open Pinqloq Client Log Demo",
                             containerColor = Color(0xFF6A1B9A),
                             onClick = onOpenPinqloq
                         )
 
                         CustomButton(
-                            modifier = Modifier.heightIn(min = 50.dp),
+                            modifier = launcherButtonModifier,
                             text = "Open File Picker Demo",
                             containerColor = Color(0xFF1565C0),
                             onClick = onOpenFilePicker
