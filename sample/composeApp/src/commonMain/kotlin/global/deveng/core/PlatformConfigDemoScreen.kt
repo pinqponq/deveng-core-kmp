@@ -28,6 +28,7 @@ import deveng_core_kmp.sample.composeapp.generated.resources.Res
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_arrow_left
 
 private const val MISSING_VALUE_TEXT = "null"
+private val PLATFORM_CONFIG_BODY_FONT_SIZE = 14.sp
 private const val UNAVAILABLE_TEXT = "MultiPlatformUtils is not created on this platform in the sample."
 
 private data class PlatformConfigDemoRow(
@@ -41,6 +42,8 @@ internal fun PlatformConfigDemoScreen(onBack: () -> Unit) {
     val platformConfigRows = remember(multiPlatformUtils) {
         multiPlatformUtils?.getPlatformConfig()?.let(::readPlatformConfigRows).orEmpty()
     }
+    val isUnavailableTextVisible = platformConfigRows.isEmpty()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -55,8 +58,8 @@ internal fun PlatformConfigDemoScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(space = 16.dp),
         ) {
             Text(text = "getPlatformConfig()", style = CoreMediumTextStyle().copy(fontSize = 18.sp))
-            if (platformConfigRows.isEmpty()) {
-                Text(text = UNAVAILABLE_TEXT, style = CoreRegularTextStyle().copy(fontSize = 14.sp))
+            if (isUnavailableTextVisible) {
+                Text(text = UNAVAILABLE_TEXT, style = CoreRegularTextStyle().copy(fontSize = PLATFORM_CONFIG_BODY_FONT_SIZE))
             }
             platformConfigRows.forEach { row ->
                 PlatformConfigDemoRowSection(row = row)
@@ -80,8 +83,8 @@ private fun PlatformConfigDemoRowSection(row: PlatformConfigDemoRow) {
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(space = 4.dp),
     ) {
-        Text(text = row.fieldName, style = CoreMediumTextStyle().copy(fontSize = 14.sp))
-        Text(text = row.fieldValue, style = CoreRegularTextStyle().copy(fontSize = 14.sp))
+        Text(text = row.fieldName, style = CoreMediumTextStyle().copy(fontSize = PLATFORM_CONFIG_BODY_FONT_SIZE))
+        Text(text = row.fieldValue, style = CoreRegularTextStyle().copy(fontSize = PLATFORM_CONFIG_BODY_FONT_SIZE))
     }
 }
 
