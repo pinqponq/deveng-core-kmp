@@ -1,3 +1,2 @@
 flows:
   - "motion/*"
-  - "platformconfig/*"
