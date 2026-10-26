@@ -378,6 +378,7 @@ internal fun App() {
         var showBaseViewModelScreen by remember { mutableStateOf(false) }
         var showPinqloqScreen by remember { mutableStateOf(false) }
         var showFilePickerScreen by remember { mutableStateOf(false) }
+        var showComponentLayoutThemeScreen by remember { mutableStateOf(false) }
         when {
             showJwtClaimsScreen -> JwtClaimsDemoScreen(onBack = { showJwtClaimsScreen = false })
             showPlatformConfigScreen -> PlatformConfigDemoScreen(onBack = { showPlatformConfigScreen = false })
@@ -389,6 +390,7 @@ internal fun App() {
             showAtmosphereScreen -> AtmosphereDemoScreen(onBack = { showAtmosphereScreen = false })
             showPushNotificationsScreen -> PushNotificationsDemoScreen(onBack = { showPushNotificationsScreen = false })
             showScrollToEdgeScreen -> ScrollToEdgeDemoScreen(onBack = { showScrollToEdgeScreen = false })
+            showComponentLayoutThemeScreen -> ComponentLayoutThemeDemoScreen(onBack = { showComponentLayoutThemeScreen = false })
             showSwipeToReplyScreen -> SwipeToReplyDemoScreen(onBack = { showSwipeToReplyScreen = false })
             showMediaViewerScreen -> MediaViewerDemoScreen(onBack = { showMediaViewerScreen = false })
             showNavigationBarScreen -> NavigationBarDemoScreen(onBack = { showNavigationBarScreen = false })
@@ -401,6 +403,7 @@ internal fun App() {
                 onOpenQrGenerator = { showQrGeneratorScreen = true },
                 onOpenQrScanner = { showQrScannerScreen = true },
                 onOpenScrollToEdge = { showScrollToEdgeScreen = true },
+                onOpenComponentLayoutTheme = { showComponentLayoutThemeScreen = true },
                 onOpenSwipeToReply = { showSwipeToReplyScreen = true },
                 onOpenMediaViewer = { showMediaViewerScreen = true },
                 onOpenNavigationBar = { showNavigationBarScreen = true },
@@ -675,6 +678,7 @@ private fun ThemingDemo(
     onOpenQrGenerator: () -> Unit = {},
     onOpenQrScanner: () -> Unit = {},
     onOpenScrollToEdge: () -> Unit = {},
+    onOpenComponentLayoutTheme: () -> Unit = {},
     onOpenSwipeToReply: () -> Unit = {},
     onOpenMediaViewer: () -> Unit = {},
     onOpenNavigationBar: () -> Unit = {},
@@ -1082,6 +1086,13 @@ private fun ThemingDemo(
                             text = "Open Scroll-to-Edge Demo",
                             containerColor = Color(0xFF00897B),
                             onClick = onOpenScrollToEdge
+                        )
+
+                        CustomButton(
+                            modifier = launcherButtonModifier,
+                            text = "Open Component Layout Theme Demo",
+                            containerColor = Color(0xFF5D4037),
+                            onClick = onOpenComponentLayoutTheme
                         )
 
                         CustomButton(

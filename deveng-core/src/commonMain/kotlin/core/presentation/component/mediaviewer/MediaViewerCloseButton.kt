@@ -10,20 +10,19 @@ import core.presentation.theme.LocalComponentTheme
 import global.deveng.deveng_core.generated.resources.Res
 import global.deveng.deveng_core.generated.resources.shared_ic_arrow_left
 
-private val CloseIconSize = 24.dp
-private val CloseButtonSize = 44.dp
-
 @Composable
 internal fun MediaViewerCloseButton(
     closeContentDescription: String,
     onCloseClick: () -> Unit,
 ) {
+    val mediaViewerHeaderTheme = LocalComponentTheme.current.mediaViewerHeader
+
     CustomIconButton(
         icon = Res.drawable.shared_ic_arrow_left,
         iconDescription = closeContentDescription,
-        iconTint = LocalComponentTheme.current.mediaViewerHeader.closeIconTint,
-        iconModifier = Modifier.size(CloseIconSize),
-        buttonSize = CloseButtonSize,
+        iconTint = mediaViewerHeaderTheme.closeIconTint,
+        iconModifier = Modifier.size(mediaViewerHeaderTheme.closeIconSize),
+        buttonSize = mediaViewerHeaderTheme.closeButtonSize,
         backgroundColor = Color.Transparent,
         shadowElevation = 0.dp,
         onClick = onCloseClick,
