@@ -1124,7 +1124,7 @@ private fun ThemingDemo(
                         )
 
                         CustomButton(
-                            text = "Open Platform Config",
+                            text = "Platform Config",
                             containerColor = Color(0xFF455A64),
                             onClick = onOpenPlatformConfig
                         )
