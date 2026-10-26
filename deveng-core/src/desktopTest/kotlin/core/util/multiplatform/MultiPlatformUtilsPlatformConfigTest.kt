@@ -33,9 +33,17 @@ class MultiPlatformUtilsPlatformConfigTest {
         assertNull(platformConfig.operatingSystemVersion)
     }
 
+    @Test
+    fun getPlatformConfig_onDesktop_returnsDesktopPackageVersionName() {
+        val platformConfig = multiPlatformUtils.getPlatformConfig()
+
+        assertEquals(DESKTOP_PACKAGE_VERSION_NAME, platformConfig.packageVersionName)
+    }
+
     private companion object {
         const val OPERATING_SYSTEM_VERSION_PROPERTY = "os.version"
         const val OPERATING_SYSTEM_VERSION = "15.4.1"
         const val BLANK_OPERATING_SYSTEM_VERSION = "  "
+        const val DESKTOP_PACKAGE_VERSION_NAME = "0.0.0"
     }
 }
