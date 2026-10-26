@@ -1,11 +1,16 @@
 package core.presentation.component.mediaviewer
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -19,6 +24,7 @@ import core.presentation.theme.AppTheme
 import core.presentation.theme.DefaultComponentTheme
 import kotlin.math.abs
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalTestApi::class)
@@ -66,11 +72,60 @@ class MediaViewerHeaderThemeTest {
 
     @Test
     fun showHeader_withActionSpacing_separatesActionsByThemeValue() = runComposeUiTest {
+        showHeaderWithTwoActions(actionSpacing = null)
+
+        val firstActionBounds = onNodeWithText(ACTION_LABEL).getUnclippedBoundsInRoot()
+        val secondActionBounds = onNodeWithText(SECOND_ACTION_LABEL).getUnclippedBoundsInRoot()
+        assertDpEquals(CUSTOM_THEME.mediaViewerHeader.actionSpacing, secondActionBounds.left - firstActionBounds.right)
+    }
+
+    @Test
+    fun showHeader_withActionSpacingParameter_prefersParameterOverTheme() = runComposeUiTest {
+        showHeaderWithTwoActions(actionSpacing = PARAMETER_ACTION_SPACING)
+
+        val firstActionBounds = onNodeWithText(ACTION_LABEL).getUnclippedBoundsInRoot()
+        val secondActionBounds = onNodeWithText(SECOND_ACTION_LABEL).getUnclippedBoundsInRoot()
+        assertDpEquals(PARAMETER_ACTION_SPACING, secondActionBounds.left - firstActionBounds.right)
+    }
+
+    @Test
+    fun showHeader_withThemeCornerRadius_leavesPanelCornerEmpty() = runComposeUiTest {
+        showHeaderOnBackdrop(panelCornerRadius = null)
+
+        assertEquals(BACKDROP_COLOR, panelCornerPixel())
+    }
+
+    @Test
+    fun showHeader_withSquareCornerParameter_fillsPanelCorner() = runComposeUiTest {
+        showHeaderOnBackdrop(panelCornerRadius = 0.dp)
+
+        assertEquals(OPAQUE_PANEL_COLOR, panelCornerPixel())
+    }
+
+    private fun ComposeUiTest.showHeaderOnBackdrop(panelCornerRadius: Dp?) {
+        setContent {
+            AppTheme(darkTheme = false, componentTheme = ROUNDED_PANEL_THEME) {
+                Box(modifier = Modifier.background(BACKDROP_COLOR)) {
+                    MediaViewerHeader(
+                        onCloseButtonClick = {},
+                        closeContentDescription = CLOSE_DESCRIPTION,
+                        panelCornerRadius = panelCornerRadius,
+                    )
+                }
+            }
+        }
+        waitForIdle()
+    }
+
+    private fun ComposeUiTest.panelCornerPixel(): Color = onRoot().captureToImage().toPixelMap()[1, 1]
+
+    private fun ComposeUiTest.showHeaderWithTwoActions(actionSpacing: Dp?) {
         setContent {
             AppTheme(darkTheme = false, componentTheme = CUSTOM_THEME) {
                 MediaViewerHeader(
                     onCloseButtonClick = {},
                     closeContentDescription = CLOSE_DESCRIPTION,
+                    actionSpacing = actionSpacing,
                     actions = {
                         Text(text = ACTION_LABEL)
                         Text(text = SECOND_ACTION_LABEL)
@@ -78,10 +133,7 @@ class MediaViewerHeaderThemeTest {
                 )
             }
         }
-
-        val firstActionBounds = onNodeWithText(ACTION_LABEL).getUnclippedBoundsInRoot()
-        val secondActionBounds = onNodeWithText(SECOND_ACTION_LABEL).getUnclippedBoundsInRoot()
-        assertDpEquals(CUSTOM_THEME.mediaViewerHeader.actionSpacing, secondActionBounds.left - firstActionBounds.right)
+        waitForIdle()
     }
 
     private fun ComposeUiTest.showHeader(
@@ -120,6 +172,17 @@ class MediaViewerHeaderThemeTest {
         const val SECOND_ACTION_LABEL = "Save"
         val PARAMETER_OUTER_PADDING = 3.dp
         val PARAMETER_PANEL_PADDING = 5.dp
+        val PARAMETER_ACTION_SPACING = 4.dp
+        val BACKDROP_COLOR = Color(0xFF1E88E5)
+        val OPAQUE_PANEL_COLOR = Color(0xFFE53935)
+        val ROUNDED_PANEL_THEME = DefaultComponentTheme.copy(
+            mediaViewerHeader = DefaultComponentTheme.mediaViewerHeader.copy(
+                panelBackgroundColor = OPAQUE_PANEL_COLOR,
+                outerHorizontalPadding = 0.dp,
+                outerVerticalPadding = 0.dp,
+                panelCornerRadius = 20.dp
+            )
+        )
         val CUSTOM_THEME = DefaultComponentTheme.copy(
             mediaViewerHeader = DefaultComponentTheme.mediaViewerHeader.copy(
                 outerHorizontalPadding = 14.dp,

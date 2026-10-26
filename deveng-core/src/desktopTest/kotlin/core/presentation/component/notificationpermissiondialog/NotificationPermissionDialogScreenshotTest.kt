@@ -92,7 +92,9 @@ class NotificationPermissionDialogScreenshotTest {
                 contentSpacing = 14.dp,
                 bodyHorizontalPadding = 4.dp,
                 buttonVerticalPadding = 10.dp,
-                primaryButtonShadowElevation = 0.dp,
+                primaryButtonShadowElevation = 16.dp,
+                primaryButtonSpotShadowAlpha = 1f,
+                primaryButtonAmbientShadowAlpha = 0.8f,
                 secondaryButtonBorderWidth = 3.dp
             )
         )
