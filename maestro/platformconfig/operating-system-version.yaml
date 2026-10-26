@@ -1,0 +1,18 @@
+appId: ${APP_ID}
+env:
+  APP_ID: io.deveng.core.androidApp
+  PLATFORM: android
+---
+- launchApp:
+    clearState: true
+- scrollUntilVisible:
+    element: "Open Platform Config Demo"
+- startRecording: build/maestro/${PLATFORM}/platform-config
+- tapOn: "Open Platform Config Demo"
+- assertVisible: "getPlatformConfig()"
+- assertVisible: "operatingSystemVersion"
+- assertVisible: ${EXPECTED_OPERATING_SYSTEM_VERSION}
+- takeScreenshot: build/maestro/${PLATFORM}/platform-config-01-values
+- tapOn: "Back"
+- assertVisible: "Open Platform Config Demo"
+- stopRecording

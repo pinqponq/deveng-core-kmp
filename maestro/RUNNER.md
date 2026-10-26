@@ -6,3 +6,5 @@ The sample app (`sample/composeApp`) is the device target for deveng-core-kmp. I
 - Emulator: AVD `Medium_Phone`, cold boot is fine. Install with `adb install -r <apk>`.
 - Run a flow: `maestro --device <id> test maestro/motion/reveal.yaml --test-output-dir build/maestro/android`.
 - The reveal flow clears the app state, opens the motion demo from the main list and drives pop, flip and count-up.
+- iOS: the simulator app is built with `xcodebuild -project sample/iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator`; its bundle id is `io.pinqponq.chat.iosApp`. Pass it to a flow that reads `APP_ID` with `-e APP_ID=io.pinqponq.chat.iosApp -e PLATFORM=ios`.
+- `platformconfig/operating-system-version.yaml` needs `-e EXPECTED_OPERATING_SYSTEM_VERSION=<version>`: on Android the output of `adb shell getprop ro.build.version.release`, on iOS the simulator runtime version (for example `26.0`).
