@@ -81,6 +81,7 @@ actual class MultiPlatformUtils(private val context: Context) {
             uuid = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID),
             deviceName = "${Build.MANUFACTURER} - ${Build.VERSION.SDK_INT} - ${Build.MODEL}",
             packageVersionName = "$versionName - $versionCode",
+            operatingSystemVersion = Build.VERSION.RELEASE,
         )
     }
 

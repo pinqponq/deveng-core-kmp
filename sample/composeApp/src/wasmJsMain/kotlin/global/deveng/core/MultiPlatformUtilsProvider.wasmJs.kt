@@ -1,5 +1,7 @@
 package global.deveng.core
 
+import androidx.compose.runtime.Composable
 import core.util.multiplatform.MultiPlatformUtils
 
-actual fun createMultiPlatformUtils(context: Any?): MultiPlatformUtils? = null
+@Composable
+actual fun rememberSampleMultiPlatformUtils(): MultiPlatformUtils? = null
