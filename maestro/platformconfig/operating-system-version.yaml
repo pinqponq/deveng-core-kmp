@@ -5,9 +5,10 @@ env:
 ---
 - launchApp:
     clearState: true
+- startRecording: build/maestro/${PLATFORM}/platform-config
 - scrollUntilVisible:
     element: "Platform Config"
-- startRecording: build/maestro/${PLATFORM}/platform-config
+- takeScreenshot: build/maestro/${PLATFORM}/platform-config-00-launcher
 - tapOn: "Platform Config"
 - assertVisible: "getPlatformConfig()"
 - assertVisible: "operatingSystemVersion"
