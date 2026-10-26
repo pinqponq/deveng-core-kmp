@@ -48,6 +48,7 @@ actual class MultiPlatformUtils(
             uuid = getDeviceId() ?: "unknown_desktop_uid",
             deviceName = getDeviceName(),
             packageVersionName = "0.0.0",
+            operatingSystemVersion = readOperatingSystemVersion(),
         )
     }
 
@@ -88,6 +89,10 @@ actual class MultiPlatformUtils(
         } catch (e: Exception) {
             "Unknown Desktop"
         }
+    }
+
+    private fun readOperatingSystemVersion(): String? {
+        return System.getProperty("os.version")?.takeIf { version -> version.isNotBlank() }
     }
 }
 

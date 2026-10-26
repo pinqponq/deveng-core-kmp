@@ -368,12 +368,14 @@ internal fun App() {
         var showAtmosphereScreen by remember { mutableStateOf(false) }
         var showPushNotificationsScreen by remember { mutableStateOf(false) }
         var showJwtClaimsScreen by remember { mutableStateOf(false) }
+        var showPlatformConfigScreen by remember { mutableStateOf(false) }
         var showAuthSessionScreen by remember { mutableStateOf(false) }
         var showBaseViewModelScreen by remember { mutableStateOf(false) }
         var showPinqloqScreen by remember { mutableStateOf(false) }
         var showFilePickerScreen by remember { mutableStateOf(false) }
         when {
             showJwtClaimsScreen -> JwtClaimsDemoScreen(onBack = { showJwtClaimsScreen = false })
+            showPlatformConfigScreen -> PlatformConfigDemoScreen(onBack = { showPlatformConfigScreen = false })
             showAuthSessionScreen -> AuthSessionDemoScreen(onBack = { showAuthSessionScreen = false })
             showBaseViewModelScreen -> BaseViewModelDemoScreen(onBack = { showBaseViewModelScreen = false })
             showPinqloqScreen -> PinqloqDemoScreen(onBack = { showPinqloqScreen = false })
@@ -402,6 +404,7 @@ internal fun App() {
                 onOpenAtmosphere = { showAtmosphereScreen = true },
                 onOpenPushNotifications = { showPushNotificationsScreen = true },
                 onOpenJwtClaims = { showJwtClaimsScreen = true },
+                onOpenPlatformConfig = { showPlatformConfigScreen = true },
                 onOpenAuthSession = { showAuthSessionScreen = true },
                 onOpenBaseViewModel = { showBaseViewModelScreen = true },
                 onOpenPinqloq = { showPinqloqScreen = true },
@@ -675,6 +678,7 @@ private fun ThemingDemo(
     onOpenAtmosphere: () -> Unit = {},
     onOpenPushNotifications: () -> Unit = {},
     onOpenJwtClaims: () -> Unit = {},
+    onOpenPlatformConfig: () -> Unit = {},
     onOpenAuthSession: () -> Unit = {},
     onOpenBaseViewModel: () -> Unit = {},
     onOpenPinqloq: () -> Unit = {},
@@ -1117,6 +1121,12 @@ private fun ThemingDemo(
                             text = "Open JWT Claims Demo",
                             containerColor = Color(0xFF37474F),
                             onClick = onOpenJwtClaims
+                        )
+
+                        CustomButton(
+                            text = "Open Platform Config Demo",
+                            containerColor = Color(0xFF455A64),
+                            onClick = onOpenPlatformConfig
                         )
 
                         CustomButton(

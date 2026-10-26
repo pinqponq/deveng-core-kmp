@@ -66,7 +66,7 @@ AppTheme {
 
 ```kotlin
 val utils = MultiPlatformUtils(context) // Android; use no-arg constructor on iOS/Desktop/Wasm
-val config = utils.getPlatformConfig() // platform, language, uuid, deviceName, packageVersionName
+val config = utils.getPlatformConfig() // platform, language, uuid, deviceName, packageVersionName, operatingSystemVersion
 utils.copyToClipBoard("text")
 utils.openUrl("https://example.com")
 ```
@@ -411,13 +411,15 @@ component of a type the library does not know, which is skipped and reported und
 
 ```kotlin
 val utils = MultiPlatformUtils(context)
-val config = utils.getPlatformConfig() // platform, systemLanguage, uuid, deviceName, packageVersionName
+val config = utils.getPlatformConfig() // platform, systemLanguage, uuid, deviceName, packageVersionName, operatingSystemVersion
 utils.copyToClipBoard("Copied text")
 utils.openUrl("https://example.com")
 utils.openMapsWithLocation(41.0082, 28.9784)
 utils.shareText("Share this")
 val (lat, lng) = utils.getCurrentLocation() ?: (0.0 to 0.0)
 ```
+
+`PlatformConfig.operatingSystemVersion` is the operating system version the platform reports: `Build.VERSION.RELEASE` on Android (for example `15`), `UIDevice.systemVersion` on iOS (for example `18.2`) and the JVM `os.version` property on desktop. It is null on the web, and on desktop when that property is blank. The sample app shows every `PlatformConfig` field in "Open Platform Config Demo".
 
 **Date/time** — Format and selectable dates:
 

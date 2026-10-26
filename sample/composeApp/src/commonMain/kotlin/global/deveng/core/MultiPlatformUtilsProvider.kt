@@ -1,9 +1,11 @@
 package global.deveng.core
 
+import androidx.compose.runtime.Composable
 import core.util.multiplatform.MultiPlatformUtils
 
 /**
- * Creates platform-specific [MultiPlatformUtils] instance.
- * @param context Optional context (e.g. Android Context); ignored on other platforms.
+ * Creates the platform-specific [MultiPlatformUtils] instance for the current composition.
+ * Returns null on platforms where the sample does not create one.
  */
-expect fun createMultiPlatformUtils(context: Any?): MultiPlatformUtils?
+@Composable
+expect fun rememberSampleMultiPlatformUtils(): MultiPlatformUtils?

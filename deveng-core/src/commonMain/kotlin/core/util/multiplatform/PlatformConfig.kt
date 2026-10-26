@@ -5,5 +5,6 @@ data class PlatformConfig(
     val systemLanguage: String,
     val uuid: String,
     val deviceName: String,
-    val packageVersionName: String
+    val packageVersionName: String,
+    val operatingSystemVersion: String? = null,
 )

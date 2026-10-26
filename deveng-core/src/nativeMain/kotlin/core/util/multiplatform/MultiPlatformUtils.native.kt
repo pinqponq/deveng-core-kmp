@@ -78,7 +78,8 @@ actual class MultiPlatformUtils {
             systemLanguage = languageCode.substringBefore("-"),
             uuid = UIDevice.currentDevice.identifierForVendor?.UUIDString ?: "unknown_ios_uid",
             deviceName = "${UIDevice.currentDevice.model} - ${UIDevice.currentDevice.systemVersion} - ${readHardwareModelIdentifier()}",
-            packageVersionName = readPackageVersionName()
+            packageVersionName = readPackageVersionName(),
+            operatingSystemVersion = UIDevice.currentDevice.systemVersion,
         )
     }
 
