@@ -16,24 +16,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.unit.dp
 import core.presentation.component.Slot
 import core.presentation.theme.LocalComponentTheme
 import core.util.debouncedCombinedClickable
 
-private const val PRIMARY_BUTTON_SPOT_SHADOW_ALPHA = 0.35f
-private const val PRIMARY_BUTTON_AMBIENT_SHADOW_ALPHA = 0.2f
-private val CardHorizontalPadding = 25.dp
-private val CardVerticalPadding = 33.dp
-private val ContentSpacing = 8.dp
-private val BodyHorizontalPadding = 16.dp
-private val PrimaryButtonShadowElevation = 8.dp
-private val ButtonVerticalPadding = 16.dp
-private val SecondaryButtonBorderWidth = 1.dp
-
 /**
  * Promotional card with an optional hero, a title, a body text, a filled primary button and an optional
- * outlined secondary button.
+ * outlined secondary button. Colors, text styles, paddings and the button shadow come from
+ * [core.presentation.theme.PromoTwoButtonCardTheme].
  *
  * @param title Title displayed under the hero.
  * @param body Body text displayed under the title.
@@ -65,39 +55,39 @@ fun PromoTwoButtonCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(horizontal = CardHorizontalPadding, vertical = CardVerticalPadding)
+                .padding(horizontal = promoTheme.horizontalPadding, vertical = promoTheme.verticalPadding)
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(ContentSpacing)
+            verticalArrangement = Arrangement.spacedBy(promoTheme.contentSpacing)
         ) {
             heroContent?.invoke()
 
             Text(
-                modifier = Modifier.padding(top = ContentSpacing),
+                modifier = Modifier.padding(top = promoTheme.contentSpacing),
                 text = title,
                 style = promoTheme.titleTextStyle
             )
 
             Text(
-                modifier = Modifier.padding(horizontal = BodyHorizontalPadding),
+                modifier = Modifier.padding(horizontal = promoTheme.bodyHorizontalPadding),
                 text = body,
                 style = promoTheme.bodyTextStyle
             )
 
             Box(
                 modifier = Modifier
-                    .padding(top = ContentSpacing)
+                    .padding(top = promoTheme.contentSpacing)
                     .fillMaxWidth()
                     .shadow(
-                        elevation = PrimaryButtonShadowElevation,
+                        elevation = promoTheme.primaryButtonShadowElevation,
                         shape = promoTheme.buttonShape,
-                        spotColor = promoTheme.primaryButtonColor.copy(alpha = PRIMARY_BUTTON_SPOT_SHADOW_ALPHA),
-                        ambientColor = promoTheme.primaryButtonColor.copy(alpha = PRIMARY_BUTTON_AMBIENT_SHADOW_ALPHA)
+                        spotColor = promoTheme.primaryButtonColor.copy(alpha = promoTheme.primaryButtonSpotShadowAlpha),
+                        ambientColor = promoTheme.primaryButtonColor.copy(alpha = promoTheme.primaryButtonAmbientShadowAlpha)
                     )
                     .clip(promoTheme.buttonShape)
                     .background(color = promoTheme.primaryButtonColor)
                     .debouncedCombinedClickable(onClick = onPrimaryClick)
-                    .padding(vertical = ButtonVerticalPadding),
+                    .padding(vertical = promoTheme.buttonVerticalPadding),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -113,12 +103,12 @@ fun PromoTwoButtonCard(
                         .debouncedCombinedClickable(onClick = onSecondaryClick),
                     shape = promoTheme.buttonShape,
                     color = promoTheme.secondaryButtonColor,
-                    border = BorderStroke(SecondaryButtonBorderWidth, promoTheme.secondaryButtonBorderColor)
+                    border = BorderStroke(promoTheme.secondaryButtonBorderWidth, promoTheme.secondaryButtonBorderColor)
                 ) {
                     Text(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = ButtonVerticalPadding),
+                            .padding(vertical = promoTheme.buttonVerticalPadding),
                         text = secondaryButtonLabel,
                         style = promoTheme.secondaryButtonTextStyle
                     )

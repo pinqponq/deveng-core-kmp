@@ -217,6 +217,23 @@ CustomButton(
 - **Feedback:** `RatingRow`, `ProgressIndicatorBars`, `JsonViewer`, `CustomQrCodeView` (see [CustomQrCodeView](#customqrcodeview))
 - **Swipe stack:** `SwipeCards`, `SwipeCardsState`, `rememberSwipeCardsState`, `SwipeCardsScope`; optional left/right/revert icon buttons; use `pendingRevertKey` when the list updates so the revert button stays visible (see [SwipeCards](#swipecards))
 - **Scrolling:** `PaginatedListView`, `ScrollbarWithScrollState`, `ScrollbarWithLazyListState`, `ScrollToEdgeButton` (optional `unreadCount` badge: hidden at 0, shows `999+` above 999; badge colors and size in `scrollToEdgeButton` theme; demo: "Scroll To Edge" in the sample app)
+- **Cards and content dialogs:** `PromoTwoButtonCard`, `NotificationPermissionDialog`, `ScrollableContentDialog`, `EmailDisplayField`, `MediaViewerHeader` (see [Layout values in component themes](#layout-values-in-component-themes))
+
+### Layout values in component themes
+
+`PromoTwoButtonCard`, `ScrollableContentDialog`, `MediaViewerHeader`, `NotificationPermissionDialog` and `EmailDisplayField` read their paddings, spacings, icon and button sizes, border width and button shadow from their theme in `ComponentTheme`, next to their colors and text styles. The default values keep the current look. Change them once on the app's theme instead of copying a component:
+
+```kotlin
+val theme = ComponentTheme(
+    promoTwoButtonCard = PromoTwoButtonCardTheme(horizontalPadding = 16.dp, verticalPadding = 20.dp, buttonVerticalPadding = 12.dp),
+    scrollableContentDialog = ScrollableContentDialogTheme(headerTopPadding = 12.dp, contentHorizontalPadding = 24.dp),
+    mediaViewerHeader = MediaViewerHeaderTheme(closeButtonSize = 40.dp, closeIconSize = 20.dp),
+    notificationPermissionDialog = NotificationPermissionDialogTheme(horizontalPadding = 32.dp),
+    emailDisplayField = EmailDisplayFieldTheme(editTextEndPadding = 12.dp)
+)
+```
+
+`MediaViewerHeader` still takes its paddings, corner radius and action spacing as parameters; a parameter that is set wins over the theme value. Every text these components show is a parameter, so a product can pass its own copy. Demo: "Component Layout Theme" in the sample app.
 
 ### Complete UI Example
 

@@ -51,20 +51,12 @@ import global.deveng.deveng_core.generated.resources.shared_read_and_approve_tex
 import org.jetbrains.compose.resources.stringResource
 
 private val EdgeFadeAlphaStops = listOf(0f, 0.3f, 0.7f, 1f)
-private val HeaderTopPadding = 25.dp
-private val HeaderBottomPadding = 15.dp
-private val BackIconHeight = 14.dp
-private val BackIconWidth = 18.dp
-private val TitleHorizontalPadding = 45.dp
-private val ContentHorizontalPadding = 20.dp
-private val ContentBottomPadding = 13.dp
-private val ApprovalRowTopPadding = 15.dp
-private val ApprovalRowBottomPadding = 41.dp
 private const val HEADER_Z_INDEX = 2f
 
 /**
  * Full-height dialog that shows markdown content under a fixed header, fading the content out at the
- * scroll edges, with an optional "read and approve" checkbox row at the end.
+ * scroll edges, with an optional "read and approve" checkbox row at the end. Colors, text styles,
+ * paddings and the back icon size come from [core.presentation.theme.ScrollableContentDialogTheme].
  *
  * @param title Title shown in the header and at the start of the approval text.
  * @param content Markdown content rendered with [MarkdownContentParser].
@@ -124,11 +116,11 @@ fun ScrollableContentDialog(
                         .onSizeChanged { size ->
                             headerHeightDp = with(density) { size.height.toDp() }
                         }
-                        .padding(top = HeaderTopPadding, bottom = HeaderBottomPadding)
+                        .padding(top = dialogTheme.headerTopPadding, bottom = dialogTheme.headerBottomPadding)
                 ) {
                     CustomIconButton(
                         modifier = Modifier.align(Alignment.CenterStart),
-                        iconModifier = Modifier.height(BackIconHeight).width(BackIconWidth),
+                        iconModifier = Modifier.height(dialogTheme.backIconHeight).width(dialogTheme.backIconWidth),
                         backgroundColor = Color.Transparent,
                         icon = Res.drawable.shared_ic_arrow_left,
                         iconDescription = backIconDescription,
@@ -141,7 +133,7 @@ fun ScrollableContentDialog(
                         style = dialogTheme.titleTextStyle,
                         modifier = Modifier
                             .align(Alignment.Center)
-                            .padding(horizontal = TitleHorizontalPadding)
+                            .padding(horizontal = dialogTheme.titleHorizontalPadding)
                     )
                 }
 
@@ -186,9 +178,9 @@ fun ScrollableContentDialog(
                         .verticalScroll(scrollState)
                         .padding(
                             top = headerHeightDp,
-                            start = ContentHorizontalPadding,
-                            end = ContentHorizontalPadding,
-                            bottom = ContentBottomPadding
+                            start = dialogTheme.contentHorizontalPadding,
+                            end = dialogTheme.contentHorizontalPadding,
+                            bottom = dialogTheme.contentBottomPadding
                         )
                 ) {
                     MarkdownContentParser(
@@ -200,7 +192,7 @@ fun ScrollableContentDialog(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = ApprovalRowTopPadding, bottom = ApprovalRowBottomPadding),
+                                .padding(top = dialogTheme.approvalRowTopPadding, bottom = dialogTheme.approvalRowBottomPadding),
                             horizontalArrangement = Arrangement.Start,
                             verticalAlignment = Alignment.CenterVertically
                         ) {

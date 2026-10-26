@@ -5,16 +5,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import core.presentation.component.Slot
 import core.presentation.component.alertdialog.CustomDialog
 import core.presentation.component.promotwobuttoncard.PromoTwoButtonCard
+import core.presentation.theme.LocalComponentTheme
 import global.deveng.deveng_core.generated.resources.Res
 import global.deveng.deveng_core.generated.resources.shared_notification_permission_later
 import org.jetbrains.compose.resources.stringResource
-
-private val DialogHorizontalPadding = 24.dp
 
 /**
  * Asks for notifications in the app's own words before the system dialog appears. iOS shows its
@@ -24,6 +22,9 @@ private val DialogHorizontalPadding = 24.dp
  * App Store guideline 5.1.1(iv) requires the user to go on to the system dialog while it can still be
  * shown, so pass `null` as [laterButtonLabel] then: the dialog has no postpone button and cannot be
  * dismissed with back or an outside tap.
+ *
+ * The side padding comes from [core.presentation.theme.NotificationPermissionDialogTheme]; the card inside
+ * uses [core.presentation.theme.PromoTwoButtonCardTheme].
  *
  * @param isVisible Whether the dialog is shown.
  * @param title Title of the dialog.
@@ -45,11 +46,13 @@ fun NotificationPermissionDialog(
     onDismissRequest: () -> Unit,
     onEnableButtonClick: () -> Unit
 ) {
+    val notificationPermissionDialogTheme = LocalComponentTheme.current.notificationPermissionDialog
+
     if (isVisible) {
         CustomDialog(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = DialogHorizontalPadding),
+                .padding(horizontal = notificationPermissionDialogTheme.horizontalPadding),
             onDismissRequest = onDismissRequest,
             backgroundColor = Color.Transparent,
             properties = notificationPermissionDialogProperties(laterButtonLabel = laterButtonLabel)
