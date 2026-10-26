@@ -7,14 +7,14 @@ env:
     clearState: true
 - startRecording: build/maestro/${PLATFORM}/platform-config
 - scrollUntilVisible:
-    element: "Platform Config"
+    element: "Open Platform Config Demo"
 - takeScreenshot: build/maestro/${PLATFORM}/platform-config-00-launcher
-- tapOn: "Platform Config"
+- tapOn: "Open Platform Config Demo"
 - assertVisible: "getPlatformConfig()"
 - assertVisible: "operatingSystemVersion"
 - assertVisible: ${EXPECTED_OPERATING_SYSTEM_VERSION}
 - takeScreenshot: build/maestro/${PLATFORM}/platform-config-01-values
 - tapOn: "Back"
 - scrollUntilVisible:
-    element: "Platform Config"
+    element: "Open Platform Config Demo"
 - stopRecording
