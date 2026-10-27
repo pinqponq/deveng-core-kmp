@@ -378,6 +378,7 @@ internal fun App() {
         var showBaseViewModelScreen by remember { mutableStateOf(false) }
         var showPinqloqScreen by remember { mutableStateOf(false) }
         var showFilePickerScreen by remember { mutableStateOf(false) }
+        var showCooldownTimerScreen by remember { mutableStateOf(false) }
         when {
             showJwtClaimsScreen -> JwtClaimsDemoScreen(onBack = { showJwtClaimsScreen = false })
             showPlatformConfigScreen -> PlatformConfigDemoScreen(onBack = { showPlatformConfigScreen = false })
@@ -385,6 +386,7 @@ internal fun App() {
             showBaseViewModelScreen -> BaseViewModelDemoScreen(onBack = { showBaseViewModelScreen = false })
             showPinqloqScreen -> PinqloqDemoScreen(onBack = { showPinqloqScreen = false })
             showFilePickerScreen -> FilePickerDemoScreen(onBack = { showFilePickerScreen = false })
+            showCooldownTimerScreen -> CooldownTimerDemoScreen(onBack = { showCooldownTimerScreen = false })
             showMotionScreen -> MotionDemoScreen(onBack = { showMotionScreen = false })
             showAtmosphereScreen -> AtmosphereDemoScreen(onBack = { showAtmosphereScreen = false })
             showPushNotificationsScreen -> PushNotificationsDemoScreen(onBack = { showPushNotificationsScreen = false })
@@ -414,6 +416,7 @@ internal fun App() {
                 onOpenBaseViewModel = { showBaseViewModelScreen = true },
                 onOpenPinqloq = { showPinqloqScreen = true },
                 onOpenFilePicker = { showFilePickerScreen = true },
+                onOpenCooldownTimer = { showCooldownTimerScreen = true },
             )
         }
     }
@@ -688,6 +691,7 @@ private fun ThemingDemo(
     onOpenBaseViewModel: () -> Unit = {},
     onOpenPinqloq: () -> Unit = {},
     onOpenFilePicker: () -> Unit = {},
+    onOpenCooldownTimer: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1173,6 +1177,13 @@ private fun ThemingDemo(
                             text = "Open File Picker Demo",
                             containerColor = Color(0xFF1565C0),
                             onClick = onOpenFilePicker
+                        )
+
+                        CustomButton(
+                            modifier = launcherButtonModifier,
+                            text = "Open Cooldown Timer Demo",
+                            containerColor = Color(0xFF00695C),
+                            onClick = onOpenCooldownTimer
                         )
 
                         RatingRow(
