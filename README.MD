@@ -476,6 +476,18 @@ val expiresAt: Instant? = jwtExpiresAt(token)          // standard "exp" claim, 
 
 All three throw `IllegalArgumentException` when the token does not have three parts or the payload is not valid (`SerializationException` for JSON errors is a subclass). The sample app shows them in "Open JWT Claims Demo".
 
+
+**Cooldown timer** — `CooldownTimer` (`core.util`) counts down whole seconds, for example the wait before a verification code can be sent again. It has no text or UI: the screen formats `remainingSeconds` itself with a localized string. `start` cancels a running countdown first, `cancel` sets `remainingSeconds` to 0, and `start(0)` finishes at once. Pass a small `tickDelayMillis`, or a scope on a test dispatcher, so tests do not wait in real time. The sample app shows it in "Open Cooldown Timer Demo".
+
+```kotlin
+val timer = CooldownTimer(scope = viewModelScope)
+val remainingSeconds: StateFlow<Int> = timer.remainingSeconds // 0 when idle or finished
+val isRunning: StateFlow<Boolean> = timer.isRunning
+
+timer.start(seconds = 60)
+timer.cancel()
+```
+
 ---
 
 ## Data & Domain
