@@ -1,5 +1,6 @@
 package core.presentation.navigation
 
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -11,15 +12,16 @@ import co.touchlab.kermit.Logger
  *
  * The current screen counts as the target when it has the same route class and that route has no
  * arguments. A route with arguments is always navigated to, so the same screen can open again with
- * other arguments (for example another item id). The call does nothing while the navigation graph
- * is not set yet. A failed navigation is logged.
+ * other arguments (for example another item id). When the target is already current, nothing
+ * happens, also when [clearBackStack] is true. The call does nothing while the navigation graph is
+ * not set yet. A failed navigation is logged.
  *
  * @param destination The type-safe route object of the target screen.
  * @param clearBackStack When true, every screen in the back stack is removed before the target opens.
  */
 fun NavController.navigateSingle(destination: Any, clearBackStack: Boolean = false) {
-    if (!isGraphSet()) return
-    if (isCurrentDestination(destination)) return
+    val currentEntry = currentBackStackEntry ?: return
+    if (currentEntry.isDestination(destination)) return
 
     navigateLoggingFailure(destination) {
         if (clearBackStack) {
@@ -47,11 +49,13 @@ fun NavController.navigateClearingBackStack(destination: Any) {
  * @param destination The type-safe route object of the tab root screen.
  * @param anchor The route object of the screen every tab returns to; null uses the graph's start screen.
  * @param restoreState When true, the tab being left keeps its screens and state, and a tab opened
- * again gets back the screens and state it had. When false, the tab always opens on its root screen.
+ * again gets back the screens and state it had. This also applies to the anchor screen itself:
+ * switching to it brings back the screens that were above it when it was left. When false, the
+ * tab always opens on its root screen.
  */
 fun NavController.navigateToTab(destination: Any, anchor: Any? = null, restoreState: Boolean = true) {
-    if (!isGraphSet()) return
-    if (isCurrentDestination(destination)) return
+    val currentEntry = currentBackStackEntry ?: return
+    if (currentEntry.isDestination(destination)) return
 
     navigateLoggingFailure(destination) {
         if (anchor == null) {
@@ -64,18 +68,9 @@ fun NavController.navigateToTab(destination: Any, anchor: Any? = null, restoreSt
     }
 }
 
-private fun NavController.isGraphSet(): Boolean =
-    try {
-        graph
-        true
-    } catch (exception: IllegalStateException) {
-        false
-    }
-
-private fun NavController.isCurrentDestination(destination: Any): Boolean {
-    val currentDestination = currentBackStackEntry?.destination ?: return false
-    val hasSameRouteClass = currentDestination.hasRoute(destination::class)
-    val hasRouteArguments = currentDestination.arguments.isNotEmpty()
+private fun NavBackStackEntry.isDestination(destination: Any): Boolean {
+    val hasSameRouteClass = this.destination.hasRoute(destination::class)
+    val hasRouteArguments = this.destination.arguments.isNotEmpty()
     return hasSameRouteClass && !hasRouteArguments
 }
 

@@ -230,11 +230,50 @@ class NavigationExtensionsTest {
         setContent { navController = rememberNavController() }
 
         navigateOnIdle { navController?.navigateSingle(DetailRoute) }
+
+        runOnIdle {
+            assertNull(navController?.currentBackStackEntry)
+            assertTrue(recordingLogWriter.logEntries.isEmpty())
+        }
+    }
+
+    @Test
+    fun navigateToTab_beforeGraphIsSet_returnsWithoutLogging() = runComposeUiTest {
+        var navController: NavController? = null
+        setContent { navController = rememberNavController() }
+
         navigateOnIdle { navController?.navigateToTab(DetailRoute) }
 
         runOnIdle {
             assertNull(navController?.currentBackStackEntry)
             assertTrue(recordingLogWriter.logEntries.isEmpty())
+        }
+    }
+
+    @Test
+    fun navigateClearingBackStack_withTargetAlreadyCurrent_keepsScreenBelow() = runComposeUiTest {
+        val navController = setUpHost()
+
+        navigateOnIdle { navController.navigateSingle(LoginRoute) }
+        navigateOnIdle { navController.navigateClearingBackStack(LoginRoute) }
+
+        runOnIdle {
+            assertTrue(navController.isCurrent<LoginRoute>())
+            assertTrue(navController.previousBackStackEntry.isRoute<HomeRoute>())
+        }
+    }
+
+    @Test
+    fun navigateToTab_withStartScreenAsTargetAndRestoreState_bringsBackScreensAboveIt() = runComposeUiTest {
+        val navController = setUpHost()
+
+        navigateOnIdle { navController.navigateSingle(DetailRoute) }
+        navigateOnIdle { navController.navigateToTab(SettingsRoute) }
+        navigateOnIdle { navController.navigateToTab(HomeRoute) }
+
+        runOnIdle {
+            assertTrue(navController.isCurrent<DetailRoute>())
+            assertTrue(navController.previousBackStackEntry.isRoute<HomeRoute>())
         }
     }
 

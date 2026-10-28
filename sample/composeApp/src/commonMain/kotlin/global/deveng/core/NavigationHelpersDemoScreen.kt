@@ -101,6 +101,15 @@ private fun NavigationHelpersDemoActions(navController: NavController) {
             onClick = { navController.navigateToTab(destination = NavigationDemoProfileTabRoute, restoreState = false) },
         )
         CustomButton(
+            text = "navigateToTab(Profile, anchor = Settings)",
+            onClick = {
+                navController.navigateToTab(
+                    destination = NavigationDemoProfileTabRoute,
+                    anchor = NavigationDemoSettingsTabRoute,
+                )
+            },
+        )
+        CustomButton(
             text = "navigateClearingBackStack(Home)",
             onClick = { navController.navigateClearingBackStack(NavigationDemoHomeRoute) },
         )
