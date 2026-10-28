@@ -90,12 +90,12 @@ class NavigationExtensionsTest {
     @Test
     fun navigateSingle_withClearBackStack_replacesGraphEntry() = runComposeUiTest {
         val navController = setUpHost()
-        val graphEntryBefore = runOnIdle { navController.getBackStackEntry(navController.graph.id) }
+        val graphEntryBefore = runOnIdle { navController.getBackStackEntry(destinationId = navController.graph.id) }
 
         navigateOnIdle { navController.navigateSingle(destination = LoginRoute, clearBackStack = true) }
 
         runOnIdle {
-            val graphEntryAfter = navController.getBackStackEntry(navController.graph.id)
+            val graphEntryAfter = navController.getBackStackEntry(destinationId = navController.graph.id)
             assertNotSame(graphEntryBefore, graphEntryAfter)
         }
     }
