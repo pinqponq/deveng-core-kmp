@@ -43,8 +43,9 @@ fun NavController.navigateClearingBackStack(destination: Any) {
 
 /**
  * Switches to a tab root screen the way a tab bar does. Every screen above [anchor] is removed, so
- * no other tab's screens stay buried in the back stack. Skips the call in the same cases as
- * [navigateSingle].
+ * no other tab's screens stay buried in the back stack. One exception: when the target is the anchor
+ * itself and [restoreState] is true, the screens that were above the anchor come back. Skips the
+ * call in the same cases as [navigateSingle].
  *
  * @param destination The type-safe route object of the tab root screen.
  * @param anchor The route object of the screen every tab returns to; null uses the graph's start screen.
