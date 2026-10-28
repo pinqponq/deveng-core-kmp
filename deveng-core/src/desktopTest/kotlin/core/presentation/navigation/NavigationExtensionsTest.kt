@@ -20,6 +20,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -60,6 +61,7 @@ class NavigationExtensionsTest {
         runOnIdle {
             val currentItemRoute = navController.currentBackStackEntry?.toRoute<ItemRoute>()
             assertEquals(SECOND_ITEM_ID, currentItemRoute?.itemId)
+            assertTrue(navController.previousBackStackEntry.isRoute<HomeRoute>())
         }
     }
 
@@ -82,6 +84,19 @@ class NavigationExtensionsTest {
         runOnIdle {
             assertTrue(navController.isCurrent<LoginRoute>())
             assertNull(navController.previousBackStackEntry)
+        }
+    }
+
+    @Test
+    fun navigateSingle_withClearBackStack_replacesGraphEntry() = runComposeUiTest {
+        val navController = setUpHost()
+        val graphEntryBefore = runOnIdle { navController.getBackStackEntry(navController.graph.id) }
+
+        navigateOnIdle { navController.navigateSingle(destination = LoginRoute, clearBackStack = true) }
+
+        runOnIdle {
+            val graphEntryAfter = navController.getBackStackEntry(navController.graph.id)
+            assertNotSame(graphEntryBefore, graphEntryAfter)
         }
     }
 
@@ -141,6 +156,34 @@ class NavigationExtensionsTest {
         runOnIdle {
             assertTrue(navController.isCurrent<LoginRoute>())
             assertTrue(navController.previousBackStackEntry.isRoute<SettingsRoute>())
+        }
+    }
+
+    @Test
+    fun navigateToTab_withAnchorAndRestoreState_bringsBackScreensOfReopenedTab() = runComposeUiTest {
+        val navController = setUpHost()
+
+        navigateOnIdle { navController.navigateToTab(destination = SettingsRoute, anchor = HomeRoute) }
+        navigateOnIdle { navController.navigateSingle(DetailRoute) }
+        navigateOnIdle { navController.navigateToTab(destination = LoginRoute, anchor = HomeRoute) }
+        navigateOnIdle { navController.navigateToTab(destination = SettingsRoute, anchor = HomeRoute) }
+
+        runOnIdle {
+            assertTrue(navController.isCurrent<DetailRoute>())
+            assertTrue(navController.previousBackStackEntry.isRoute<SettingsRoute>())
+        }
+    }
+
+    @Test
+    fun navigateToTab_withStartScreenAsTarget_keepsSingleStartEntry() = runComposeUiTest {
+        val navController = setUpHost()
+
+        navigateOnIdle { navController.navigateSingle(DetailRoute) }
+        navigateOnIdle { navController.navigateToTab(destination = HomeRoute, restoreState = false) }
+
+        runOnIdle {
+            assertTrue(navController.isCurrent<HomeRoute>())
+            assertNull(navController.previousBackStackEntry)
         }
     }
 
