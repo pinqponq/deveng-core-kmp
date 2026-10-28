@@ -90,12 +90,12 @@ class NavigationExtensionsTest {
     @Test
     fun navigateSingle_withClearBackStack_replacesGraphEntry() = runComposeUiTest {
         val navController = setUpHost()
-        val graphEntryBefore = runOnIdle { navController.getBackStackEntry(destinationId = navController.graph.id) }
+        val graphEntryBefore = runOnIdle { navController.getBackStackEntry<HostGraphRoute>() }
 
         navigateOnIdle { navController.navigateSingle(destination = LoginRoute, clearBackStack = true) }
 
         runOnIdle {
-            val graphEntryAfter = navController.getBackStackEntry(destinationId = navController.graph.id)
+            val graphEntryAfter = navController.getBackStackEntry<HostGraphRoute>()
             assertNotSame(graphEntryBefore, graphEntryAfter)
         }
     }
@@ -266,7 +266,7 @@ class NavigationExtensionsTest {
     @Composable
     private fun host(): NavController {
         val navController = rememberNavController()
-        NavHost(navController = navController, startDestination = HomeRoute) {
+        NavHost(navController = navController, startDestination = HomeRoute, route = HostGraphRoute::class) {
             composable<HomeRoute> {}
             composable<DetailRoute> {}
             composable<SettingsRoute> {}
@@ -276,6 +276,9 @@ class NavigationExtensionsTest {
 
         return navController
     }
+
+    @Serializable
+    data object HostGraphRoute
 
     @Serializable
     data object HomeRoute
