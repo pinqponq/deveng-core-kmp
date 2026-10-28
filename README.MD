@@ -460,6 +460,18 @@ MarkdownContentParser(
 )
 ```
 
+**Navigation helpers** — `NavController` extensions in `core.presentation.navigation` for type-safe routes (any `@Serializable` route object, so each app keeps its own route classes):
+
+```kotlin
+navController.navigateSingle(Screen.Gallery)                        // does nothing when Gallery is already the current screen
+navController.navigateSingle(Screen.Home, clearBackStack = true)    // removes every screen in the back stack first
+navController.navigateClearingBackStack(Screen.Login)               // same as clearBackStack = true
+navController.navigateToTab(Screen.Settings)                        // tab switch: keeps the left tab's screens and restores the reopened tab's screens
+navController.navigateToTab(Screen.Camera, anchor = Screen.Camera, restoreState = false) // pop to the app's own anchor screen, open the tab root
+```
+
+A call counts as "already on the target" when the current screen has the same route class and that route has no arguments. A route with arguments (for example `Screen.Item(itemId = 2)`) is always navigated to, so the same screen can open with other arguments. `navigateToTab` without `anchor` removes the screens above the graph's start screen. All three do nothing while the navigation graph is not set yet. A failed navigation (for example a route missing from the graph) is logged as an error through Kermit and does not crash. The sample app shows them in "Open Navigation Helpers Demo".
+
 **JWT claims** — Read the claims of a JWT on the client (`core.util`). The payload is decoded as base64url with or without padding. The signature is not verified, so never use the claims to make trust decisions.
 
 ```kotlin
