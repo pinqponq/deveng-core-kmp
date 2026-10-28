@@ -368,6 +368,7 @@ internal fun App() {
         var showSwipeToReplyScreen by remember { mutableStateOf(false) }
         var showMediaViewerScreen by remember { mutableStateOf(false) }
         var showNavigationBarScreen by remember { mutableStateOf(false) }
+        var showNavigationHelpersScreen by remember { mutableStateOf(false) }
         var showServerDrivenScreen by remember { mutableStateOf(false) }
         var showMotionScreen by remember { mutableStateOf(false) }
         var showAtmosphereScreen by remember { mutableStateOf(false) }
@@ -392,6 +393,7 @@ internal fun App() {
             showSwipeToReplyScreen -> SwipeToReplyDemoScreen(onBack = { showSwipeToReplyScreen = false })
             showMediaViewerScreen -> MediaViewerDemoScreen(onBack = { showMediaViewerScreen = false })
             showNavigationBarScreen -> NavigationBarDemoScreen(onBack = { showNavigationBarScreen = false })
+            showNavigationHelpersScreen -> NavigationHelpersDemoScreen(onBack = { showNavigationHelpersScreen = false })
             showServerDrivenScreen -> ServerDrivenDemoScreen(onBack = { showServerDrivenScreen = false })
             showQrGeneratorScreen -> QrGeneratorDemoScreen(onBack = { showQrGeneratorScreen = false })
             showQrScannerScreen -> QrScannerDemoScreen(onBack = { showQrScannerScreen = false })
@@ -404,6 +406,7 @@ internal fun App() {
                 onOpenSwipeToReply = { showSwipeToReplyScreen = true },
                 onOpenMediaViewer = { showMediaViewerScreen = true },
                 onOpenNavigationBar = { showNavigationBarScreen = true },
+                onOpenNavigationHelpers = { showNavigationHelpersScreen = true },
                 onOpenServerDriven = { showServerDrivenScreen = true },
                 onOpenMotion = { showMotionScreen = true },
                 onOpenAtmosphere = { showAtmosphereScreen = true },
@@ -678,6 +681,7 @@ private fun ThemingDemo(
     onOpenSwipeToReply: () -> Unit = {},
     onOpenMediaViewer: () -> Unit = {},
     onOpenNavigationBar: () -> Unit = {},
+    onOpenNavigationHelpers: () -> Unit = {},
     onOpenServerDriven: () -> Unit = {},
     onOpenMotion: () -> Unit = {},
     onOpenAtmosphere: () -> Unit = {},
@@ -1103,6 +1107,13 @@ private fun ThemingDemo(
                             text = "Open Navigation Bar Demo",
                             containerColor = Color(0xFF0E0E0E),
                             onClick = onOpenNavigationBar
+                        )
+
+                        CustomButton(
+                            modifier = launcherButtonModifier,
+                            text = "Open Navigation Helpers Demo",
+                            containerColor = Color(0xFF1B5E20),
+                            onClick = onOpenNavigationHelpers
                         )
 
                         CustomButton(
