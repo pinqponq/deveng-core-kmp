@@ -43,6 +43,18 @@ sealed interface BackgroundUploadPreparation {
         val remoteId: Int,
     ) : BackgroundUploadPreparation
 
+    /**
+     * A large file PUT straight to storage in parts of [partSizeBytes] (the last part is shorter).
+     * The app's server has already opened the multipart upload and finds it again by [remoteKey].
+     * The scheduler needs a [BackgroundUploadPartHandler] to sign and complete the parts.
+     */
+    data class DirectFileInParts(
+        val filePath: String,
+        val totalBytes: Long,
+        val partSizeBytes: Long,
+        val remoteKey: String,
+    ) : BackgroundUploadPreparation
+
     /** Gives the upload up for good and reports [reason] as a permanent failure. */
     data class Failed(val reason: String) : BackgroundUploadPreparation
 

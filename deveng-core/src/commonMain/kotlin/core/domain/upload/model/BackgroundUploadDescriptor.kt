@@ -16,4 +16,6 @@ data class BackgroundUploadDescriptor(
      */
     @SerialName("mediaId")
     val remoteId: Int? = null,
+    /** Set when the file goes to storage in parts; holds which parts are already stored. */
+    val partedUpload: PartedUpload? = null,
 )

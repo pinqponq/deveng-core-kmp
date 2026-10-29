@@ -8,6 +8,8 @@ import core.domain.upload.model.BackgroundUploadCompletion
 import core.domain.upload.model.BackgroundUploadDescriptor
 import core.domain.upload.model.BackgroundUploadFailureReason
 import core.domain.upload.model.BackgroundUploadStatus
+import core.domain.upload.model.PartedUpload
+import core.domain.upload.model.StoredPart
 import core.domain.upload.model.UploadProgress
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -19,11 +21,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.TimeSource
 
 private const val HTTP_METHOD_POST = "POST"
 private const val HTTP_METHOD_PUT = "PUT"
 private const val HTTP_UNAUTHORIZED = 401
+private const val HTTP_FORBIDDEN = 403
+private const val HTTP_SERVER_ERROR_STATUS_CODES_START = 500
 private const val HTTP_SUCCESS_STATUS_CODES_START = 200
 private const val HTTP_SUCCESS_STATUS_CODES_END = 299
 private const val HEADER_AUTHORIZATION = "Authorization"
@@ -32,6 +37,7 @@ private const val HEADER_CONTENT_LENGTH = "Content-Length"
 private const val RESPONSE_PREVIEW_LENGTH = 200
 private const val EVENT_BUFFER_CAPACITY = 64
 const val DEFAULT_UPLOAD_STALL_TIMEOUT_MILLIS = 2 * 60 * 1000L
+const val DEFAULT_MAX_PART_ATTEMPTS = 3
 
 /**
  * Runs uploads through a background transfer service one at a time: prepares each request with the
@@ -39,6 +45,11 @@ const val DEFAULT_UPLOAD_STALL_TIMEOUT_MILLIS = 2 * 60 * 1000L
  * session once when the server answers 401, and reports progress and completions. Direct uploads
  * are recognised by the remote id stored in their descriptor, so a completion the OS delivers after
  * the app was killed and relaunched still commits.
+ *
+ * Parted uploads ([BackgroundUploadPreparation.DirectFileInParts]) send one part per transfer and
+ * store each part's ETag in the descriptor before the next part starts. When a part keeps failing
+ * on the network, or a part cannot be signed, the upload pauses instead of failing: its descriptor
+ * stays, and [resumeInterruptedUploads] continues it from the first part that is not stored.
  */
 class BackgroundUploadSessionScheduler<T>(
     private val descriptorStorage: BackgroundUploadDescriptorStorage,
@@ -49,6 +60,8 @@ class BackgroundUploadSessionScheduler<T>(
     private val coroutineScope: CoroutineScope,
     private val logTag: String,
     private val stallTimeoutMillis: Long = DEFAULT_UPLOAD_STALL_TIMEOUT_MILLIS,
+    private val partHandler: BackgroundUploadPartHandler<T>? = null,
+    private val maxPartAttempts: Int = DEFAULT_MAX_PART_ATTEMPTS,
 ) : BackgroundUploadScheduler<T>, BackgroundUploadTransferListener {
 
     private val completionMutableFlow = MutableSharedFlow<BackgroundUploadCompletion<T>>(
@@ -71,6 +84,12 @@ class BackgroundUploadSessionScheduler<T>(
     // One renewal attempt per upload: a refresh token the backend already rejected would
     // otherwise send the same upload around this loop forever.
     private val sessionRenewedUploadIds = mutableSetOf<String>()
+
+    // A part completion checks and saves the stored parts as one step, so two completions of the
+    // same part (the OS finishing a task that a resume already restarted) continue the upload once.
+    private val partStateMutex = Mutex()
+    private val partAttemptsByTransferId = mutableMapOf<String, Int>()
+    private val partProgressBaseByTransferId = mutableMapOf<String, PartProgressBase>()
 
     override val completionEvents: Flow<BackgroundUploadCompletion<T>> = completionMutableFlow.asSharedFlow()
 
@@ -100,6 +119,23 @@ class BackgroundUploadSessionScheduler<T>(
             BackgroundUploadStatus.NotFound
         }
 
+    /**
+     * Continues every parted upload whose descriptor is still stored, from its first part that is
+     * not stored. Call it once after [reconnect] when the app starts. A part the OS is still sending
+     * may be sent twice; the second completion of a stored part is ignored.
+     */
+    fun resumeInterruptedUploads() {
+        descriptorStorage.loadAll()
+            .filter { descriptor -> descriptor.partedUpload != null }
+            .forEach { descriptor ->
+                Logger.i { "[$logTag] Resuming parted upload uploadId=${descriptor.uploadId}" }
+                coroutineScope.launch {
+                    runCatching { uploadNextPart(descriptor) }
+                        .onFailure { throwable -> Logger.e(throwable) { "[$logTag] Resume failed uploadId=${descriptor.uploadId}" } }
+                }
+            }
+    }
+
     fun reconnect(onEventsDelivered: () -> Unit) {
         transport.reconnect(onEventsDelivered)
         deleteOrphanedBodyFiles()
@@ -108,20 +144,51 @@ class BackgroundUploadSessionScheduler<T>(
 
     override fun onTransferProgress(uploadId: String, bytesSent: Long, bytesTotal: Long) {
         lastBytesSentByUploadId[uploadId] = bytesSent
-        progressMutableFlow.tryEmit(UploadProgress(uploadId = uploadId, bytesSent = bytesSent, bytesTotal = bytesTotal))
+        val transferId = BackgroundUploadTransferId.parse(uploadId)
+        if (transferId.partNumber == null) {
+            progressMutableFlow.tryEmit(UploadProgress(uploadId = uploadId, bytesSent = bytesSent, bytesTotal = bytesTotal))
+            return
+        }
+        // A part reports its own bytes; the upload's progress adds the parts stored before it.
+        // A part the OS kept running across an app kill has no base yet, so it reports nothing.
+        val progressBase = partProgressBaseByTransferId[uploadId] ?: return
+        progressMutableFlow.tryEmit(
+            UploadProgress(
+                uploadId = transferId.uploadId,
+                bytesSent = progressBase.storedBytes + bytesSent,
+                bytesTotal = progressBase.totalBytes,
+            ),
+        )
     }
 
     override fun onTransferCompleted(uploadId: String, outcome: BackgroundUploadTransferOutcome) {
-        coroutineScope.launch { handleTransferOutcome(uploadId = uploadId, outcome = outcome) }
+        coroutineScope.launch {
+            val transferId = BackgroundUploadTransferId.parse(uploadId)
+            val partNumber = transferId.partNumber
+            if (partNumber == null) {
+                handleTransferOutcome(uploadId = uploadId, outcome = outcome)
+            } else {
+                handlePartOutcome(uploadId = transferId.uploadId, partNumber = partNumber, outcome = outcome)
+            }
+        }
     }
 
     private suspend fun startUpload(descriptor: BackgroundUploadDescriptor) {
         val startedAt = TimeSource.Monotonic.markNow()
         Logger.i { "[$logTag:STEP] START uploadId=${descriptor.uploadId} isVideo=${descriptor.isVideo}" }
 
+        // Scheduling an upload that already stored parts continues it; preparing it again would
+        // open a second multipart upload on the server.
+        val storedPartedDescriptor = descriptorStorage.load(descriptor.uploadId)?.takeIf { stored -> stored.partedUpload != null }
+        if (storedPartedDescriptor != null) {
+            uploadNextPart(storedPartedDescriptor)
+            return
+        }
+
         when (val preparation = requestHandler.prepareUpload(descriptor)) {
             is BackgroundUploadPreparation.Multipart -> startMultipartUpload(descriptor, preparation, startedAt)
             is BackgroundUploadPreparation.DirectFile -> startDirectUpload(descriptor, preparation, startedAt)
+            is BackgroundUploadPreparation.DirectFileInParts -> startPartedUpload(descriptor, preparation)
             is BackgroundUploadPreparation.Failed -> handleUploadFailure(descriptor.uploadId, preparation.reason)
             is BackgroundUploadPreparation.Abandoned ->
                 Logger.e { "[$logTag:STEP] FAIL ${preparation.logDetail} uploadId=${descriptor.uploadId}" }
@@ -186,6 +253,205 @@ class BackgroundUploadSessionScheduler<T>(
         }
 
         resumeAndAwaitCompletion(task = task, uploadId = descriptor.uploadId, startedAt = startedAt)
+    }
+
+    private suspend fun startPartedUpload(
+        descriptor: BackgroundUploadDescriptor,
+        preparation: BackgroundUploadPreparation.DirectFileInParts,
+    ) {
+        val partedUpload = try {
+            PartedUpload(
+                remoteKey = preparation.remoteKey,
+                filePath = preparation.filePath,
+                totalBytes = preparation.totalBytes,
+                partSizeBytes = preparation.partSizeBytes,
+            )
+        } catch (exception: IllegalArgumentException) {
+            Logger.e(exception) { "[$logTag:STEP] FAIL invalid_part_layout uploadId=${descriptor.uploadId}" }
+            handleUploadFailure(descriptor.uploadId, BackgroundUploadFailureReason.INVALID_PART_LAYOUT)
+            return
+        }
+        val partedDescriptor = descriptor.copy(partedUpload = partedUpload)
+        descriptorStorage.save(partedDescriptor)
+        Logger.i { "[$logTag:STEP] parted upload opened parts=${partedUpload.partCount} uploadId=${descriptor.uploadId}" }
+        uploadNextPart(partedDescriptor)
+    }
+
+    private suspend fun uploadNextPart(descriptor: BackgroundUploadDescriptor) {
+        val uploadId = descriptor.uploadId
+        val partedUpload = requireNotNull(descriptor.partedUpload) { "Only parted descriptors reach the part loop" }
+        val handler = partHandler
+        if (handler == null) {
+            Logger.e { "[$logTag:STEP] FAIL part_handler_missing uploadId=$uploadId" }
+            handleUploadFailure(uploadId, BackgroundUploadFailureReason.PART_HANDLER_MISSING)
+            return
+        }
+
+        val partNumber = partedUpload.nextPendingPartNumber()
+        if (partNumber == null) {
+            completeParts(descriptor = descriptor, storedParts = partedUpload.storedParts, handler = handler)
+            return
+        }
+
+        val transferId = BackgroundUploadTransferId(uploadId = uploadId, partNumber = partNumber).value
+        val attempt = (partAttemptsByTransferId[transferId] ?: 0) + 1
+        if (attempt > maxPartAttempts) {
+            pausePartedUpload(uploadId = uploadId, transferId = transferId, detail = "attempts_exhausted part=$partNumber")
+            return
+        }
+        partAttemptsByTransferId[transferId] = attempt
+
+        val partUrl = try {
+            handler.signPart(descriptor = descriptor, partNumber = partNumber)
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: Exception) {
+            Logger.e(exception) { "[$logTag:STEP] sign part failed part=$partNumber uploadId=$uploadId" }
+            pausePartedUpload(uploadId = uploadId, transferId = transferId, detail = "sign_failed part=$partNumber")
+            return
+        }
+
+        val byteRange = partedUpload.byteRangeOf(partNumber)
+        val bodyFilePath = fileStore.writePart(
+            transferId = transferId,
+            sourceFilePath = partedUpload.filePath,
+            offset = byteRange.offset,
+            length = byteRange.length,
+        )
+        if (bodyFilePath == null) {
+            Logger.e { "[$logTag:STEP] FAIL write_part_file part=$partNumber uploadId=$uploadId" }
+            handleUploadFailure(uploadId, BackgroundUploadFailureReason.WRITE_PART_FILE_FAILED)
+            return
+        }
+
+        // No headers: the presigned url carries the authorization, and an added header that is not
+        // part of the signature makes storage reject the request.
+        val request = BackgroundUploadTransferRequest(
+            httpMethod = HTTP_METHOD_PUT,
+            url = partUrl,
+            headers = emptyMap(),
+            bodyFilePath = bodyFilePath,
+        )
+        val task = transport.createTask(uploadId = transferId, request = request)
+        if (task == null) {
+            Logger.e { "[$logTag:STEP] FAIL invalid_presigned_url part=$partNumber uploadId=$uploadId" }
+            handleUploadFailure(uploadId, BackgroundUploadFailureReason.INVALID_PRESIGNED_URL)
+            return
+        }
+
+        partProgressBaseByTransferId[transferId] = PartProgressBase(
+            storedBytes = partedUpload.storedBytes,
+            totalBytes = partedUpload.totalBytes,
+        )
+        Logger.i { "[$logTag:STEP] part $partNumber/${partedUpload.partCount} attempt=$attempt uploadId=$uploadId" }
+        resumeAndAwaitCompletion(task = task, uploadId = transferId, startedAt = TimeSource.Monotonic.markNow())
+    }
+
+    private suspend fun handlePartOutcome(uploadId: String, partNumber: Int, outcome: BackgroundUploadTransferOutcome) {
+        val transferId = BackgroundUploadTransferId(uploadId = uploadId, partNumber = partNumber).value
+        val decision = decidePartOutcome(uploadId = uploadId, partNumber = partNumber, outcome = outcome)
+        releaseTransfer(transferId)
+
+        when (decision) {
+            PartOutcomeDecision.Ignore ->
+                Logger.w { "[$logTag] Ignored completion of a part that is stored or no longer uploading part=$partNumber uploadId=$uploadId" }
+
+            is PartOutcomeDecision.Retry -> {
+                Logger.w { "[$logTag] Part failed, retrying part=$partNumber uploadId=$uploadId reason=${decision.reason}" }
+                uploadNextPart(decision.descriptor)
+            }
+
+            is PartOutcomeDecision.Fail -> handleUploadFailure(uploadId, decision.reason)
+
+            is PartOutcomeDecision.Stored -> {
+                fileStore.delete(transferId)
+                partAttemptsByTransferId.remove(transferId)
+                uploadNextPart(decision.descriptor)
+            }
+        }
+    }
+
+    private suspend fun decidePartOutcome(
+        uploadId: String,
+        partNumber: Int,
+        outcome: BackgroundUploadTransferOutcome,
+    ): PartOutcomeDecision = partStateMutex.withLock {
+        val descriptor = descriptorStorage.load(uploadId)
+        val partedUpload = descriptor?.partedUpload
+        if (descriptor == null || partedUpload == null || partedUpload.isStored(partNumber)) {
+            return@withLock PartOutcomeDecision.Ignore
+        }
+
+        when (outcome) {
+            is BackgroundUploadTransferOutcome.NetworkError -> PartOutcomeDecision.Retry(descriptor = descriptor, reason = outcome.failureReason)
+            is BackgroundUploadTransferOutcome.Response -> decidePartResponse(
+                descriptor = descriptor,
+                partedUpload = partedUpload,
+                partNumber = partNumber,
+                response = outcome,
+            )
+        }
+    }
+
+    private fun decidePartResponse(
+        descriptor: BackgroundUploadDescriptor,
+        partedUpload: PartedUpload,
+        partNumber: Int,
+        response: BackgroundUploadTransferOutcome.Response,
+    ): PartOutcomeDecision {
+        val statusCode = response.statusCode
+        // Storage answers 403 when the presigned url expired while the part waited, so the part is
+        // signed again; a server error is worth another attempt too.
+        val isRetryableStatusCode = statusCode == HTTP_FORBIDDEN || statusCode >= HTTP_SERVER_ERROR_STATUS_CODES_START
+        if (isRetryableStatusCode) {
+            return PartOutcomeDecision.Retry(descriptor = descriptor, reason = BackgroundUploadFailureReason.httpStatus(statusCode))
+        }
+        if (statusCode !in HTTP_SUCCESS_STATUS_CODES_START..HTTP_SUCCESS_STATUS_CODES_END) {
+            val responsePreview = response.body?.take(RESPONSE_PREVIEW_LENGTH) ?: "(no body)"
+            Logger.e { "[$logTag] HTTP_ERROR part=$partNumber uploadId=${descriptor.uploadId} statusCode=$statusCode body=$responsePreview" }
+            return PartOutcomeDecision.Fail(reason = BackgroundUploadFailureReason.httpStatus(statusCode))
+        }
+
+        val entityTag = response.entityTag?.takeIf { tag -> tag.isNotBlank() }
+        if (entityTag == null) {
+            Logger.e { "[$logTag] Part stored without an ETag part=$partNumber uploadId=${descriptor.uploadId}" }
+            return PartOutcomeDecision.Fail(reason = BackgroundUploadFailureReason.PART_ENTITY_TAG_MISSING)
+        }
+
+        val updatedDescriptor = descriptor.copy(
+            partedUpload = partedUpload.withStoredPart(StoredPart(partNumber = partNumber, entityTag = entityTag)),
+        )
+        descriptorStorage.save(updatedDescriptor)
+        return PartOutcomeDecision.Stored(descriptor = updatedDescriptor)
+    }
+
+    private suspend fun completeParts(
+        descriptor: BackgroundUploadDescriptor,
+        storedParts: List<StoredPart>,
+        handler: BackgroundUploadPartHandler<T>,
+    ) {
+        val result = try {
+            handler.completeParts(descriptor = descriptor, storedParts = storedParts)
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: Exception) {
+            Logger.e(exception) { "[$logTag:STEP] FAIL complete parts uploadId=${descriptor.uploadId}" }
+            handleUploadFailure(descriptor.uploadId, BackgroundUploadFailureReason.COMMIT_FAILED)
+            return
+        }
+        handleUploadSuccess(uploadId = descriptor.uploadId, result = result)
+    }
+
+    private fun pausePartedUpload(uploadId: String, transferId: String, detail: String) {
+        partAttemptsByTransferId.remove(transferId)
+        fileStore.delete(transferId)
+        Logger.w { "[$logTag:STEP] PAUSED $detail uploadId=$uploadId — resumes on the next resumeInterruptedUploads" }
+    }
+
+    private fun releaseTransfer(transferId: String) {
+        pendingDeferreds.remove(transferId)?.complete(Unit)
+        lastBytesSentByUploadId.remove(transferId)
+        partProgressBaseByTransferId.remove(transferId)
     }
 
     private suspend fun resumeAndAwaitCompletion(
@@ -326,7 +592,7 @@ class BackgroundUploadSessionScheduler<T>(
     private suspend fun handleUploadSuccess(uploadId: String, result: T) {
         sessionRenewedUploadIds.remove(uploadId)
         descriptorStorage.remove(uploadId)
-        fileStore.delete(uploadId)
+        deleteBodyFiles(uploadId)
         completionMutableFlow.tryEmit(BackgroundUploadCompletion.Success(uploadId = uploadId, result = result))
         pendingDeferreds.remove(uploadId)?.complete(Unit)
         Logger.i { "[$logTag] Success uploadId=$uploadId" }
@@ -341,20 +607,59 @@ class BackgroundUploadSessionScheduler<T>(
     }
 
     private fun handleUploadFailure(uploadId: String, reason: String) {
+        abortPartedUpload(descriptorStorage.load(uploadId))
         sessionRenewedUploadIds.remove(uploadId)
         descriptorStorage.remove(uploadId)
-        fileStore.delete(uploadId)
+        deleteBodyFiles(uploadId)
         completionMutableFlow.tryEmit(BackgroundUploadCompletion.PermanentFailure(uploadId = uploadId, reason = reason))
         pendingDeferreds.remove(uploadId)?.complete(Unit)
         Logger.e { "[$logTag] Failed uploadId=$uploadId reason=$reason" }
     }
 
+    // Best-effort and off the failure path: the failure is reported whether or not the server
+    // answers, and an aborted multipart upload stops costing storage.
+    private fun abortPartedUpload(descriptor: BackgroundUploadDescriptor?) {
+        val handler = partHandler ?: return
+        if (descriptor?.partedUpload == null) return
+        coroutineScope.launch {
+            try {
+                handler.abortParts(descriptor)
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                Logger.e(exception) { "[$logTag] Abort of parted upload failed uploadId=${descriptor.uploadId}" }
+            }
+        }
+    }
+
+    private fun deleteBodyFiles(uploadId: String) {
+        fileStore.listUploadIds()
+            .filter { transferId -> BackgroundUploadTransferId.parse(transferId).uploadId == uploadId }
+            .forEach(fileStore::delete)
+        fileStore.delete(uploadId)
+    }
+
     private fun deleteOrphanedBodyFiles() {
         fileStore.listUploadIds()
-            .filter { uploadId -> descriptorStorage.load(uploadId) == null }
-            .forEach { uploadId ->
-                fileStore.delete(uploadId)
-                Logger.i { "[$logTag] Cleaned orphaned body file uploadId=$uploadId" }
+            .filter { transferId -> descriptorStorage.load(BackgroundUploadTransferId.parse(transferId).uploadId) == null }
+            .forEach { transferId ->
+                fileStore.delete(transferId)
+                Logger.i { "[$logTag] Cleaned orphaned body file transferId=$transferId" }
             }
+    }
+
+    private data class PartProgressBase(
+        val storedBytes: Long,
+        val totalBytes: Long,
+    )
+
+    private sealed interface PartOutcomeDecision {
+        data object Ignore : PartOutcomeDecision
+
+        data class Retry(val descriptor: BackgroundUploadDescriptor, val reason: String) : PartOutcomeDecision
+
+        data class Fail(val reason: String) : PartOutcomeDecision
+
+        data class Stored(val descriptor: BackgroundUploadDescriptor) : PartOutcomeDecision
     }
 }

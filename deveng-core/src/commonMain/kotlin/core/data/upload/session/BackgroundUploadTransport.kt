@@ -41,8 +41,10 @@ sealed interface BackgroundUploadTransferOutcome {
     /** The request never got an HTTP response; [failureReason] names the platform error. */
     data class NetworkError(val failureReason: String) : BackgroundUploadTransferOutcome
 
+    /** [entityTag] is the ETag response header; storage sends it for every stored part. */
     data class Response(
         val statusCode: Int,
         val body: String?,
+        val entityTag: String? = null,
     ) : BackgroundUploadTransferOutcome
 }

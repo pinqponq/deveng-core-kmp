@@ -12,10 +12,15 @@ import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.value
 import platform.Foundation.NSError
+import platform.Foundation.NSFileHandle
 import platform.Foundation.NSFileManager
+import platform.Foundation.closeFile
+import platform.Foundation.fileHandleForReadingAtPath
+import platform.Foundation.readDataOfLength
+import platform.Foundation.seekToFileOffset
 import platform.Foundation.writeToFile
 
-/** Keeps request bodies as `<prefix><uploadId><suffix>` files under [directoryProvider]'s folder. */
+/** Keeps request bodies as `<prefix><transferId><suffix>` files under [directoryProvider]'s folder. */
 @OptIn(ExperimentalForeignApi::class)
 internal class FileManagerBackgroundUploadFileStore(
     private val directoryProvider: TempStorageDirProvider,
@@ -30,6 +35,31 @@ internal class FileManagerBackgroundUploadFileStore(
         val isWritten = bytes.toNSData().writeToFile(path, atomically = true)
         if (!isWritten) {
             Logger.e { "[BackgroundUpload] Could not write request body path=$path" }
+            return null
+        }
+        return path
+    }
+
+    override fun writePart(transferId: String, sourceFilePath: String, offset: Long, length: Long): String? {
+        if (length <= 0) return null
+        val sourceHandle = NSFileHandle.fileHandleForReadingAtPath(sourceFilePath)
+        if (sourceHandle == null) {
+            Logger.e { "[BackgroundUpload] Could not open the source file of a part path=$sourceFilePath" }
+            return null
+        }
+        val partData = try {
+            sourceHandle.seekToFileOffset(offset.toULong())
+            sourceHandle.readDataOfLength(length.toULong())
+        } finally {
+            sourceHandle.closeFile()
+        }
+        if (partData.length != length.toULong()) {
+            Logger.e { "[BackgroundUpload] Source file is shorter than the part path=$sourceFilePath offset=$offset expected=$length read=${partData.length}" }
+            return null
+        }
+        val path = filePath(transferId)
+        if (!partData.writeToFile(path, atomically = true)) {
+            Logger.e { "[BackgroundUpload] Could not write part body path=$path" }
             return null
         }
         return path

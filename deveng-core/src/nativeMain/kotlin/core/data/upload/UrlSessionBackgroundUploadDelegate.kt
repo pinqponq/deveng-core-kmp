@@ -18,8 +18,9 @@ import platform.darwin.NSObject
 private const val PERCENT_MULTIPLIER = 100
 private const val BYTES_PER_KILOBYTE = 1024
 private const val NO_HTTP_RESPONSE_FAILURE_REASON = "network_no_http_response"
+private const val HEADER_ENTITY_TAG = "ETag"
 
-/** Collects one background session's callbacks per task (task description = upload id) and hands them to the listener. */
+/** Collects one background session's callbacks per task (task description = transfer id) and hands them to the listener. */
 internal class UrlSessionBackgroundUploadDelegate(
     private val logTag: String,
 ) : NSObject(), NSURLSessionDataDelegateProtocol, NSURLSessionTaskDelegateProtocol, NSURLSessionDelegateProtocol {
@@ -73,6 +74,7 @@ internal class UrlSessionBackgroundUploadDelegate(
             else -> BackgroundUploadTransferOutcome.Response(
                 statusCode = httpResponse.statusCode.toInt(),
                 body = chunks?.let(::concatenate)?.decodeToString(),
+                entityTag = httpResponse.valueForHTTPHeaderField(HEADER_ENTITY_TAG),
             )
         }
         listener?.onTransferCompleted(uploadId = uploadId, outcome = outcome)
