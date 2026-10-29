@@ -14,6 +14,8 @@ import kotlinx.cinterop.value
 import platform.Foundation.NSError
 import platform.Foundation.NSFileHandle
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSFileSize
+import platform.Foundation.NSNumber
 import platform.Foundation.closeFile
 import platform.Foundation.fileHandleForReadingAtPath
 import platform.Foundation.readDataOfLength
@@ -42,6 +44,13 @@ internal class FileManagerBackgroundUploadFileStore(
 
     override fun writePart(transferId: String, sourceFilePath: String, offset: Long, length: Long): String? {
         if (length <= 0) return null
+        // NSFileHandle raises an Objective-C exception when it reads past the end, which would
+        // crash the app, so a source file that became shorter is caught here first.
+        val sourceFileBytes = sourceFileSize(sourceFilePath)
+        if (sourceFileBytes == null || offset + length > sourceFileBytes) {
+            Logger.e { "[BackgroundUpload] Source file does not hold the part path=$sourceFilePath size=$sourceFileBytes offset=$offset length=$length" }
+            return null
+        }
         val sourceHandle = NSFileHandle.fileHandleForReadingAtPath(sourceFilePath)
         if (sourceHandle == null) {
             Logger.e { "[BackgroundUpload] Could not open the source file of a part path=$sourceFilePath" }
@@ -86,6 +95,16 @@ internal class FileManagerBackgroundUploadFileStore(
             .orEmpty()
             .filterIsInstance<String>()
             .mapNotNull(fileNaming::uploadIdOf)
+    }
+
+    private fun sourceFileSize(path: String): Long? = memScoped {
+        val error = alloc<ObjCObjectVar<NSError?>>()
+        val attributes = fileManager.attributesOfItemAtPath(path, error = error.ptr)
+        if (attributes == null) {
+            Logger.e { "[BackgroundUpload] Could not read the source file size path=$path error=${error.value?.localizedDescription}" }
+            return@memScoped null
+        }
+        (attributes[NSFileSize] as? NSNumber)?.longLongValue
     }
 
     private fun directoryPath(): String = directoryProvider.getPath().trimEnd('/')

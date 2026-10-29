@@ -81,6 +81,30 @@ class BackgroundPartedUploadLoopTest {
     }
 
     @Test
+    fun upload_whenTheFirstPartFails_storesTheLayoutSoTheNextRunDoesNotOpenAgain() = runTest {
+        sendFailure = IllegalStateException(FAILURE_MESSAGE)
+
+        assertFailsWith<IllegalStateException> { loop.upload(descriptor = VIDEO_DESCRIPTOR, openParts = ::openParts) }
+        sendFailure = null
+        loop.upload(descriptor = VIDEO_DESCRIPTOR, openParts = ::openParts)
+
+        assertEquals(1, openCount)
+    }
+
+    @Test
+    fun upload_withStatusJustOutsideTheSuccessRange_fails() = runTest {
+        listOf(HTTP_BELOW_SUCCESS, HTTP_ABOVE_SUCCESS).forEachIndexed { index, statusCode ->
+            descriptorStorage.remove(VIDEO_UPLOAD_ID)
+            val partUrl = FakeBackgroundUploadPartHandler.urlOf(partNumber = 1, signature = index + 1)
+            answersByUrl[partUrl] = BackgroundUploadPartAnswer(statusCode = statusCode, entityTag = ENTITY_TAG)
+
+            val attempt = loop.upload(descriptor = VIDEO_DESCRIPTOR, openParts = ::openParts)
+
+            assertEquals(BackgroundUploadAttempt.Failed(reason = BackgroundUploadFailureReason.httpStatus(statusCode)), attempt)
+        }
+    }
+
+    @Test
     fun upload_whenSignatureExpired_signsOnceMoreAndStoresThePart() = runTest {
         answersByUrl[FakeBackgroundUploadPartHandler.urlOf(partNumber = 1, signature = 1)] = BackgroundUploadPartAnswer(statusCode = HTTP_FORBIDDEN, entityTag = null)
 
@@ -208,8 +232,10 @@ class BackgroundPartedUploadLoopTest {
         const val TOTAL_BYTES = 2 * PART_SIZE_BYTES + LAST_PART_BYTES
         const val ENTITY_TAG = "\"etag\""
         const val FAILURE_MESSAGE = "boom"
+        const val HTTP_BELOW_SUCCESS = 199
         const val HTTP_OK = 200
         const val HTTP_LAST_SUCCESS = 299
+        const val HTTP_ABOVE_SUCCESS = 300
         const val HTTP_REDIRECT = 302
         const val HTTP_FORBIDDEN = 403
         const val HTTP_NOT_FOUND = 404

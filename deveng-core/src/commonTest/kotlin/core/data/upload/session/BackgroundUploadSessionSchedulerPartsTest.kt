@@ -73,6 +73,7 @@ class BackgroundUploadSessionSchedulerPartsTest {
         assertEquals(listOf(1, 2), partHandler.signedPartNumbers)
         assertEquals(WrittenPart(transferId = partTransferId(2), sourceFilePath = VIDEO_FILE_PATH, offset = PART_SIZE_BYTES, length = PART_SIZE_BYTES), fileStore.writtenParts.last())
         assertEquals(partTransferId(2), transport.createdRequests.last().first)
+        assertTrue(transport.tasks.last().isResumed)
     }
 
     @Test
@@ -82,6 +83,7 @@ class BackgroundUploadSessionSchedulerPartsTest {
         scheduler.schedule(VIDEO_DESCRIPTOR)
         runCurrent()
 
+        fileStore.filesByUploadId[partTransferId(STALE_PART_NUMBER)] = byteArrayOf(1)
         storeAllParts()
 
         assertEquals(listOf(STORED_PARTS), partHandler.completedParts)
@@ -201,6 +203,21 @@ class BackgroundUploadSessionSchedulerPartsTest {
     }
 
     @Test
+    fun partThatCannotBeSignedAgainAndAgain_isSignedOnEveryResume() = runTest {
+        val scheduler = createScheduler()
+        partHandler.signFailure = IllegalStateException(FAILURE_MESSAGE)
+        scheduler.schedule(VIDEO_DESCRIPTOR)
+        runCurrent()
+
+        repeat(MAX_PART_ATTEMPTS) {
+            scheduler.resumeInterruptedUploads()
+            runCurrent()
+        }
+
+        assertEquals(List(MAX_PART_ATTEMPTS + 1) { 1 }, partHandler.signedPartNumbers)
+    }
+
+    @Test
     fun resumeInterruptedUploads_continuesOnlyPartedUploadsFromTheirFirstPendingPart() = runTest {
         descriptorStorage.save(VIDEO_DESCRIPTOR.copy(partedUpload = partedUploadWith(StoredPart(partNumber = 1, entityTag = ENTITY_TAG_1))))
         descriptorStorage.save(PHOTO_DESCRIPTOR)
@@ -280,6 +297,21 @@ class BackgroundUploadSessionSchedulerPartsTest {
         runCurrent()
 
         assertEquals(listOf(failure(BackgroundUploadFailureReason.httpStatus(HTTP_REDIRECT))), completions)
+    }
+
+    @Test
+    fun partAnsweredJustOutsideTheSuccessRange_failsAsNotStored() = runTest {
+        listOf(HTTP_BELOW_SUCCESS, HTTP_ABOVE_SUCCESS).forEach { statusCode ->
+            val scheduler = createScheduler()
+            val completions = collectCompletions(scheduler)
+            scheduler.schedule(VIDEO_DESCRIPTOR)
+            runCurrent()
+
+            transport.complete(partTransferId(1), BackgroundUploadTransferOutcome.Response(statusCode = statusCode, body = null, entityTag = ENTITY_TAG_1))
+            runCurrent()
+
+            assertEquals(listOf(failure(BackgroundUploadFailureReason.httpStatus(statusCode))), completions)
+        }
     }
 
     @Test
@@ -475,8 +507,11 @@ class BackgroundUploadSessionSchedulerPartsTest {
         const val ENTITY_TAG_1 = "\"etag-1\""
         const val FAILURE_MESSAGE = "boom"
         const val NETWORK_FAILURE_REASON = "network_NSURLErrorDomain_-1005: connection lost"
+        const val STALE_PART_NUMBER = 9
+        const val HTTP_BELOW_SUCCESS = 199
         const val HTTP_OK = 200
         const val HTTP_LAST_SUCCESS = 299
+        const val HTTP_ABOVE_SUCCESS = 300
         const val HTTP_REDIRECT = 302
         const val HTTP_FORBIDDEN = 403
         const val HTTP_NOT_FOUND = 404

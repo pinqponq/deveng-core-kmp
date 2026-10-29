@@ -47,6 +47,9 @@ sealed interface BackgroundUploadPreparation {
      * A large file PUT straight to storage in parts of [partSizeBytes] (the last part is shorter).
      * The app's server has already opened the multipart upload and finds it again by [remoteKey].
      * The scheduler needs a [BackgroundUploadPartHandler] to sign and complete the parts.
+     * [filePath] is stored and read again when the upload resumes after an app kill, so it must
+     * stay valid until the upload ends. On iOS an app update can move the app's container, and a
+     * part that cannot be read then fails the upload with `write_part_file_failed`.
      */
     data class DirectFileInParts(
         val filePath: String,

@@ -17,6 +17,16 @@ class PartedUploadTest {
     }
 
     @Test
+    fun properties_keepTheLayoutTheyWereCreatedWith() {
+        val upload = partedUpload(totalBytes = 25)
+
+        assertEquals("session-1", upload.remoteKey)
+        assertEquals("/videos/clip.mp4", upload.filePath)
+        assertEquals(25, upload.totalBytes)
+        assertEquals(PART_SIZE_BYTES, upload.partSizeBytes)
+    }
+
+    @Test
     fun partCount_withExactMultiple_hasNoEmptyLastPart() {
         assertEquals(2, partedUpload(totalBytes = 20).partCount)
     }

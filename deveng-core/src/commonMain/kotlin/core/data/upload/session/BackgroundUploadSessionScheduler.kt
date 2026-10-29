@@ -632,11 +632,11 @@ class BackgroundUploadSessionScheduler<T>(
         }
     }
 
+    // Covers the whole-file body and every part body: both parse back to this upload id.
     private fun deleteBodyFiles(uploadId: String) {
         fileStore.listUploadIds()
             .filter { transferId -> BackgroundUploadTransferId.parse(transferId).uploadId == uploadId }
             .forEach(fileStore::delete)
-        fileStore.delete(uploadId)
     }
 
     private fun deleteOrphanedBodyFiles() {
