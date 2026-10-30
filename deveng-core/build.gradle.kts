@@ -78,6 +78,7 @@ kotlin {
             implementation(libs.qrose)
             implementation(libs.material3.adaptive)
             api(libs.ktor.client.core)
+            api(libs.deveng.networking.kmp)
             api(libs.androidx.lifecycle.viewmodel)
             implementation(libs.compose.media.player)
         }
@@ -126,6 +127,8 @@ kotlin {
             implementation(libs.turbine)
             implementation(libs.russhwolf.settings.test)
             implementation(libs.ktor.client.mock)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
         }
 
         val desktopTest by getting {
