@@ -13,6 +13,10 @@ import networking.util.DevengHttpMethod
  * `{"accessToken": "…", "refreshToken": "…"}`, where `refreshToken` is optional. The revoke endpoint may
  * answer any 2xx status, with or without a body.
  *
+ * Both requests are sent like every other request of the client: with the current access token and, on
+ * HTTP 401, with the client's `onUnauthorized` callback. While the client renews the session, a 401 of the
+ * renew request does not start another renewal.
+ *
  * Pass both functions to the session options:
  * `AuthSessionOptions(renewTokens = authSessionApi::renewTokens, revokeRefreshToken = authSessionApi::revokeRefreshToken, …)`.
  *

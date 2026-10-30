@@ -29,6 +29,8 @@ import kotlin.test.assertTrue
 class HttpAuthSessionApiTest {
 
     private val sentRequests = mutableListOf<SentRequest>()
+    private val sentAuthorizationHeaders = mutableListOf<String?>()
+    private var unauthorizedNotificationCount = 0
 
     @Test
     fun renewTokens_withRotatedRefreshToken_postsRefreshTokenAndReturnsBothTokens() = runTest {
@@ -56,6 +58,26 @@ class HttpAuthSessionApiTest {
         val failure = assertFailsWith<DevengException> { authSessionApi.renewTokens(refreshToken = REFRESH_TOKEN) }
 
         assertEquals(HttpStatusCode.Unauthorized.value, failure.statusCode)
+        assertEquals(1, unauthorizedNotificationCount)
+    }
+
+    @Test
+    fun renewTokens_withClientToken_sendsTheCurrentAccessToken() = runTest {
+        val authSessionApi = createAuthSessionApi(responses = listOf(HttpStatusCode.OK to ROTATED_TOKENS_RESPONSE))
+
+        authSessionApi.renewTokens(refreshToken = REFRESH_TOKEN)
+
+        assertEquals(listOf<String?>("Bearer $ACCESS_TOKEN"), sentAuthorizationHeaders)
+    }
+
+    @Test
+    fun revokeRefreshToken_withUnauthorizedAnswer_throwsAndNotifiesTheClient() = runTest {
+        val authSessionApi = createAuthSessionApi(responses = listOf(HttpStatusCode.Unauthorized to ERROR_RESPONSE))
+
+        val failure = assertFailsWith<DevengException> { authSessionApi.revokeRefreshToken(refreshToken = REFRESH_TOKEN) }
+
+        assertEquals(HttpStatusCode.Unauthorized.value, failure.statusCode)
+        assertEquals(1, unauthorizedNotificationCount)
     }
 
     @Test
@@ -83,6 +105,7 @@ class HttpAuthSessionApiTest {
         val failure = assertFailsWith<DevengException> { authSessionApi.revokeRefreshToken(refreshToken = REFRESH_TOKEN) }
 
         assertEquals(HttpStatusCode.InternalServerError.value, failure.statusCode)
+        assertEquals(0, unauthorizedNotificationCount)
     }
 
     @Test
@@ -141,13 +164,18 @@ class HttpAuthSessionApiTest {
                 url = request.url.toString(),
                 body = request.body.toByteArray().decodeToString(),
             )
+            sentAuthorizationHeaders += request.headers[HttpHeaders.Authorization]
             val (status, body) = pendingResponses.removeFirst()
             respond(content = body, status = status, headers = JSON_HEADERS)
         }
         val devengNetworkingModule = DevengNetworkingModule()
         devengNetworkingModule.initDevengNetworkingModule(
             restBaseUrl = BASE_URL,
-            config = DevengNetworkingConfig(loggingEnabled = false),
+            config = DevengNetworkingConfig(
+                loggingEnabled = false,
+                token = ACCESS_TOKEN,
+                onUnauthorized = { unauthorizedNotificationCount += 1 },
+            ),
         )
         devengNetworkingModule.client?.close()
         devengNetworkingModule.client = HttpClient(mockEngine) {
