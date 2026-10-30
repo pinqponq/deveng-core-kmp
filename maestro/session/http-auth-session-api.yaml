@@ -1,0 +1,35 @@
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID || 'io.deveng.core.androidApp'}
+  PLATFORM: ${PLATFORM || 'android'}
+---
+- launchApp:
+    clearState: true
+- scrollUntilVisible:
+    element: "Open Auth Session Demo"
+- tapOn: "Open Auth Session Demo"
+- assertVisible: "Signed in: false"
+- startRecording: build/maestro/${PLATFORM}/http-auth-session-api
+- tapOn: "Sign in"
+- assertVisible: "Signed in: true"
+- takeScreenshot: build/maestro/${PLATFORM}/http-auth-session-api-01-signed-in
+- tapOn: "Refresh session"
+- assertVisible: "Sent POST auth/refresh with refresh token demo-refresh-0"
+- extendedWaitUntil:
+    visible: "Last refresh: stored"
+    timeout: 10000
+- takeScreenshot: build/maestro/${PLATFORM}/http-auth-session-api-02-renewed
+- tapOn: "Refresh, then sign out before it finishes"
+- extendedWaitUntil:
+    visible: "Last refresh: dropped"
+    timeout: 10000
+- assertVisible: "Sent POST auth/logout with refresh token demo-refresh-1"
+- assertVisible: "Signed in: false"
+- takeScreenshot: build/maestro/${PLATFORM}/http-auth-session-api-03-signed-out-during-renewal
+- tapOn: "Sign in"
+- assertVisible: "Signed in: true"
+- tapOn: "Sign out"
+- assertVisible: "Sent POST auth/logout with refresh token demo-refresh-0"
+- assertVisible: "Signed in: false"
+- takeScreenshot: build/maestro/${PLATFORM}/http-auth-session-api-04-signed-out
+- stopRecording

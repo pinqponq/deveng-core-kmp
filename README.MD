@@ -798,14 +798,20 @@ func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: Str
 
 `core.session` covers the sign-in session every app wires by hand: storing the token pair, handing the access token to the HTTP client, renewing the tokens when the backend rejects the access token, and clearing everything on sign-out. A renewal that finishes after a sign-out, or after the next sign-in, is dropped instead of writing old tokens back. Your app keeps its renew and revoke endpoints and its own cleanup.
 
-Create one `AuthSessionManager` per app (for example a DI singleton):
+Create one `AuthSessionManager` per app (for example a DI singleton). When your backend renews and revokes with the body `{"refreshToken": "…"}`, `HttpAuthSessionApi` sends both requests through your `DevengNetworkingModule`; you pass only the two paths:
 
 ```kotlin
+val authSessionApi = HttpAuthSessionApi(
+    devengNetworkingModule = devengNetworkingModule,
+    refreshEndpoint = "auth/refresh",
+    logoutEndpoint = "auth/logout",
+)
+
 val authSessionManager = AuthSessionManager(
     authSessionOptions = AuthSessionOptions(
-        renewTokens = { refreshToken -> authApi.renew(refreshToken).let { AuthTokens(it.accessToken, it.refreshToken) } },
+        renewTokens = authSessionApi::renewTokens,
         onAccessTokenChanged = { accessToken -> devengNetworkingModule.setToken(accessToken.orEmpty()) },
-        revokeRefreshToken = { refreshToken -> authApi.revoke(refreshToken) }, // optional
+        revokeRefreshToken = authSessionApi::revokeRefreshToken, // optional
     ),
     // Pass your current keys (AuthSessionStorageKeys(accessTokenKey = "TOKEN", ...)) to keep signed-in users signed in.
     authCredentialsStorage = AuthCredentialsStorageImpl(settings),
@@ -826,7 +832,11 @@ DevengNetworkingConfig(
 | Read claims of the access token | `decodeClaims<UserClaims>()` (null when signed out; signature not verified) |
 | Renew before a long background job | `devengNetworkingModule.refreshSession()` (shares the client's single-flight lock; do not call `authSessionManager.refreshSession()` directly) |
 
-`signIn` hands the token to the client before `isLoggedIn` turns true. `signOut` runs `beforeSignOut` while requests are still authenticated, then turns `isLoggedIn` false and removes the stored tokens, revokes the refresh token, drops the client's token and runs `onCleared`; a failing hook or revoke is logged and never stops the local sign-out, and the steps after `isLoggedIn` turns false still run when the calling screen's scope is cancelled. A revoke that does not answer within `revokeTimeout` (10 s by default) is abandoned. If the app process dies during the revoke, no token is left stored, but `onCleared` does not run. A renewal without a new refresh token keeps the stored one. The **Auth Session Demo** screen in the sample app shows the flow, including a sign-out while a renewal is running.
+`signIn` hands the token to the client before `isLoggedIn` turns true. `signOut` runs `beforeSignOut` while requests are still authenticated, then turns `isLoggedIn` false and removes the stored tokens, revokes the refresh token, drops the client's token and runs `onCleared`; a failing hook or revoke is logged and never stops the local sign-out, and the steps after `isLoggedIn` turns false still run when the calling screen's scope is cancelled. A revoke that does not answer within `revokeTimeout` (10 s by default) is abandoned. If the app process dies during the revoke, no token is left stored, but `onCleared` does not run. A renewal without a new refresh token keeps the stored one.
+
+`HttpAuthSessionApi` posts `{"refreshToken": "…"}` to both paths. The renew answer must be `{"accessToken": "…", "refreshToken": "…"}`, where `refreshToken` is optional. The revoke answer may be any 2xx status, with or without a body. Both requests carry the current access token like every other request of the client. A non-2xx answer throws the client's `DevengException`, so the manager logs it and treats the renewal or revoke as failed. A 401 answer also calls the client's `onUnauthorized`; while the client renews the session, a 401 of the renew request does not start another renewal. A backend with a different request or answer shape keeps its own functions in `renewTokens` and `revokeRefreshToken`.
+
+The **Auth Session Demo** screen in the sample app shows the flow through `HttpAuthSessionApi` against a mock backend, including a sign-out while a renewal is running.
 
 ---
 

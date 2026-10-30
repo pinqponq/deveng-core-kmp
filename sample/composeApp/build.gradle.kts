@@ -66,6 +66,9 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.ktor.client.mock)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
         }
 
         androidMain.dependencies {

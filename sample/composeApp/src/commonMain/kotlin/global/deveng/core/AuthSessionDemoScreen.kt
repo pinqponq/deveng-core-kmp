@@ -30,23 +30,22 @@ import core.presentation.component.CustomButton
 import core.presentation.component.CustomIconButton
 import core.presentation.theme.CoreMediumTextStyle
 import core.presentation.theme.CoreRegularTextStyle
+import core.session.data.remote.HttpAuthSessionApi
 import core.session.data.store.AuthCredentialsStorageImpl
 import core.session.domain.AuthSessionManager
 import core.session.domain.AuthSessionOptions
-import core.session.domain.model.AuthTokens
 import deveng_core_kmp.sample.composeapp.generated.resources.Res
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_arrow_left
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import kotlin.time.Duration.Companion.seconds
 
-private val DEMO_RENEW_DURATION = 2.seconds
 private const val DEMO_ACCESS_TOKEN =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vLXVzZXIifQ.c2lnbmF0dXJl"
 private const val DEMO_REFRESH_TOKEN_PREFIX = "demo-refresh-"
 private const val SUBJECT_CLAIM_NAME = "sub"
+private const val DEMO_REFRESH_ENDPOINT = "auth/refresh"
+private const val DEMO_LOGOUT_ENDPOINT = "auth/logout"
 
 @Composable
 internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
@@ -55,18 +54,31 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
     var renewCount by remember { mutableIntStateOf(0) }
     var lastRefreshResult by remember { mutableStateOf("-") }
     val authSessionManager = remember {
+        val demoNetworkingModule = createDemoAuthBackend(
+            refreshEndpoint = DEMO_REFRESH_ENDPOINT,
+            onRequest = { request ->
+                eventLines += "Sent ${request.method} ${request.endpoint} with refresh token ${request.refreshToken}"
+            },
+            renewedTokensBody = {
+                renewCount += 1
+                """{"accessToken":"$DEMO_ACCESS_TOKEN","refreshToken":"$DEMO_REFRESH_TOKEN_PREFIX$renewCount"}"""
+            },
+        )
+
+        val authSessionApi = HttpAuthSessionApi(
+            devengNetworkingModule = demoNetworkingModule,
+            refreshEndpoint = DEMO_REFRESH_ENDPOINT,
+            logoutEndpoint = DEMO_LOGOUT_ENDPOINT,
+        )
+
         AuthSessionManager(
             authSessionOptions = AuthSessionOptions(
-                renewTokens = { refreshToken ->
-                    eventLines += "renew with $refreshToken (takes $DEMO_RENEW_DURATION)"
-                    delay(DEMO_RENEW_DURATION)
-                    renewCount += 1
-                    AuthTokens(accessToken = DEMO_ACCESS_TOKEN, refreshToken = "$DEMO_REFRESH_TOKEN_PREFIX$renewCount")
-                },
+                renewTokens = authSessionApi::renewTokens,
                 onAccessTokenChanged = { accessToken ->
-                    eventLines += "client token: ${accessToken?.take(n = 12) ?: "none"}"
+                    demoNetworkingModule.setToken(accessToken.orEmpty())
+                    eventLines += if (accessToken == null) "HTTP client token cleared" else "HTTP client token set"
                 },
-                revokeRefreshToken = { refreshToken -> eventLines += "revoke $refreshToken" },
+                revokeRefreshToken = authSessionApi::revokeRefreshToken,
             ),
             authCredentialsStorage = AuthCredentialsStorageImpl(settings = Settings()),
         )
