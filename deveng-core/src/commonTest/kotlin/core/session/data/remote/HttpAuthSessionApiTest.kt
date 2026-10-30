@@ -140,6 +140,7 @@ class HttpAuthSessionApiTest {
         val authSessionApi = createAuthSessionApi(
             responses = listOf(HttpStatusCode.OK to ROTATED_TOKENS_RESPONSE, HttpStatusCode.NoContent to ""),
         )
+
         val accessTokensSentToClient = mutableListOf<String?>()
         val authSessionManager = AuthSessionManager(
             authSessionOptions = AuthSessionOptions(
@@ -149,6 +150,7 @@ class HttpAuthSessionApiTest {
             ),
             authCredentialsStorage = AuthCredentialsStorageImpl(settings = MapSettings()),
         )
+
         authSessionManager.signIn(accessToken = ACCESS_TOKEN, refreshToken = REFRESH_TOKEN)
 
         val isRefreshStored = authSessionManager.refreshSession()
@@ -162,6 +164,7 @@ class HttpAuthSessionApiTest {
             ),
             sentRequests,
         )
+
         assertEquals(listOf(ACCESS_TOKEN, RENEWED_ACCESS_TOKEN, null), accessTokensSentToClient)
     }
 
@@ -173,6 +176,7 @@ class HttpAuthSessionApiTest {
                 url = request.url.toString(),
                 body = request.body.toByteArray().decodeToString(),
             )
+
             sentAuthorizationHeaders += request.headers[HttpHeaders.Authorization]
             val (status, body) = pendingResponses.removeFirst()
             respond(content = body, status = status, headers = JSON_HEADERS)
@@ -186,6 +190,7 @@ class HttpAuthSessionApiTest {
                 onUnauthorized = { unauthorizedNotificationCount += 1 },
             ),
         )
+
         devengNetworkingModule.client?.close()
         devengNetworkingModule.client = HttpClient(mockEngine) {
             install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
