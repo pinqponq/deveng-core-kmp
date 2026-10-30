@@ -57,7 +57,9 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
         val authSessionApi = HttpAuthSessionApi(
             devengNetworkingModule = createDemoAuthBackend(
                 refreshEndpoint = DEMO_REFRESH_ENDPOINT,
-                onRequest = { request -> eventLines += "${request.method} ${request.endpoint} ${request.body}" },
+                onRequest = { request ->
+                    eventLines += "Sent ${request.method} ${request.endpoint} with refresh token ${request.refreshToken}"
+                },
                 renewedTokensBody = {
                     renewCount += 1
                     """{"accessToken":"$DEMO_ACCESS_TOKEN","refreshToken":"$DEMO_REFRESH_TOKEN_PREFIX$renewCount"}"""
@@ -70,7 +72,7 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
             authSessionOptions = AuthSessionOptions(
                 renewTokens = authSessionApi::renewTokens,
                 onAccessTokenChanged = { accessToken ->
-                    eventLines += "client token: ${accessToken?.take(n = 12) ?: "none"}"
+                    eventLines += if (accessToken == null) "HTTP client token cleared" else "HTTP client token set"
                 },
                 revokeRefreshToken = authSessionApi::revokeRefreshToken,
             ),
