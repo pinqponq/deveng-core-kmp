@@ -12,14 +12,19 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import networking.DevengNetworkingConfig
 import networking.DevengNetworkingModule
 import kotlin.time.Duration.Companion.seconds
 
 private const val DEMO_BASE_URL = "https://demo.deveng.test/"
 private val DEMO_RENEW_DURATION = 2.seconds
+private const val REFRESH_TOKEN_FIELD_NAME = "refreshToken"
 
-internal class DemoAuthRequest(val method: String, val endpoint: String, val body: String)
+internal class DemoAuthRequest(val method: String, val endpoint: String, val refreshToken: String)
+
+private val demoJson = Json { ignoreUnknownKeys = true }
 
 // The sample has no backend, so a mock engine answers the renew request after a delay and the revoke request with 204.
 internal fun createDemoAuthBackend(
@@ -29,7 +34,9 @@ internal fun createDemoAuthBackend(
 ): DevengNetworkingModule {
     val mockEngine = MockEngine { request ->
         val endpoint = request.url.toString().removePrefix(DEMO_BASE_URL)
-        onRequest(DemoAuthRequest(request.method.value, endpoint, request.body.toByteArray().decodeToString()))
+        val requestBody = demoJson.parseToJsonElement(request.body.toByteArray().decodeToString()).jsonObject
+        val refreshToken = requestBody.getValue(REFRESH_TOKEN_FIELD_NAME).jsonPrimitive.content
+        onRequest(DemoAuthRequest(request.method.value, endpoint, refreshToken))
 
         if (endpoint == refreshEndpoint) {
             delay(DEMO_RENEW_DURATION)
@@ -50,7 +57,7 @@ internal fun createDemoAuthBackend(
     )
     devengNetworkingModule.client?.close()
     devengNetworkingModule.client = HttpClient(mockEngine) {
-        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        install(ContentNegotiation) { json(demoJson) }
     }
 
     return devengNetworkingModule
