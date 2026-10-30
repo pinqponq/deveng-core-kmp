@@ -54,17 +54,18 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
     var renewCount by remember { mutableIntStateOf(0) }
     var lastRefreshResult by remember { mutableStateOf("-") }
     val authSessionManager = remember {
+        val demoNetworkingModule = createDemoAuthBackend(
+            refreshEndpoint = DEMO_REFRESH_ENDPOINT,
+            onRequest = { request ->
+                eventLines += "Sent ${request.method} ${request.endpoint} with refresh token ${request.refreshToken}"
+            },
+            renewedTokensBody = {
+                renewCount += 1
+                """{"accessToken":"$DEMO_ACCESS_TOKEN","refreshToken":"$DEMO_REFRESH_TOKEN_PREFIX$renewCount"}"""
+            },
+        )
         val authSessionApi = HttpAuthSessionApi(
-            devengNetworkingModule = createDemoAuthBackend(
-                refreshEndpoint = DEMO_REFRESH_ENDPOINT,
-                onRequest = { request ->
-                    eventLines += "Sent ${request.method} ${request.endpoint} with refresh token ${request.refreshToken}"
-                },
-                renewedTokensBody = {
-                    renewCount += 1
-                    """{"accessToken":"$DEMO_ACCESS_TOKEN","refreshToken":"$DEMO_REFRESH_TOKEN_PREFIX$renewCount"}"""
-                },
-            ),
+            devengNetworkingModule = demoNetworkingModule,
             refreshEndpoint = DEMO_REFRESH_ENDPOINT,
             logoutEndpoint = DEMO_LOGOUT_ENDPOINT,
         )
@@ -72,6 +73,7 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
             authSessionOptions = AuthSessionOptions(
                 renewTokens = authSessionApi::renewTokens,
                 onAccessTokenChanged = { accessToken ->
+                    demoNetworkingModule.setToken(accessToken.orEmpty())
                     eventLines += if (accessToken == null) "HTTP client token cleared" else "HTTP client token set"
                 },
                 revokeRefreshToken = authSessionApi::revokeRefreshToken,

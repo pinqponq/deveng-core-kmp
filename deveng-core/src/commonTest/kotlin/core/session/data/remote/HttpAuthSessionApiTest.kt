@@ -52,7 +52,7 @@ class HttpAuthSessionApiTest {
     }
 
     @Test
-    fun renewTokens_withRejectedRefreshToken_throwsWithStatusCode() = runTest {
+    fun renewTokens_withUnauthorizedAnswer_throwsAndNotifiesTheClient() = runTest {
         val authSessionApi = createAuthSessionApi(responses = listOf(HttpStatusCode.Unauthorized to ERROR_RESPONSE))
 
         val failure = assertFailsWith<DevengException> { authSessionApi.renewTokens(refreshToken = REFRESH_TOKEN) }
@@ -66,6 +66,15 @@ class HttpAuthSessionApiTest {
         val authSessionApi = createAuthSessionApi(responses = listOf(HttpStatusCode.OK to ROTATED_TOKENS_RESPONSE))
 
         authSessionApi.renewTokens(refreshToken = REFRESH_TOKEN)
+
+        assertEquals(listOf<String?>("Bearer $ACCESS_TOKEN"), sentAuthorizationHeaders)
+    }
+
+    @Test
+    fun revokeRefreshToken_withClientToken_sendsTheCurrentAccessToken() = runTest {
+        val authSessionApi = createAuthSessionApi(responses = listOf(HttpStatusCode.NoContent to ""))
+
+        authSessionApi.revokeRefreshToken(refreshToken = REFRESH_TOKEN)
 
         assertEquals(listOf<String?>("Bearer $ACCESS_TOKEN"), sentAuthorizationHeaders)
     }
