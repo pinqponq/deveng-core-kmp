@@ -64,11 +64,13 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
                 """{"accessToken":"$DEMO_ACCESS_TOKEN","refreshToken":"$DEMO_REFRESH_TOKEN_PREFIX$renewCount"}"""
             },
         )
+
         val authSessionApi = HttpAuthSessionApi(
             devengNetworkingModule = demoNetworkingModule,
             refreshEndpoint = DEMO_REFRESH_ENDPOINT,
             logoutEndpoint = DEMO_LOGOUT_ENDPOINT,
         )
+
         AuthSessionManager(
             authSessionOptions = AuthSessionOptions(
                 renewTokens = authSessionApi::renewTokens,

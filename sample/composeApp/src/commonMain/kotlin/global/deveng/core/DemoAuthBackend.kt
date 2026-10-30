@@ -55,6 +55,7 @@ internal fun createDemoAuthBackend(
         restBaseUrl = DEMO_BASE_URL,
         config = DevengNetworkingConfig(loggingEnabled = false),
     )
+
     devengNetworkingModule.client?.close()
     devengNetworkingModule.client = HttpClient(mockEngine) {
         install(ContentNegotiation) { json(demoJson) }
