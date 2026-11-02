@@ -71,7 +71,7 @@ class DeferredPlatformCrashReporterTest {
         deferredReporter.attach(attachedReporter)
 
         assertEquals(
-            listOf(RecordedCrashCall.Log(SECOND_MESSAGE), RecordedCrashCall.Log(THIRD_MESSAGE)),
+            listOf<RecordedCrashCall>(RecordedCrashCall.Log(SECOND_MESSAGE), RecordedCrashCall.Log(THIRD_MESSAGE)),
             attachedReporter.calls,
         )
     }
