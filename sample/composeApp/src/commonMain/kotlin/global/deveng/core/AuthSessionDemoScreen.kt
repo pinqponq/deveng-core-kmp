@@ -26,6 +26,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.russhwolf.settings.Settings
+import core.crash.data.createCrashReporter
+import core.crash.domain.model.CrashReportingOptions
 import core.presentation.component.CustomButton
 import core.presentation.component.CustomIconButton
 import core.presentation.theme.CoreMediumTextStyle
@@ -47,6 +49,7 @@ private const val DEMO_ACCESS_TOKEN =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZW1vLXVzZXIifQ.c2lnbmF0dXJl"
 private const val DEMO_REFRESH_TOKEN_PREFIX = "demo-refresh-"
 private const val SUBJECT_CLAIM_NAME = "sub"
+private const val DEMO_INSTALL_ID = "demo-install"
 
 @Composable
 internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
@@ -54,6 +57,13 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
     val eventLines = remember { mutableStateListOf<String>() }
     var renewCount by remember { mutableIntStateOf(0) }
     var lastRefreshResult by remember { mutableStateOf("-") }
+    val crashReporter = remember {
+        createCrashReporter(
+            crashReportingOptions = CrashReportingOptions(),
+            installIdProvider = { DEMO_INSTALL_ID },
+            platformCrashReporter = DemoPlatformCrashReporter(onCall = { line -> eventLines += line }),
+        )
+    }
     val authSessionManager = remember {
         AuthSessionManager(
             authSessionOptions = AuthSessionOptions(
@@ -92,7 +102,10 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
         coroutineScope.launch {
             authSessionManager.signOut(
                 beforeSignOut = { eventLines += "beforeSignOut: unregister push" },
-                onCleared = { eventLines += "onCleared: clear product stores" },
+                onCleared = {
+                    eventLines += "onCleared: clear product stores"
+                    crashReporter.identify(userId = null)
+                },
             )
         }
     }
@@ -128,7 +141,15 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
                     authSessionManager.signIn(
                         accessToken = DEMO_ACCESS_TOKEN,
                         refreshToken = "${DEMO_REFRESH_TOKEN_PREFIX}0",
-                        onSignedIn = { eventLines += "onSignedIn: sync billing user" },
+                        onSignedIn = {
+                            eventLines += "onSignedIn: sync billing user"
+                            crashReporter.identify(
+                                userId = authSessionManager.decodeClaims<JsonObject>()
+                                    ?.get(SUBJECT_CLAIM_NAME)
+                                    ?.jsonPrimitive
+                                    ?.content,
+                            )
+                        },
                     )
                 }
             },
@@ -153,6 +174,18 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             text = "Sign out",
             onClick = ::signOut,
+        )
+
+        CustomButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = "Record non-fatal error",
+            onClick = { crashReporter.recordNonFatal(IllegalStateException("Demo upload failed")) },
+        )
+
+        CustomButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = "Write crash log",
+            onClick = { crashReporter.log(message = "Demo screen opened") },
         )
 
         Text(text = "Events", style = CoreMediumTextStyle().copy(fontSize = 16.sp))

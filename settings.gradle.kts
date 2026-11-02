@@ -46,6 +46,7 @@ include(":sample:composeApp")
 include(":deveng-core")
 include(":deveng-billing")
 include(":deveng-pinqloq")
+include(":deveng-crash")
 include(":deveng-widget")
 include(":deveng-filepicker")
 
