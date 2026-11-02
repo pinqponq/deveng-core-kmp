@@ -5,11 +5,11 @@ env:
 ---
 - launchApp:
     clearState: true
-- startRecording: build/maestro/${PLATFORM}/crash-reporter
 - scrollUntilVisible:
     element: "Open Auth Session Demo"
 - tapOn: "Open Auth Session Demo"
 - assertVisible: "Signed in: false"
+- startRecording: build/maestro/${PLATFORM}/crash-reporter
 - tapOn: "Sign in"
 - assertVisible: "Signed in: true"
 - assertVisible: "crash: setUserId demo-user"
