@@ -64,6 +64,7 @@ internal fun AuthSessionDemoScreen(onBack: () -> Unit) {
             platformCrashReporter = DemoPlatformCrashReporter(onCall = { line -> eventLines += line }),
         )
     }
+
     val authSessionManager = remember {
         AuthSessionManager(
             authSessionOptions = AuthSessionOptions(
