@@ -45,6 +45,19 @@ This file always loads. Stack-specific rules load automatically only when you to
 - Extract large logical blocks (retry logic, setup, try-catch) into well-named sub-functions.
 - Apply SRP without over-engineering. Do not create abstractions without real value.
 - Shared libraries (pinqnuqets, deveng-core-kmp, deveng-networking-kmp, …) hold only what any product would need on its own. When moving product code into one, keep the product's conventions (header and route names, error codes and messages, defaults, policies such as which errors count as client errors) in the product. A setting counts as a convention when only one product would change it: do not add it to keep that product's behavior; the product rebuilds the behavior on the library's extension points (its own middleware, resolver, endpoint). Technology-specific parts go to separate optional packages. Check the moved code, its comments and its docs for product names before opening the pull request.
+- **When code moves into a shared library.** A component, function or class from a product moves into a shared library only when all four of these points hold:
+  - It holds no text of one product. A message, label or title that one product wrote stays in that product.
+  - It holds no identity of one product: no product name, package name, route, color, API key or storage key.
+  - It uses no domain model of one product.
+  - Any product can use it as it is, or one or two new parameters make it usable by any product.
+
+  If it fails any of the four points, it stays in the product.
+
+  What counts as a new parameter: a setting the library does not have yet, with a neutral default that other products can also set. A new theme field or a new option counts too. A setting that only one product would ever change is a product convention (see the bullet above), so it is not added at all. A value that the library's theme or options already provide does not count. The content a caller passes in (texts, data, callbacks, slot content) does not count either, because every caller passes its own.
+
+  Correct: a retry helper takes the attempt count and the delay between attempts as parameters. It names no product. It moves to the shared library.
+
+  Wrong: an order-tracking dialog shows one product's own step texts. It takes that product's `Order` model. It needs five settings that only this product would change, to hide its own steps. It stays in the product.
 - Layer dependency rules:
   - Application depends only on Domain.
   - Domain must not depend on any other layer; Domain may only depend on other Domain modules.
@@ -153,10 +166,30 @@ RabbitMQService(rabbitOptions)
 
 ---
 
+## Integrating Shared Services
+
+- Before integrating a shared service (chat, logging, push, identity) into a product, read how a product that already uses it does so: the client setup, the backend endpoint that issues its tokens, deep links and notifications. Follow the same flow.
+- Check the service's response shapes in the service's own source, not only in a consumer: a consumer can read a shape the service no longer sends.
+- Add to the shared library only what the new product needs and no existing product has.
+
+---
+
 ## Moving or Replacing Existing Code
 
 When a change moves code to a shared library or replaces a whole layer (error handling, logging, paging, data access), prove with tests written against the old code that the behavior stays the same.
 
 - A characterization test records what the old code does today. Test through public behavior (HTTP responses, logs sent, values a service returns), not through the classes that will be removed, so the same tests still compile after the move. Keep the code that names the old classes in one test helper.
 - These tests must pass on the old code without any of the new code, and they must still pass after the move. A test that passed before and fails after is a regression, so fix the code.
+- Before the old code is removed, list the open pull requests that change it (`gh pr list --state open` in every repo that holds it). Port what they add to the new code, or say in both pull requests which one must follow the other. Example: a bridge rewritten in Kotlin while a .NET bridge pull request added a tool; the tool was lost and nothing could publish the list.
 - A move changes no behavior, and the move does not change any expected result of these tests. If the new library behaves differently, keep the old behavior in the code that uses it (a resolver, writer, middleware or small wrapper). A behavior change that the new library makes possible is made separately after the move, with a note on what changes, why it helps and which clients it can affect.
+
+---
+
+## Local Labs and Benchmarks
+
+A lab is a database, search engine or other server started on a developer machine to try a change or measure it. Run it so the machine and the other work on it keep running.
+
+- Keep all of its data on the disk the machine's owner names for it: container volumes, the Docker VM's disk, generated data and benchmark output. Check that the disk is mounted before you start.
+- Give every container a CPU and memory limit, and size the VM so the rest of the machine keeps enough memory. Measure a small data set first and start the large one only after the small one works.
+- Stop the containers when a measurement is done. Delete the lab and its data once the results are written down, unless the owner asks to keep them.
+- Write each limit the lab needs into its compose file, so a long test run does not stop halfway. Example: `mongod` keeps a file open for every collection and index, and with Docker's default of 1,024 open files it stopped with "Too many open files" after many test databases. `ulimits: nofile: 64000` fixed it.
