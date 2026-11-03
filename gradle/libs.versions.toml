@@ -5,7 +5,7 @@ android-targetSdk = "36"
 android-compileSdk = "36"
 app-version-major = "1"
 app-version-code = "7"
-app-minor-version = "130"
+app-minor-version = "131"
 
 androidx-activityCompose = "1.12.2"
 androidx-documentfile = "1.0.1"
@@ -124,6 +124,7 @@ ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 firebase-android-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 gitlive-firebase-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "firebase-gitlive-sdk" }
+gitlive-firebase-crashlytics = { module = "dev.gitlive:firebase-crashlytics", version.ref = "firebase-gitlive-sdk" }
 facebook-core = { module = "com.facebook.android:facebook-core", version.ref = "facebook-android-sdk" }
 install-referrer = { module = "com.android.installreferrer:installreferrer", version.ref = "install-referrer" }
 basic-ads = { module = "app.lexilabs.basic:basic-ads", version.ref = "basic-ads" }

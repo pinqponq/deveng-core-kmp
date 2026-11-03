@@ -1,0 +1,34 @@
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID || 'io.deveng.core.androidApp'}
+  PLATFORM: ${PLATFORM || 'android'}
+---
+- launchApp:
+    clearState: true
+- scrollUntilVisible:
+    element: "Open Auth Session Demo"
+- tapOn: "Open Auth Session Demo"
+- assertVisible: "Signed in: false"
+- startRecording: build/maestro/${PLATFORM}/crash-reporter
+- tapOn: "Sign in"
+- assertVisible: "Signed in: true"
+- assertVisible: "crash: setUserId demo-user"
+- assertVisible: "crash: setCustomKey install_id=demo-install"
+- takeScreenshot: build/maestro/${PLATFORM}/crash-reporter-01-identified
+- tapOn: "Record non-fatal error"
+- scrollUntilVisible:
+    element: "crash: recordNonFatal Demo upload failed"
+- tapOn: "Write crash log"
+- scrollUntilVisible:
+    element: "crash: log Demo screen opened"
+- takeScreenshot: build/maestro/${PLATFORM}/crash-reporter-02-non-fatal-and-log
+- scrollUntilVisible:
+    element: "Sign out"
+    direction: UP
+- tapOn:
+    text: "Sign out"
+- assertVisible: "Signed in: false"
+- scrollUntilVisible:
+    element: "crash: setUserId cleared"
+- takeScreenshot: build/maestro/${PLATFORM}/crash-reporter-03-cleared
+- stopRecording

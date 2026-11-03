@@ -46,6 +46,7 @@ Replace `VERSION` with the [latest release](https://central.sonatype.com/artifac
 - [Pagination](#pagination)
 - [BaseViewModel and interceptors](#baseviewmodel-and-interceptors)
 - [Client Logs (deveng-pinqloq)](#client-logs-deveng-pinqloq)
+- [Crash Reporting (deveng-crash)](#crash-reporting-deveng-crash)
 - [File picker (deveng-filepicker)](#file-picker-deveng-filepicker)
 - [Web analytics (Google Analytics 4)](#web-analytics-google-analytics-4)
 - [Sample App](#sample-app)
@@ -978,6 +979,89 @@ An empty `metadata` or `detail` is left out of the request. For another shape, i
 `log` does not throw. A failure goes to `failureListener` with a reason: `ENTRY_REJECTED` (the `enabled` check or the metadata provider threw), `DELIVERY_FAILED` (the request failed; a failed batch is dropped, not retried) or `QUEUE_OVERFLOW`. Only coroutine cancellation is rethrown.
 
 The sample app's "Pinqloq Client Log Demo" screen shows an immediate logger, a batching logger, the `enabled` check and truncation. It records requests in memory instead of sending them.
+
+---
+
+## Crash Reporting (deveng-crash)
+
+The `deveng-crash` module gives the app one `CrashReporter` for every platform. It tells Firebase Crashlytics which user and which installation a crash comes from, records non-fatal errors and writes crash log lines. It is a separate module, so an app that does not use Crashlytics does not get the Crashlytics SDK through `core-kmp`.
+
+```kotlin
+implementation("global.deveng:crash-kmp:VERSION")
+```
+
+| Platform | What the reporter calls |
+|----------|-------------------------|
+| Android | Firebase Crashlytics, through the GitLive Firebase SDK that the module brings in. |
+| iOS | The `IosCrashReporterHandler` that the app sets on `IosCrashReporterBridge`. The Crashlytics SDK stays in the iOS app, not in the Kotlin framework. |
+| Desktop, wasmJs | Nothing (no-op). |
+
+### Setup
+
+Android: apply the `com.google.gms.google-services` and `com.google.firebase.crashlytics` Gradle plugins in the app module and add `google-services.json`, as for any Crashlytics app.
+
+iOS: add `FirebaseCrashlytics` to the iOS app (Swift Package Manager or CocoaPods), add `GoogleService-Info.plist`, and set the handler right after `FirebaseApp.configure()` in the `AppDelegate`:
+
+```swift
+final class CrashlyticsHandler: IosCrashReporterHandler {
+    func setUserId(userId: String?) { Crashlytics.crashlytics().setUserID(userId) }
+    func setCustomValue(key: String, value: String) { Crashlytics.crashlytics().setCustomValue(value, forKey: key) }
+    func log(message: String) { Crashlytics.crashlytics().log(message) }
+    func recordNonFatal(errorTypeName: String, message: String, stackTrace: String) {
+        let userInfo = [NSLocalizedDescriptionKey: message, "stackTrace": stackTrace]
+        Crashlytics.crashlytics().record(error: NSError(domain: errorTypeName, code: 0, userInfo: userInfo))
+    }
+}
+
+IosCrashReporterBridge.shared.setHandler(handler: CrashlyticsHandler())
+```
+
+Calls made before `setHandler` are kept (up to 100; after that the oldest is dropped) and replayed in order when the handler is set, so the app can set the user during start-up.
+
+DI: the app registers `MultiPlatformUtils` in Koin, then adds the module:
+
+```kotlin
+val crashModule = crashReportingModule(
+    CrashReportingOptions(
+        installIdKey = "install_id",
+        isEnabled = true,
+    )
+)
+
+val crashReporter: CrashReporter by inject()
+```
+
+Without Koin, use `createCrashReporter(crashReportingOptions, installIdProvider = { platformConfig.uuid })`.
+
+### Options
+
+| Option | Default | Meaning |
+|--------|---------|---------|
+| `installIdKey` | `"install_id"` | Custom key that carries the installation id (`PlatformConfig.uuid`). Must not be blank. |
+| `isEnabled` | `true` | `false` makes every call a no-op on every platform. Crashes are still collected by Crashlytics itself when the app includes it. |
+
+### Session wiring
+
+`identify(userId)` sets the user and adds the installation id under `installIdKey`. `identify(null)` clears the user and keeps the installation id. Call it from the session hooks of `AuthSessionManager`:
+
+```kotlin
+authSessionManager.signIn(accessToken, refreshToken, onSignedIn = { crashReporter.identify(userId) })
+authSessionManager.signOut(onCleared = { crashReporter.identify(null) })
+```
+
+Call `identify` once more at start-up when a stored session is restored.
+
+### Non-fatal errors and log lines
+
+`crashReporter.recordNonFatal(throwable)` records a caught error. `crashReporter.log(message)` adds a line to the log that is sent with the next crash or non-fatal error. `setCustomKey(key, value)` adds any other key.
+
+To forward Kermit logs, add `CrashReporterLogWriter` yourself; it is not added by default. It sends logs at `minimumSeverity` (`Severity.Error` by default) or above as log lines, and records their throwable as a non-fatal error:
+
+```kotlin
+Logger.addLogWriter(CrashReporterLogWriter(crashReporter = crashReporter))
+```
+
+The sample app's **Auth Session Demo** screen calls `identify` on sign-in and sign-out and has buttons for a non-fatal error and a log line. It shows the calls in its event list instead of sending them to Crashlytics.
 
 ---
 
