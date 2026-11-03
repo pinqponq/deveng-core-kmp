@@ -61,8 +61,8 @@ class MediaViewerVideoPageWasmJsTest {
         val video = findVideo()
         val pageCenterPixel = onRoot().captureToImage().toPixelMap().let { it[it.width / 2, it.height / 2] }
 
-        assertEquals("-1", video.style.zIndex)
-        assertEquals("none", video.style.getPropertyValue("pointer-events"))
+        assertEquals(Z_INDEX_BEHIND_CANVAS, video.style.zIndex)
+        assertEquals(POINTER_EVENTS_PASSED_THROUGH, video.style.getPropertyValue(POINTER_EVENTS_PROPERTY))
         assertEquals(0f, pageCenterPixel.alpha)
         assertTrue(isCanvasTransparencyStyleInstalled())
     }
@@ -75,8 +75,8 @@ class MediaViewerVideoPageWasmJsTest {
         val video = findVideo()
         val pageCenterPixel = onRoot().captureToImage().toPixelMap().let { it[it.width / 2, it.height / 2] }
 
-        assertEquals("1", video.style.zIndex)
-        assertEquals("auto", video.style.getPropertyValue("pointer-events"))
+        assertEquals(Z_INDEX_IN_FRONT_OF_CANVAS, video.style.zIndex)
+        assertEquals(POINTER_EVENTS_TAKEN, video.style.getPropertyValue(POINTER_EVENTS_PROPERTY))
         assertEquals(Color.Black, pageCenterPixel)
     }
 
@@ -99,25 +99,33 @@ class MediaViewerVideoPageWasmJsTest {
     private fun findVideo(): HTMLVideoElement =
         // The page under test adds exactly this element, so a missing one fails the test here.
         document.querySelector(VIDEO_SELECTOR)!!.unsafeCast<HTMLVideoElement>()
-}
 
-private const val MEDIA_ID = 7
-private const val VIDEO_URL = "collage.mp4"
-private const val VIDEO_SELECTOR = "video[data-media-id='$MEDIA_ID']"
-private const val PAGE_SIZE_DP = 120
+    // The red backdrop makes both outcomes visible in a capture: a cleared page area has no colour
+    // at all, a black page area hides the red.
+    @Composable
+    private fun VideoPageOverRed(areControlsVisible: Boolean) {
+        Box(modifier = Modifier.size(PAGE_SIZE_DP.dp).background(color = Color.Red)) {
+            MediaViewerVideoPage(
+                mediaId = MEDIA_ID,
+                videoUrl = VIDEO_URL,
+                videoContentDescription = VIDEO_CONTENT_DESCRIPTION,
+                arePlayerControlsVisible = areControlsVisible,
+                isActive = false,
+            )
+        }
+    }
 
-// The red backdrop makes both outcomes visible in a capture: a cleared page area has no colour
-// at all, a black page area hides the red.
-@Composable
-private fun VideoPageOverRed(areControlsVisible: Boolean) {
-    Box(modifier = Modifier.size(PAGE_SIZE_DP.dp).background(color = Color.Red)) {
-        MediaViewerVideoPage(
-            mediaId = MEDIA_ID,
-            videoUrl = VIDEO_URL,
-            videoContentDescription = "collage",
-            arePlayerControlsVisible = areControlsVisible,
-            isActive = false,
-        )
+    private companion object {
+        const val MEDIA_ID = 7
+        const val VIDEO_URL = "collage.mp4"
+        const val VIDEO_CONTENT_DESCRIPTION = "collage"
+        const val VIDEO_SELECTOR = "video[data-media-id='$MEDIA_ID']"
+        const val PAGE_SIZE_DP = 120
+        const val Z_INDEX_BEHIND_CANVAS = "-1"
+        const val Z_INDEX_IN_FRONT_OF_CANVAS = "1"
+        const val POINTER_EVENTS_PROPERTY = "pointer-events"
+        const val POINTER_EVENTS_PASSED_THROUGH = "none"
+        const val POINTER_EVENTS_TAKEN = "auto"
     }
 }
 

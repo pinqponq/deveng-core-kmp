@@ -186,7 +186,9 @@ private class NativeVideoSurface(
         )
         element = video
         videoElementObserver?.onVideoElementCreated(mediaId, video)
-        ensureWasmCameraBootstrap()
+        if (!areControlsVisible) {
+            ensureWasmCameraBootstrap()
+        }
         document.documentElement?.appendChild(video)
         applyBounds(video, left, top, width, height)
         if (shouldStartPlaying) {
