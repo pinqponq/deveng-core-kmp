@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import core.presentation.component.textfield.CustomTextField
 import core.presentation.theme.LocalComponentTheme
 import core.util.EMPTY
@@ -20,7 +19,6 @@ import global.deveng.deveng_core.generated.resources.shared_email_field_invalid_
 import org.jetbrains.compose.resources.stringResource
 
 private const val EMAIL_MAX_LENGTH = 254
-private val EditTextEndPadding = 15.dp
 
 /**
  * Email text field with an optional title, an optional "edit" text action and a validation error message.
@@ -83,7 +81,7 @@ fun EmailDisplayField(
                 Text(
                     text = editText,
                     modifier = Modifier
-                        .padding(end = EditTextEndPadding)
+                        .padding(end = emailDisplayFieldTheme.editTextEndPadding)
                         .debouncedCombinedClickable { onEditTextClick() },
                     style = emailDisplayFieldTheme.editTextStyle
                 )

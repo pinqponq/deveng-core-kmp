@@ -566,6 +566,15 @@ val verticalPadding: Dp = 52.dp,
 val cornerRadius: Dp = 18.dp,
 val shadowElevation: Dp = 12.dp,
 val edgeFadeHeight: Dp = 40.dp,
+val headerTopPadding: Dp = 25.dp,
+val headerBottomPadding: Dp = 15.dp,
+val backIconWidth: Dp = 18.dp,
+val backIconHeight: Dp = 14.dp,
+val titleHorizontalPadding: Dp = 45.dp,
+val contentHorizontalPadding: Dp = 20.dp,
+val contentBottomPadding: Dp = 13.dp,
+val approvalRowTopPadding: Dp = 15.dp,
+val approvalRowBottomPadding: Dp = 41.dp,
 val backIconTint: Color = CorePrimaryColor,
 val titleTextStyle: TextStyle = TextStyle(
 fontSize = 22.sp,
@@ -592,6 +601,7 @@ color = CoreCustomGrayHintColor
 */
 data class EmailDisplayFieldTheme(
 val textColor: Color? = null,
+val editTextEndPadding: Dp = 15.dp,
 val editTextStyle: TextStyle = TextStyle(
 fontSize = 14.sp,
 fontWeight = CORE_MEDIUM_FONT_WEIGHT,
@@ -606,6 +616,15 @@ textDecoration = TextDecoration.Underline
 data class PromoTwoButtonCardTheme(
 val containerColor: Color = CoreSurfaceColor,
 val elevation: Dp = 20.dp,
+val horizontalPadding: Dp = 25.dp,
+val verticalPadding: Dp = 33.dp,
+val contentSpacing: Dp = 8.dp,
+val bodyHorizontalPadding: Dp = 16.dp,
+val buttonVerticalPadding: Dp = 16.dp,
+val primaryButtonShadowElevation: Dp = 8.dp,
+val primaryButtonSpotShadowAlpha: Float = 0.35f,
+val primaryButtonAmbientShadowAlpha: Float = 0.2f,
+val secondaryButtonBorderWidth: Dp = 1.dp,
 val titleTextStyle: TextStyle = TextStyle(
 fontSize = 30.sp,
 lineHeight = 36.sp,
@@ -645,7 +664,22 @@ textAlign = TextAlign.Center
 */
 data class MediaViewerHeaderTheme(
 val panelBackgroundColor: Color = Color(0x80262626),
-val closeIconTint: Color = Color.White
+val closeIconTint: Color = Color.White,
+val outerHorizontalPadding: Dp = 8.dp,
+val outerVerticalPadding: Dp = 8.dp,
+val panelHorizontalPadding: Dp = 8.dp,
+val panelVerticalPadding: Dp = 6.dp,
+val panelCornerRadius: Dp = 12.dp,
+val actionSpacing: Dp = 8.dp,
+val closeButtonSize: Dp = 44.dp,
+val closeIconSize: Dp = 24.dp
+)
+
+/**
+ * Theme for NotificationPermissionDialog component. The card inside the dialog uses [PromoTwoButtonCardTheme].
+*/
+data class NotificationPermissionDialogTheme(
+val horizontalPadding: Dp = 24.dp
 )
 
 /**
@@ -909,6 +943,7 @@ val scrollableContentDialog: ScrollableContentDialogTheme = ScrollableContentDia
 val emailDisplayField: EmailDisplayFieldTheme = EmailDisplayFieldTheme(),
 val promoTwoButtonCard: PromoTwoButtonCardTheme = PromoTwoButtonCardTheme(),
 val mediaViewerHeader: MediaViewerHeaderTheme = MediaViewerHeaderTheme(),
+val notificationPermissionDialog: NotificationPermissionDialogTheme = NotificationPermissionDialogTheme(),
 val chipItem: ChipItemTheme = ChipItemTheme(),
 val chipsMenu: ChipsMenuTheme = ChipsMenuTheme(),
 val ratingRow: RatingRowTheme = RatingRowTheme(),
