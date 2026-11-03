@@ -13,12 +13,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import core.domain.camera.ensureWasmCameraBootstrap
 import core.presentation.component.mediaviewer.internal.VideoSeekPosition
 import core.util.CustomLogger
 import kotlin.js.ExperimentalWasmJsInterop
@@ -27,6 +30,8 @@ import kotlinx.coroutines.delay
 import org.w3c.dom.HTMLVideoElement
 
 private const val PLAYBACK_POLL_INTERVAL_MILLIS = 200L
+private const val VIDEO_IN_FRONT_OF_CANVAS_Z_INDEX = "1"
+private const val VIDEO_BEHIND_CANVAS_Z_INDEX = "-1"
 
 /**
  * Notified when [MediaViewerVideoPage] creates its HTML5 `<video>` element on the web, e.g. to attach
@@ -48,6 +53,15 @@ val LocalWebVideoElementObserver = staticCompositionLocalOf<WebVideoElementObser
  * The element lives outside the Compose canvas, so its viewport rectangle is kept in sync
  * with the composable's bounds. Bounds and element creation arrive in either order, so the
  * latest bounds are cached and re-applied whenever the element appears.
+ *
+ * The element is mounted on `document.documentElement`, not `document.body`: `ComposeViewport`
+ * makes `<body>` a shadow host without a `<slot>`, so a child of the body is never drawn. With
+ * native controls hidden, the element sits behind the canvas and this composable clears its own
+ * bounds with `BlendMode.Clear`, the same way the camera preview does. Compose content drawn over
+ * the page (a feed's buttons or seek bar) then stays visible on top of the video. With native
+ * controls visible, the element sits in front of the canvas, so the controls can be clicked.
+ * An ancestor that draws into its own layer (`Modifier.alpha` below 1, `graphicsLayer`) keeps the
+ * clear inside that layer and hides the video.
  */
 @Composable
 actual fun MediaViewerVideoPage(
@@ -128,7 +142,13 @@ actual fun MediaViewerVideoPage(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(color = Color.Black)
+            .then(
+                if (arePlayerControlsVisible) {
+                    Modifier.background(color = Color.Black)
+                } else {
+                    Modifier.drawBehind { drawRect(color = Color.Transparent, blendMode = BlendMode.Clear) }
+                },
+            )
             .semantics { contentDescription = videoContentDescription }
             .onGloballyPositioned { coordinates ->
                 val position = coordinates.positionInWindow()
@@ -166,7 +186,10 @@ private class NativeVideoSurface(
         )
         element = video
         videoElementObserver?.onVideoElementCreated(mediaId, video)
-        document.body?.appendChild(video)
+        if (!areControlsVisible) {
+            ensureWasmCameraBootstrap()
+        }
+        document.documentElement?.appendChild(video)
         applyBounds(video, left, top, width, height)
         if (shouldStartPlaying) {
             startPlayback(mediaId, video)
@@ -232,12 +255,10 @@ private fun createNativeVideoElement(
         style.margin = "0px"
         style.objectFit = "contain"
         style.background = "black"
-        style.zIndex = "1"
-        // The element sits in front of the Compose canvas (see the class doc), so with native
-        // controls hidden it would otherwise still catch every pointer event over its bounds and
-        // the canvas underneath — the pager in a reels feed, or a full-surface tap handler — would
-        // never see them. Visible controls need real hit-testing to be clickable, so this only
-        // applies when they're off.
+        style.zIndex = if (areControlsVisible) VIDEO_IN_FRONT_OF_CANVAS_Z_INDEX else VIDEO_BEHIND_CANVAS_Z_INDEX
+        // With native controls hidden, every pointer event over the element must reach the canvas
+        // (the pager in a reels feed, or a full-surface tap handler). Visible controls need real
+        // hit-testing to be clickable, so this only applies when they're off.
         style.setProperty("pointer-events", if (areControlsVisible) "auto" else "none")
         setAttribute("data-media-id", mediaId.toString())
     }
