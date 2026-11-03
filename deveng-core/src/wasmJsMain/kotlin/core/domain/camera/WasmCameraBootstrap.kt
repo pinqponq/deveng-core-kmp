@@ -11,8 +11,9 @@ package core.domain.camera
  * - `canvas { background: transparent !important }` — let `BlendMode.Clear` pass through
  *
  * Idempotent via a `window.__devengWasmCameraBootstrapped` guard so repeated calls are
- * no-ops. [core.domain.camera.controller.CameraController] invokes this in its init block
- * so downstream apps don't need to edit their `index.html` — adding the Gradle dependency
+ * no-ops. [core.domain.camera.controller.CameraController] invokes this in its init block,
+ * and the web `MediaViewerVideoPage` invokes it when it attaches its `<video>`, so
+ * downstream apps don't need to edit their `index.html` — adding the Gradle dependency
  * is enough.
  *
  * Plugins that need additional JS (e.g. the QR scanner's jsQR loader) install their own

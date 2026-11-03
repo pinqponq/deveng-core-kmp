@@ -140,6 +140,13 @@ kotlin {
                 implementation(libs.roborazzi.compose.desktop)
             }
         }
+
+        val wasmJsTest by getting {
+            dependencies {
+                @OptIn(ExperimentalComposeLibrary::class)
+                implementation(compose.uiTest)
+            }
+        }
     }
 }
 

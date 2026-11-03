@@ -165,7 +165,7 @@ actual fun MediaViewerVideoPage(
 /**
  * Owns the DOM `<video>` element and keeps it aligned with the composable's viewport bounds.
  */
-internal class NativeVideoSurface(
+private class NativeVideoSurface(
     private val videoElementObserver: WebVideoElementObserver?,
 ) {
     private var element: HTMLVideoElement? = null
