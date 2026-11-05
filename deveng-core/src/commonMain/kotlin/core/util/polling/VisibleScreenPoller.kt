@@ -134,10 +134,7 @@ class VisibleScreenPoller(
 
     private suspend fun attemptSafely(activeSession: PollingSession): PollAttemptOutcome {
         val outcome = try {
-            activeSession.pollAttempt().also {
-                // An attempt that ignores cancellation can return after its loop was cancelled; drop its result.
-                currentCoroutineContext().ensureActive()
-            }
+            activeSession.pollAttempt()
         } catch (cancellation: CancellationException) {
             // A timeout inside the attempt is a CancellationException too; only a cancelled loop may end polling.
             currentCoroutineContext().ensureActive()
@@ -150,6 +147,8 @@ class VisibleScreenPoller(
             PollAttemptOutcome.CONTINUE
         }
 
+        // An attempt that ignores cancellation can return or throw after its loop was cancelled; drop its result.
+        currentCoroutineContext().ensureActive()
         activeSession.attemptCount++
 
         return outcome

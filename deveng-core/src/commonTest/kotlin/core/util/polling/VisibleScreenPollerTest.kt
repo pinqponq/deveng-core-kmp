@@ -371,6 +371,42 @@ class VisibleScreenPollerTest {
     }
 
     @Test
+    fun changeVisibility_hiddenDuringAttemptThatIgnoresCancellationAndThrows_dropsIt() = runTest {
+        val poller = VisibleScreenPoller(timeSource = testScheduler.timeSource)
+        val attemptCountPerProgress = mutableListOf<Int>()
+        val firstAttemptGate = CompletableDeferred<Unit>()
+        var startedAttemptCount = 0
+
+        poller.changeVisibility(isVisible = true)
+        poller.start(
+            scope = backgroundScope,
+            schedule = PollingSchedule { progress ->
+                attemptCountPerProgress.add(progress.attemptCount)
+                INTERVAL
+            },
+            pollAttempt = {
+                startedAttemptCount++
+                if (startedAttemptCount == 1) {
+                    withContext(NonCancellable) { firstAttemptGate.await() }
+                    throw IllegalStateException("connection reset")
+                }
+
+                PollAttemptOutcome.CONTINUE
+            },
+        )
+        runCurrent()
+        poller.changeVisibility(isVisible = false)
+        poller.changeVisibility(isVisible = true)
+        runCurrent()
+        firstAttemptGate.complete(Unit)
+        runCurrent()
+
+        assertEquals(2, startedAttemptCount)
+        assertEquals(listOf(1), attemptCountPerProgress)
+        assertTrue(poller.isPolling)
+    }
+
+    @Test
     fun stop_duringAttempt_cancelsItAndEndsPolling() = runTest {
         val poller = VisibleScreenPoller(timeSource = testScheduler.timeSource)
         val attemptGate = CompletableDeferred<Unit>()
