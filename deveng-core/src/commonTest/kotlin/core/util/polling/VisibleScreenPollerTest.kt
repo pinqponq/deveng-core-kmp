@@ -1,7 +1,11 @@
 package core.util.polling
 
+import co.touchlab.kermit.Logger
+import co.touchlab.kermit.platformLogWriter
+import core.testing.RecordingLogWriter
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -9,14 +13,28 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 class VisibleScreenPollerTest {
+    private val recordingLogWriter = RecordingLogWriter()
+
+    @BeforeTest
+    fun setUp() {
+        Logger.setLogWriters(recordingLogWriter)
+    }
+
+    @AfterTest
+    fun tearDown() {
+        Logger.setLogWriters(platformLogWriter())
+    }
 
     @Test
     fun start_whileScreenHidden_makesNoAttempt() = runTest {
@@ -273,6 +291,7 @@ class VisibleScreenPollerTest {
 
         assertEquals(2, attemptCount)
         assertEquals(listOf(1, 2), attemptCountPerProgress)
+        assertIs<IllegalStateException>(recordingLogWriter.warningThrowables.single())
         assertTrue(poller.isPolling)
     }
 
@@ -299,6 +318,7 @@ class VisibleScreenPollerTest {
         runCurrent()
 
         assertEquals(2, attemptCount)
+        assertIs<TimeoutCancellationException>(recordingLogWriter.warningThrowables.single())
         assertTrue(poller.isPolling)
     }
 
@@ -433,6 +453,7 @@ class VisibleScreenPollerTest {
 
         assertEquals(1, startedAttemptCount)
         assertEquals(0, completedAttemptCount)
+        assertTrue(recordingLogWriter.warningThrowables.isEmpty())
         assertFalse(poller.isPolling)
     }
 
