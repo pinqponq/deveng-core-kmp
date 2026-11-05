@@ -6,7 +6,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.time.Duration
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
@@ -127,9 +126,7 @@ class VisibleScreenPoller(
         }
 
         val remainingInitialDelay = activeSession.schedule.initialDelay - activeSession.startMark.elapsedNow()
-        if (remainingInitialDelay > Duration.ZERO) {
-            delay(remainingInitialDelay)
-        }
+        delay(remainingInitialDelay)
     }
 
     private suspend fun attemptSafely(activeSession: PollingSession): PollAttemptOutcome {
