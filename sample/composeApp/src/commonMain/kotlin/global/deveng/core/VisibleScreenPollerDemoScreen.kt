@@ -56,13 +56,10 @@ internal fun VisibleScreenPollerDemoScreen(onBack: () -> Unit) {
             Text(text = DEMO_SCHEDULE_DESCRIPTION, style = CoreRegularTextStyle().copy(fontSize = 14.sp))
             Text(text = "Status: ${state.pollingStatus.label}", style = CoreRegularTextStyle().copy(fontSize = 14.sp))
             Text(text = "Checks made: ${state.attemptCount}", style = CoreRegularTextStyle().copy(fontSize = 14.sp))
-            Text(
-                text = if (state.isScreenVisible) "Screen: visible" else "Screen: hidden (paused)",
-                style = CoreRegularTextStyle().copy(fontSize = 14.sp),
-            )
+            Text(text = state.screenVisibility.label, style = CoreRegularTextStyle().copy(fontSize = 14.sp))
             CustomButton(text = "Start polling", onClick = viewModel::startPolling)
             CustomButton(
-                text = if (state.isScreenVisible) "Hide screen" else "Show screen",
+                text = state.screenVisibility.toggleButtonText,
                 onClick = viewModel::toggleScreenVisibility,
             )
             CustomButton(text = "Stop", onClick = viewModel::stopPolling)

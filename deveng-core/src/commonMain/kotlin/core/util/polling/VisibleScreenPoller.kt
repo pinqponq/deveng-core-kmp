@@ -141,7 +141,6 @@ class VisibleScreenPoller(
 
             PollAttemptOutcome.CONTINUE
         } catch (exception: Exception) {
-            // One failed check (a dropped connection, a server error) must not end the wait; the next attempt retries.
             Logger.w(throwable = exception) { "A poll attempt failed; polling continues." }
 
             PollAttemptOutcome.CONTINUE

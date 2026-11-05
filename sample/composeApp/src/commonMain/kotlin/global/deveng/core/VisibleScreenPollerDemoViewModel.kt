@@ -24,10 +24,15 @@ internal enum class DemoPollingStatus(val label: String) {
     STOPPED("Stopped"),
 }
 
+internal enum class DemoScreenVisibility(val label: String, val toggleButtonText: String) {
+    VISIBLE("Screen: visible", "Hide screen"),
+    HIDDEN("Screen: hidden (paused)", "Show screen"),
+}
+
 internal data class VisibleScreenPollerDemoState(
     val pollingStatus: DemoPollingStatus = DemoPollingStatus.IDLE,
     val attemptCount: Int = 0,
-    val isScreenVisible: Boolean = true,
+    val screenVisibility: DemoScreenVisibility = DemoScreenVisibility.VISIBLE,
 )
 
 internal class VisibleScreenPollerDemoViewModel : ViewModel() {
@@ -55,8 +60,9 @@ internal class VisibleScreenPollerDemoViewModel : ViewModel() {
     }
 
     fun toggleScreenVisibility() {
-        val isScreenVisible = !_state.value.isScreenVisible
-        _state.update { it.copy(isScreenVisible = isScreenVisible) }
+        val isScreenVisible = _state.value.screenVisibility == DemoScreenVisibility.HIDDEN
+        val screenVisibility = if (isScreenVisible) DemoScreenVisibility.VISIBLE else DemoScreenVisibility.HIDDEN
+        _state.update { it.copy(screenVisibility = screenVisibility) }
         poller.changeVisibility(isVisible = isScreenVisible)
     }
 

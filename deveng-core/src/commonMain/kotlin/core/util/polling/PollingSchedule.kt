@@ -5,7 +5,7 @@ import kotlin.time.Duration
 /** Decides how long [VisibleScreenPoller] waits before each attempt. */
 fun interface PollingSchedule {
 
-    /** The wait before the first attempt of a session. */
+    /** Measured from [VisibleScreenPoller.start]; a pause does not restart it. */
     val initialDelay: Duration
         get() = Duration.ZERO
 
