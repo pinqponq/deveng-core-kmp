@@ -16,6 +16,12 @@ class PollingScheduleTest {
         val nextDelay = schedule.nextDelay(PollProgress(elapsed = LONG_ELAPSED, attemptCount = Int.MAX_VALUE))
 
         assertEquals(INTERVAL, nextDelay)
+    }
+
+    @Test
+    fun fixedInterval_withoutInitialDelay_startsAtOnce() {
+        val schedule = PollingSchedule.fixedInterval(interval = INTERVAL)
+
         assertEquals(Duration.ZERO, schedule.initialDelay)
     }
 
@@ -66,12 +72,18 @@ class PollingScheduleTest {
     }
 
     @Test
-    fun fromElapsed_passesTheElapsedTime() {
+    fun fromElapsed_withElapsedTime_returnsTheComputedDelay() {
         val schedule = PollingSchedule.fromElapsed { elapsed -> elapsed * 2 }
 
         val nextDelay = schedule.nextDelay(PollProgress(elapsed = INTERVAL, attemptCount = 1))
 
         assertEquals(INTERVAL * 2, nextDelay)
+    }
+
+    @Test
+    fun fromElapsed_always_startsAtOnce() {
+        val schedule = PollingSchedule.fromElapsed { INTERVAL }
+
         assertEquals(Duration.ZERO, schedule.initialDelay)
     }
 

@@ -1,11 +1,13 @@
 package core.util.polling
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -331,6 +333,41 @@ class VisibleScreenPollerTest {
 
         assertEquals(2, startedAttemptCount)
         assertEquals(listOf(1), attemptCountPerProgress)
+    }
+
+    @Test
+    fun changeVisibility_hiddenDuringAttemptThatIgnoresCancellation_dropsItsResult() = runTest {
+        val poller = VisibleScreenPoller(timeSource = testScheduler.timeSource)
+        val attemptCountPerProgress = mutableListOf<Int>()
+        val firstAttemptGate = CompletableDeferred<Unit>()
+        var startedAttemptCount = 0
+
+        poller.changeVisibility(isVisible = true)
+        poller.start(
+            scope = backgroundScope,
+            schedule = PollingSchedule { progress ->
+                attemptCountPerProgress.add(progress.attemptCount)
+                INTERVAL
+            },
+            pollAttempt = {
+                startedAttemptCount++
+                if (startedAttemptCount == 1) {
+                    withContext(NonCancellable) { firstAttemptGate.await() }
+                }
+
+                PollAttemptOutcome.CONTINUE
+            },
+        )
+        runCurrent()
+        poller.changeVisibility(isVisible = false)
+        poller.changeVisibility(isVisible = true)
+        runCurrent()
+        firstAttemptGate.complete(Unit)
+        runCurrent()
+
+        assertEquals(2, startedAttemptCount)
+        assertEquals(listOf(1), attemptCountPerProgress)
+        assertTrue(poller.isPolling)
     }
 
     @Test

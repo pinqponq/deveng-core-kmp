@@ -24,6 +24,11 @@ internal enum class DemoPollingStatus(val label: String) {
     STOPPED("Stopped"),
 }
 
+internal enum class DemoJobBehavior(val label: String, val toggleButtonText: String) {
+    FINISHES("Job: done on check $DEMO_ATTEMPTS_UNTIL_FINISHED", "Make the job never finish"),
+    NEVER_FINISHES("Job: never done, the schedule runs out", "Make the job finish"),
+}
+
 internal enum class DemoScreenVisibility(val label: String, val toggleButtonText: String) {
     VISIBLE("Screen: visible", "Hide screen"),
     HIDDEN("Screen: hidden (paused)", "Show screen"),
@@ -33,6 +38,7 @@ internal data class VisibleScreenPollerDemoState(
     val pollingStatus: DemoPollingStatus = DemoPollingStatus.IDLE,
     val attemptCount: Int = 0,
     val screenVisibility: DemoScreenVisibility = DemoScreenVisibility.VISIBLE,
+    val jobBehavior: DemoJobBehavior = DemoJobBehavior.FINISHES,
 )
 
 internal class VisibleScreenPollerDemoViewModel : ViewModel() {
@@ -67,6 +73,12 @@ internal class VisibleScreenPollerDemoViewModel : ViewModel() {
         poller.changeVisibility(isVisible = isScreenVisibleAfterToggle)
     }
 
+    fun toggleJobBehavior() {
+        val isJobFinishing = _state.value.jobBehavior == DemoJobBehavior.FINISHES
+        val jobBehavior = if (isJobFinishing) DemoJobBehavior.NEVER_FINISHES else DemoJobBehavior.FINISHES
+        _state.update { it.copy(jobBehavior = jobBehavior) }
+    }
+
     fun stopPolling() {
         poller.stop()
         _state.update { it.copy(pollingStatus = DemoPollingStatus.STOPPED) }
@@ -74,7 +86,8 @@ internal class VisibleScreenPollerDemoViewModel : ViewModel() {
 
     private fun checkDemoJob(): PollAttemptOutcome {
         val attemptCount = _state.value.attemptCount + 1
-        val isDemoJobDone = attemptCount >= DEMO_ATTEMPTS_UNTIL_FINISHED
+        val isDemoJobFinishing = _state.value.jobBehavior == DemoJobBehavior.FINISHES
+        val isDemoJobDone = isDemoJobFinishing && attemptCount >= DEMO_ATTEMPTS_UNTIL_FINISHED
         val pollingStatus = if (isDemoJobDone) DemoPollingStatus.FINISHED else DemoPollingStatus.POLLING
         _state.update { it.copy(attemptCount = attemptCount, pollingStatus = pollingStatus) }
 

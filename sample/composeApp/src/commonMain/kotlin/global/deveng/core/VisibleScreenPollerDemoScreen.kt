@@ -28,8 +28,7 @@ import deveng_core_kmp.sample.composeapp.generated.resources.Res
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_arrow_left
 
 private val DEMO_SCHEDULE_DESCRIPTION =
-    "Checks every $DEMO_INTERVAL after a $DEMO_INITIAL_DELAY wait, at most $DEMO_MAX_ATTEMPTS times. " +
-        "The job is done on check $DEMO_ATTEMPTS_UNTIL_FINISHED."
+    "Checks every $DEMO_INTERVAL after a $DEMO_INITIAL_DELAY wait, at most $DEMO_MAX_ATTEMPTS times."
 
 @Composable
 internal fun VisibleScreenPollerDemoScreen(onBack: () -> Unit) {
@@ -57,12 +56,14 @@ internal fun VisibleScreenPollerDemoScreen(onBack: () -> Unit) {
             Text(text = "Status: ${state.pollingStatus.label}", style = CoreRegularTextStyle().copy(fontSize = 14.sp))
             Text(text = "Checks made: ${state.attemptCount}", style = CoreRegularTextStyle().copy(fontSize = 14.sp))
             Text(text = state.screenVisibility.label, style = CoreRegularTextStyle().copy(fontSize = 14.sp))
+            Text(text = state.jobBehavior.label, style = CoreRegularTextStyle().copy(fontSize = 14.sp))
             CustomButton(text = "Start polling", onClick = viewModel::startPolling)
             CustomButton(
                 text = state.screenVisibility.toggleButtonText,
                 onClick = viewModel::toggleScreenVisibility,
             )
 
+            CustomButton(text = state.jobBehavior.toggleButtonText, onClick = viewModel::toggleJobBehavior)
             CustomButton(text = "Stop", onClick = viewModel::stopPolling)
         }
 
