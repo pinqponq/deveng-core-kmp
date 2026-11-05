@@ -2,6 +2,7 @@ package core.util.polling
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -34,6 +35,20 @@ class PollingScheduleTest {
         val nextDelay = schedule.nextDelay(PollProgress(elapsed = Duration.ZERO, attemptCount = MAX_ATTEMPTS))
 
         assertNull(nextDelay)
+    }
+
+    @Test
+    fun fixedInterval_withZeroMaxAttempts_isRejected() {
+        assertFailsWith<IllegalArgumentException> {
+            PollingSchedule.fixedInterval(interval = INTERVAL, maxAttempts = 0)
+        }
+    }
+
+    @Test
+    fun fixedInterval_withOneMaxAttempt_isAccepted() {
+        val schedule = PollingSchedule.fixedInterval(interval = INTERVAL, maxAttempts = 1)
+
+        assertNull(schedule.nextDelay(PollProgress(elapsed = Duration.ZERO, attemptCount = 1)))
     }
 
     @Test

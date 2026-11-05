@@ -60,10 +60,11 @@ internal class VisibleScreenPollerDemoViewModel : ViewModel() {
     }
 
     fun toggleScreenVisibility() {
-        val isScreenVisible = _state.value.screenVisibility == DemoScreenVisibility.HIDDEN
-        val screenVisibility = if (isScreenVisible) DemoScreenVisibility.VISIBLE else DemoScreenVisibility.HIDDEN
+        val isScreenVisibleAfterToggle = _state.value.screenVisibility == DemoScreenVisibility.HIDDEN
+        val screenVisibility =
+            if (isScreenVisibleAfterToggle) DemoScreenVisibility.VISIBLE else DemoScreenVisibility.HIDDEN
         _state.update { it.copy(screenVisibility = screenVisibility) }
-        poller.changeVisibility(isVisible = isScreenVisible)
+        poller.changeVisibility(isVisible = isScreenVisibleAfterToggle)
     }
 
     fun stopPolling() {
