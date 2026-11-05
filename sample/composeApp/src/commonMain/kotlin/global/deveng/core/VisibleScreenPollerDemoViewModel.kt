@@ -25,7 +25,7 @@ internal enum class DemoPollingStatus(val label: String) {
 }
 
 internal enum class DemoJobBehavior(val label: String, val toggleButtonText: String) {
-    FINISHES("Job: done on check $DEMO_ATTEMPTS_UNTIL_FINISHED", "Make the job never finish"),
+    FINISHES("Job: done on attempt $DEMO_ATTEMPTS_UNTIL_FINISHED", "Make the job never finish"),
     NEVER_FINISHES("Job: never done, the schedule runs out", "Make the job finish"),
 }
 
@@ -60,7 +60,7 @@ internal class VisibleScreenPollerDemoViewModel : ViewModel() {
                 maxAttempts = DEMO_MAX_ATTEMPTS,
                 initialDelay = DEMO_INITIAL_DELAY,
             ),
-            pollAttempt = ::checkDemoJob,
+            pollAttempt = ::attemptDemoJobCheck,
             onScheduleExhausted = { _state.update { it.copy(pollingStatus = DemoPollingStatus.SCHEDULE_EXHAUSTED) } },
         )
     }
@@ -84,7 +84,7 @@ internal class VisibleScreenPollerDemoViewModel : ViewModel() {
         _state.update { it.copy(pollingStatus = DemoPollingStatus.STOPPED) }
     }
 
-    private fun checkDemoJob(): PollAttemptOutcome {
+    private fun attemptDemoJobCheck(): PollAttemptOutcome {
         val attemptCount = _state.value.attemptCount + 1
         val isDemoJobFinishing = _state.value.jobBehavior == DemoJobBehavior.FINISHES
         val isDemoJobDone = isDemoJobFinishing && attemptCount >= DEMO_ATTEMPTS_UNTIL_FINISHED

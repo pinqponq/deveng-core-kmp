@@ -50,7 +50,7 @@ class VisibleScreenPollerTest {
     }
 
     @Test
-    fun start_whileScreenVisible_checksAtOnceAndThenOnSchedule() = runTest {
+    fun start_whileScreenVisible_attemptsAtOnceAndThenOnSchedule() = runTest {
         val poller = VisibleScreenPoller(timeSource = testScheduler.timeSource)
         var attemptCount = 0
 
@@ -69,7 +69,7 @@ class VisibleScreenPollerTest {
     }
 
     @Test
-    fun changeVisibility_hiddenThenVisible_pausesAndChecksStraightAway() = runTest {
+    fun changeVisibility_hiddenThenVisible_pausesAndAttemptsStraightAway() = runTest {
         val poller = VisibleScreenPoller(timeSource = testScheduler.timeSource)
         var attemptCount = 0
 
