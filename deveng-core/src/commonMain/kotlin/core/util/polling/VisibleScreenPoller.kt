@@ -20,7 +20,8 @@ import kotlin.time.TimeSource
  * the poller checks straight away and then continues the same schedule, measured from [start].
  * The first attempt of a session waits the schedule's initial delay, also measured from [start]; a screen
  * that becomes visible again before that delay has passed waits for the rest of it.
- * An attempt cut off because the screen was hidden is not counted and runs again on resume.
+ * An attempt cut off because the screen was hidden is not counted and runs again on resume. If that attempt
+ * ignores cancellation, it keeps running next to the new one, and its result is dropped.
  * A screen that never reports visibility is treated as hidden, so it must call `changeVisibility(true)`.
  *
  * Polling ends when an attempt returns [PollAttemptOutcome.FINISHED], when the schedule runs out, or on [stop].
@@ -96,12 +97,12 @@ class VisibleScreenPoller(
     }
 
     private suspend fun runPollingLoop(activeSession: PollingSession) {
-        waitForFirstAttempt(activeSession)
+        waitForRestOfInitialDelay(activeSession)
 
         while (true) {
             val outcome = attemptSafely(activeSession)
             if (outcome == PollAttemptOutcome.FINISHED) {
-                endSession(activeSession)
+                endSession()
 
                 return
             }
@@ -113,7 +114,7 @@ class VisibleScreenPoller(
 
             val nextDelay = activeSession.schedule.nextDelay(progress)
             if (nextDelay == null) {
-                endSession(activeSession)
+                endSession()
                 activeSession.onScheduleExhausted()
 
                 return
@@ -123,11 +124,7 @@ class VisibleScreenPoller(
         }
     }
 
-    private suspend fun waitForFirstAttempt(activeSession: PollingSession) {
-        if (activeSession.attemptCount > 0) {
-            return
-        }
-
+    private suspend fun waitForRestOfInitialDelay(activeSession: PollingSession) {
         val remainingInitialDelay = activeSession.schedule.initialDelay - activeSession.startMark.elapsedNow()
         delay(remainingInitialDelay)
     }
@@ -154,10 +151,8 @@ class VisibleScreenPoller(
         return outcome
     }
 
-    private fun endSession(activeSession: PollingSession) {
-        if (session === activeSession) {
-            session = null
-        }
+    private fun endSession() {
+        session = null
     }
 
     private fun cancelPollingLoop() {

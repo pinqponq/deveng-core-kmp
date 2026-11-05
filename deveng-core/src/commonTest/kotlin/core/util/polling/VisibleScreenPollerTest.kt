@@ -278,7 +278,7 @@ class VisibleScreenPollerTest {
             pollAttempt = {
                 attemptCount++
                 if (attemptCount == 1) {
-                    throw IllegalStateException("connection reset")
+                    throw IllegalStateException(ATTEMPT_FAILURE_MESSAGE)
                 }
 
                 PollAttemptOutcome.CONTINUE
@@ -408,7 +408,7 @@ class VisibleScreenPollerTest {
                 startedAttemptCount++
                 if (startedAttemptCount == 1) {
                     withContext(NonCancellable) { firstAttemptGate.await() }
-                    throw IllegalStateException("connection reset")
+                    throw IllegalStateException(ATTEMPT_FAILURE_MESSAGE)
                 }
 
                 PollAttemptOutcome.CONTINUE
@@ -527,5 +527,6 @@ class VisibleScreenPollerTest {
         val INITIAL_DELAY = 8.seconds
         val ONE_MOMENT = 1.seconds
         const val MAX_ATTEMPTS = 4
+        const val ATTEMPT_FAILURE_MESSAGE = "connection reset"
     }
 }
