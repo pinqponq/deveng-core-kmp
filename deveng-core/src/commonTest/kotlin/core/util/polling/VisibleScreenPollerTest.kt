@@ -162,7 +162,7 @@ class VisibleScreenPollerTest {
     }
 
     @Test
-    fun fixedIntervalSchedule_withMaxAttempts_stopsAfterTheBudget() = runTest {
+    fun fixedIntervalSchedule_withMaxAttempts_stopsAfterMaxAttempts() = runTest {
         val poller = VisibleScreenPoller(timeSource = testScheduler.timeSource)
         var attemptCount = 0
         var isExhaustionReported = false

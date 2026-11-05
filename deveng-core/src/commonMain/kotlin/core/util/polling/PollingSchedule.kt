@@ -46,8 +46,8 @@ private class FixedIntervalSchedule(
 ) : PollingSchedule {
 
     override fun nextDelay(progress: PollProgress): Duration? {
-        val isAttemptBudgetUsed = maxAttempts != null && progress.attemptCount >= maxAttempts
-        if (isAttemptBudgetUsed) {
+        val isMaxAttemptsReached = maxAttempts != null && progress.attemptCount >= maxAttempts
+        if (isMaxAttemptsReached) {
             return null
         }
 
