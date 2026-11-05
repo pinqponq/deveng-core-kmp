@@ -62,6 +62,7 @@ internal fun VisibleScreenPollerDemoScreen(onBack: () -> Unit) {
                 text = state.screenVisibility.toggleButtonText,
                 onClick = viewModel::toggleScreenVisibility,
             )
+
             CustomButton(text = "Stop", onClick = viewModel::stopPolling)
         }
 

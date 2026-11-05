@@ -107,6 +107,7 @@ class VisibleScreenPollerTest {
             },
             onScheduleExhausted = { isExhaustionReported = true },
         )
+
         advanceTimeBy(INTERVAL * 10)
         runCurrent()
 
@@ -131,6 +132,7 @@ class VisibleScreenPollerTest {
             },
             onScheduleExhausted = { exhaustionReportCount++ },
         )
+
         advanceTimeBy(DURATION * 3)
         runCurrent()
 
@@ -155,6 +157,7 @@ class VisibleScreenPollerTest {
             },
             onScheduleExhausted = { isExhaustionReported = true },
         )
+
         advanceTimeBy(INTERVAL * (MAX_ATTEMPTS + 5))
         runCurrent()
 
@@ -177,6 +180,7 @@ class VisibleScreenPollerTest {
                 PollAttemptOutcome.CONTINUE
             },
         )
+
         advanceTimeBy(INITIAL_DELAY - ONE_MOMENT)
         runCurrent()
         assertEquals(0, attemptCount)
@@ -200,6 +204,7 @@ class VisibleScreenPollerTest {
                 PollAttemptOutcome.CONTINUE
             },
         )
+
         advanceTimeBy(ONE_MOMENT)
         poller.changeVisibility(isVisible = false)
         advanceTimeBy(ONE_MOMENT)
@@ -227,6 +232,7 @@ class VisibleScreenPollerTest {
             },
             pollAttempt = { PollAttemptOutcome.CONTINUE },
         )
+
         runCurrent()
         poller.changeVisibility(isVisible = false)
         advanceTimeBy(DURATION)
@@ -254,9 +260,11 @@ class VisibleScreenPollerTest {
                 if (attemptCount == 1) {
                     throw IllegalStateException("connection reset")
                 }
+
                 PollAttemptOutcome.CONTINUE
             },
         )
+
         runCurrent()
         advanceTimeBy(INTERVAL)
         runCurrent()
@@ -280,9 +288,11 @@ class VisibleScreenPollerTest {
                 if (attemptCount == 1) {
                     withTimeout(timeout = ONE_MOMENT) { awaitCancellation() }
                 }
+
                 PollAttemptOutcome.CONTINUE
             },
         )
+
         advanceTimeBy(ONE_MOMENT + INTERVAL)
         runCurrent()
 
@@ -309,9 +319,11 @@ class VisibleScreenPollerTest {
                 if (startedAttemptCount == 1) {
                     firstAttemptGate.await()
                 }
+
                 PollAttemptOutcome.CONTINUE
             },
         )
+
         runCurrent()
         poller.changeVisibility(isVisible = false)
         poller.changeVisibility(isVisible = true)
@@ -339,6 +351,7 @@ class VisibleScreenPollerTest {
                 PollAttemptOutcome.CONTINUE
             },
         )
+
         runCurrent()
         poller.stop()
         attemptGate.complete(Unit)
@@ -396,6 +409,7 @@ class VisibleScreenPollerTest {
                 PollAttemptOutcome.FINISHED
             },
         )
+
         runCurrent()
 
         assertTrue(poller.isPolling)

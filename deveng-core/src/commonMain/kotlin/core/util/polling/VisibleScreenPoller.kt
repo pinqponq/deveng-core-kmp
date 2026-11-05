@@ -110,6 +110,7 @@ class VisibleScreenPoller(
                 elapsed = activeSession.startMark.elapsedNow(),
                 attemptCount = activeSession.attemptCount,
             )
+
             val nextDelay = activeSession.schedule.nextDelay(progress)
             if (nextDelay == null) {
                 endSession(activeSession)
@@ -145,6 +146,7 @@ class VisibleScreenPoller(
 
             PollAttemptOutcome.CONTINUE
         }
+
         activeSession.attemptCount++
 
         return outcome

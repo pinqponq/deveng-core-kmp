@@ -45,6 +45,13 @@ class PollingScheduleTest {
     }
 
     @Test
+    fun fixedInterval_withZeroInterval_isRejected() {
+        assertFailsWith<IllegalArgumentException> {
+            PollingSchedule.fixedInterval(interval = Duration.ZERO)
+        }
+    }
+
+    @Test
     fun fixedInterval_withOneMaxAttempt_isAccepted() {
         val schedule = PollingSchedule.fixedInterval(interval = INTERVAL, maxAttempts = 1)
 

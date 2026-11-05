@@ -14,12 +14,16 @@ fun interface PollingSchedule {
 
     companion object {
 
-        /** @param maxAttempts the number of attempts after which the schedule runs out, at least 1; null means no limit. */
+        /**
+         * @param interval the wait between attempts, more than zero.
+         * @param maxAttempts the number of attempts after which the schedule runs out, at least 1; null means no limit.
+         */
         fun fixedInterval(
             interval: Duration,
             maxAttempts: Int? = null,
             initialDelay: Duration = Duration.ZERO,
         ): PollingSchedule {
+            require(interval > Duration.ZERO) { "interval must be positive, was $interval." }
             require(maxAttempts == null || maxAttempts >= 1) { "maxAttempts must be at least 1, was $maxAttempts." }
 
             return FixedIntervalSchedule(
