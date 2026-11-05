@@ -378,6 +378,7 @@ class VisibleScreenPollerTest {
                 PollAttemptOutcome.CONTINUE
             },
         )
+
         runCurrent()
         poller.changeVisibility(isVisible = false)
         poller.changeVisibility(isVisible = true)
@@ -414,6 +415,7 @@ class VisibleScreenPollerTest {
                 PollAttemptOutcome.CONTINUE
             },
         )
+
         runCurrent()
         poller.changeVisibility(isVisible = false)
         poller.changeVisibility(isVisible = true)

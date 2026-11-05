@@ -12,12 +12,12 @@ import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
 /**
- * Repeats a check while its screen is visible, for example while the server finishes a payment or a render.
+ * Repeats a poll attempt while its screen is visible, for example while the server finishes a payment or a render.
  *
  * A ViewModel outlives its screen (tab navigation keeps it), so polling that ignored visibility would keep
  * calling the server from a screen nobody is looking at. The screen reports visibility through
  * [changeVisibility]. While the screen is hidden the loop is cancelled. When the screen is visible again,
- * the poller checks straight away and then continues the same schedule, measured from [start].
+ * the poller makes an attempt straight away and then continues the same schedule, measured from [start].
  * The first attempt of a session waits the schedule's initial delay, also measured from [start]; a screen
  * that becomes visible again before that delay has passed waits for the rest of it.
  * An attempt cut off because the screen was hidden is not counted and runs again on resume. If that attempt
