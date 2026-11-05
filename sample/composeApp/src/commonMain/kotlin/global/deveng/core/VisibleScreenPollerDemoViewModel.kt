@@ -60,7 +60,7 @@ internal class VisibleScreenPollerDemoViewModel : ViewModel() {
                 maxAttempts = DEMO_MAX_ATTEMPTS,
                 initialDelay = DEMO_INITIAL_DELAY,
             ),
-            pollAttempt = ::attemptDemoJobCheck,
+            pollAttempt = ::pollDemoJob,
             onScheduleExhausted = { _state.update { it.copy(pollingStatus = DemoPollingStatus.SCHEDULE_EXHAUSTED) } },
         )
     }
@@ -84,7 +84,7 @@ internal class VisibleScreenPollerDemoViewModel : ViewModel() {
         _state.update { it.copy(pollingStatus = DemoPollingStatus.STOPPED) }
     }
 
-    private fun attemptDemoJobCheck(): PollAttemptOutcome {
+    private fun pollDemoJob(): PollAttemptOutcome {
         val attemptCount = _state.value.attemptCount + 1
         val isDemoJobFinishing = _state.value.jobBehavior == DemoJobBehavior.FINISHES
         val isDemoJobDone = isDemoJobFinishing && attemptCount >= DEMO_ATTEMPTS_UNTIL_FINISHED
