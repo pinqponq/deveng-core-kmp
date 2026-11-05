@@ -1,10 +1,12 @@
 package core.util.polling
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -261,6 +263,30 @@ class VisibleScreenPollerTest {
 
         assertEquals(2, attemptCount)
         assertEquals(listOf(1, 2), attemptCountPerProgress)
+        assertTrue(poller.isPolling)
+    }
+
+    @Test
+    fun pollAttempt_timesOut_countsTheAttemptAndPollingContinues() = runTest {
+        val poller = VisibleScreenPoller(timeSource = testScheduler.timeSource)
+        var attemptCount = 0
+
+        poller.changeVisibility(isVisible = true)
+        poller.start(
+            scope = backgroundScope,
+            schedule = PollingSchedule.fixedInterval(interval = INTERVAL),
+            pollAttempt = {
+                attemptCount++
+                if (attemptCount == 1) {
+                    withTimeout(timeout = ONE_MOMENT) { awaitCancellation() }
+                }
+                PollAttemptOutcome.CONTINUE
+            },
+        )
+        advanceTimeBy(ONE_MOMENT + INTERVAL)
+        runCurrent()
+
+        assertEquals(2, attemptCount)
         assertTrue(poller.isPolling)
     }
 

@@ -1,6 +1,6 @@
 package core.util.polling
 
-/** What one poll attempt found. */
+/** [FINISHED] ends polling; [CONTINUE] waits for the schedule's next delay and checks again. */
 enum class PollAttemptOutcome {
     FINISHED,
     CONTINUE,

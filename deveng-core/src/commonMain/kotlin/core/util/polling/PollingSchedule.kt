@@ -14,12 +14,7 @@ fun interface PollingSchedule {
 
     companion object {
 
-        /**
-         * Waits [interval] between attempts.
-         *
-         * @param maxAttempts the number of attempts after which the schedule runs out; null means no limit.
-         * @param initialDelay the wait before the first attempt.
-         */
+        /** @param maxAttempts the number of attempts after which the schedule runs out; null means no limit. */
         fun fixedInterval(
             interval: Duration,
             maxAttempts: Int? = null,

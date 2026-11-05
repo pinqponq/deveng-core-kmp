@@ -4,6 +4,8 @@ import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.TimeMark
@@ -22,7 +24,7 @@ import kotlin.time.TimeSource
  * A screen that never reports visibility is treated as hidden, so it must call `changeVisibility(true)`.
  *
  * Polling ends when an attempt returns [PollAttemptOutcome.FINISHED], when the schedule runs out, or on [stop].
- * An attempt that throws is logged and counts as [PollAttemptOutcome.CONTINUE].
+ * An attempt that throws, a timeout inside it included, is logged and counts as [PollAttemptOutcome.CONTINUE].
  *
  * Call every function from the thread of [start]'s scope (for example the ViewModel's main scope): the
  * session fields are not synchronised. An attempt that does I/O switches dispatcher itself.
@@ -133,7 +135,11 @@ class VisibleScreenPoller(
         val outcome = try {
             activeSession.pollAttempt()
         } catch (cancellation: CancellationException) {
-            throw cancellation
+            // A timeout inside the attempt is a CancellationException too; only a cancelled loop may end polling.
+            currentCoroutineContext().ensureActive()
+            Logger.w(throwable = cancellation) { "A poll attempt was cancelled; polling continues." }
+
+            PollAttemptOutcome.CONTINUE
         } catch (exception: Exception) {
             // One failed check (a dropped connection, a server error) must not end the wait; the next attempt retries.
             Logger.w(throwable = exception) { "A poll attempt failed; polling continues." }

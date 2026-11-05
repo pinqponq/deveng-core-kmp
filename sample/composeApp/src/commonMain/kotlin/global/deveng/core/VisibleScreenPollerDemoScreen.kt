@@ -12,12 +12,9 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,29 +24,20 @@ import core.presentation.component.CustomButton
 import core.presentation.component.CustomIconButton
 import core.presentation.theme.CoreMediumTextStyle
 import core.presentation.theme.CoreRegularTextStyle
-import core.util.polling.PollAttemptOutcome
-import core.util.polling.PollingSchedule
-import core.util.polling.VisibleScreenPoller
 import deveng_core_kmp.sample.composeapp.generated.resources.Res
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_arrow_left
-import kotlin.time.Duration.Companion.seconds
 
-private const val DEMO_MAX_ATTEMPTS = 10
-private const val DEMO_ATTEMPTS_UNTIL_FINISHED = 6
-private val DEMO_INTERVAL = 2.seconds
-private val DEMO_INITIAL_DELAY = 1.seconds
+private val DEMO_SCHEDULE_DESCRIPTION =
+    "Checks every $DEMO_INTERVAL after a $DEMO_INITIAL_DELAY wait, at most $DEMO_MAX_ATTEMPTS times. " +
+        "The job is done on check $DEMO_ATTEMPTS_UNTIL_FINISHED."
 
 @Composable
 internal fun VisibleScreenPollerDemoScreen(onBack: () -> Unit) {
-    val scope = rememberCoroutineScope()
-    val poller = remember { VisibleScreenPoller() }
-    var attemptCount by remember { mutableIntStateOf(0) }
-    var isScreenVisible by remember { mutableStateOf(true) }
-    var statusText by remember { mutableStateOf("Idle") }
+    val viewModel = remember { VisibleScreenPollerDemoViewModel() }
+    val state by viewModel.state.collectAsState()
 
-    DisposableEffect(poller) {
-        poller.changeVisibility(isVisible = true)
-        onDispose { poller.stop() }
+    DisposableEffect(viewModel) {
+        onDispose(viewModel::stopPolling)
     }
 
     Box(
@@ -65,55 +53,19 @@ internal fun VisibleScreenPollerDemoScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(space = 16.dp),
         ) {
             Text(text = "Wait for a server job", style = CoreMediumTextStyle().copy(fontSize = 18.sp))
+            Text(text = DEMO_SCHEDULE_DESCRIPTION, style = CoreRegularTextStyle().copy(fontSize = 14.sp))
+            Text(text = "Status: ${state.pollingStatus.label}", style = CoreRegularTextStyle().copy(fontSize = 14.sp))
+            Text(text = "Checks made: ${state.attemptCount}", style = CoreRegularTextStyle().copy(fontSize = 14.sp))
             Text(
-                text = "Checks every 2 s after a 1 s wait, at most 10 times. The job is done on check 6.",
+                text = if (state.isScreenVisible) "Screen: visible" else "Screen: hidden (paused)",
                 style = CoreRegularTextStyle().copy(fontSize = 14.sp),
             )
-            Text(text = "Status: $statusText", style = CoreRegularTextStyle().copy(fontSize = 14.sp))
-            Text(text = "Checks made: $attemptCount", style = CoreRegularTextStyle().copy(fontSize = 14.sp))
-            Text(
-                text = if (isScreenVisible) "Screen: visible" else "Screen: hidden (paused)",
-                style = CoreRegularTextStyle().copy(fontSize = 14.sp),
-            )
+            CustomButton(text = "Start polling", onClick = viewModel::startPolling)
             CustomButton(
-                text = "Start polling",
-                onClick = {
-                    attemptCount = 0
-                    statusText = "Polling"
-                    poller.start(
-                        scope = scope,
-                        schedule = PollingSchedule.fixedInterval(
-                            interval = DEMO_INTERVAL,
-                            maxAttempts = DEMO_MAX_ATTEMPTS,
-                            initialDelay = DEMO_INITIAL_DELAY,
-                        ),
-                        pollAttempt = {
-                            attemptCount++
-                            if (attemptCount >= DEMO_ATTEMPTS_UNTIL_FINISHED) {
-                                statusText = "Finished"
-                                PollAttemptOutcome.FINISHED
-                            } else {
-                                PollAttemptOutcome.CONTINUE
-                            }
-                        },
-                        onScheduleExhausted = { statusText = "Schedule ran out" },
-                    )
-                },
+                text = if (state.isScreenVisible) "Hide screen" else "Show screen",
+                onClick = viewModel::toggleScreenVisibility,
             )
-            CustomButton(
-                text = if (isScreenVisible) "Hide screen" else "Show screen",
-                onClick = {
-                    isScreenVisible = !isScreenVisible
-                    poller.changeVisibility(isVisible = isScreenVisible)
-                },
-            )
-            CustomButton(
-                text = "Stop",
-                onClick = {
-                    poller.stop()
-                    statusText = "Stopped"
-                },
-            )
+            CustomButton(text = "Stop", onClick = viewModel::stopPolling)
         }
 
         CustomIconButton(
