@@ -41,6 +41,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlin.coroutines.cancellation.CancellationException
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.State
@@ -622,6 +623,9 @@ fun DefaultCameraPreview(
                     showShutterFlash = true
                     shutterEffectTrigger++
                 }
+            } catch (cancellation: CancellationException) {
+                if (singleCaptureModeEnabled) hasClaimedSingleCapture = false
+                throw cancellation
             } catch (t: Throwable) {
                 t.printStackTrace()
                 if (singleCaptureModeEnabled) hasClaimedSingleCapture = false

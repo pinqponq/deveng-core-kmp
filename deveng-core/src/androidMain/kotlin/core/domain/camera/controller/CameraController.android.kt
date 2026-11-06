@@ -145,6 +145,8 @@ actual class CameraController(
 
     private var bindAwaitContinuation: CancellableContinuation<Unit>? = null
 
+    private var stillCaptureModeOverride: StillCaptureMode? = null
+
     actual var onPreviewTapListener: ((Float, Float) -> Unit)? = null
     actual var onPreviewDoubleTapListener: (() -> Unit)? = null
     actual var shouldSuppressTapToFocus: ((Float, Float) -> Boolean)? = null
@@ -833,12 +835,7 @@ actual class CameraController(
         // Intentionally left blank.
     }
 
-    @OptIn(ExperimentalZeroShutterLag::class)
-    private fun resolveStillImageCaptureMode(): Int = when (currentStillCaptureMode()) {
-        StillCaptureMode.ZERO_SHUTTER_LAG -> ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
-        StillCaptureMode.MINIMIZE_LATENCY -> ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
-        StillCaptureMode.MAXIMIZE_QUALITY -> ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
-    }
+    private fun resolveStillImageCaptureMode(): Int = currentStillCaptureMode().toImageCaptureMode()
 
     private fun currentStillCaptureMode(): StillCaptureMode =
         resolveStillCaptureMode(stillCaptureModeOverride, qualityPriority, flashMode)
@@ -846,7 +843,7 @@ actual class CameraController(
     actual fun getStillCaptureMode(): StillCaptureMode? = currentStillCaptureMode()
 
     actual suspend fun setStillCaptureModeOverride(mode: StillCaptureMode?) {
-        if (stillCaptureModeOverride == mode) return
+        if (!stillCaptureModeOverrideChanges(current = stillCaptureModeOverride, requested = mode)) return
         stillCaptureModeOverride = mode
         Log.d("CameraK", "setStillCaptureModeOverride mode=$mode resolved=${currentStillCaptureMode()}")
         // The capture mode of ImageCapture is fixed once built, so the session is rebound.
@@ -1489,7 +1486,6 @@ actual class CameraController(
         previewView?.let { bindCamera(it) }
     }
 
-    private var stillCaptureModeOverride: StillCaptureMode? = null
 
     actual fun setStillCaptureSettings(
         qualityPrioritization: QualityPrioritization,

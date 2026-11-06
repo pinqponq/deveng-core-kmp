@@ -3,6 +3,7 @@ package global.deveng.core
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,7 +36,6 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -494,7 +494,8 @@ private fun CameraContent(onBack: () -> Unit) {
     var flashMode by remember { mutableStateOf(FlashMode.OFF) }
     var imageFormat by remember { mutableStateOf(ImageFormat.JPEG) }
     var qualityPrioritization by remember { mutableStateOf(QualityPrioritization.BALANCED) }
-    val captureRetryScope = rememberCoroutineScope()
+    var stillCaptureModeOverride by remember { mutableStateOf<StillCaptureMode?>(null) }
+    var stillCaptureMode by remember { mutableStateOf<StillCaptureMode?>(null) }
 
     val config = remember(aspectRatio, flashMode, imageFormat, qualityPrioritization) {
         CameraConfiguration(
@@ -632,27 +633,26 @@ private fun CameraContent(onBack: () -> Unit) {
                                     }
                                 }
 
-                                is ImageCaptureResult.Error -> {
-                                    val failedMode = state.controller.getStillCaptureMode()
-                                    println("Error: ${result.exception.message} mode=$failedMode")
-                                    val nextMode = when (failedMode) {
-                                        StillCaptureMode.ZERO_SHUTTER_LAG -> StillCaptureMode.MINIMIZE_LATENCY
-                                        StillCaptureMode.MINIMIZE_LATENCY -> StillCaptureMode.MAXIMIZE_QUALITY
-                                        else -> null
-                                    }
-                                    if (nextMode != null) {
-                                        captureRetryScope.launch {
-                                            state.controller.setStillCaptureModeOverride(nextMode)
-                                            val retry = state.controller.takePictureToFile()
-                                            println("Retry with $nextMode: ${retry::class.simpleName}")
-                                        }
-                                    }
-                                }
+                                is ImageCaptureResult.Error ->
+                                    println("Error: ${result.exception.message} mode=$stillCaptureMode")
                             }
                         },
                         onGalleryClick = { /* TODO: open gallery */ },
                         onLastPhotoClick = { bitmap -> /* TODO: open viewer with bitmap */ },
                         stateHolder = cameraStateHolder,
+                    )
+
+                    LaunchedEffect(state.controller, stillCaptureModeOverride) {
+                        state.controller.setStillCaptureModeOverride(stillCaptureModeOverride)
+                        stillCaptureMode = state.controller.getStillCaptureMode()
+                    }
+                    StillCaptureModePicker(
+                        selectedOverride = stillCaptureModeOverride,
+                        currentMode = stillCaptureMode,
+                        onOverrideSelect = { mode -> stillCaptureModeOverride = mode },
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 48.dp),
                     )
 
                     // Visual-only mock bottom navigation for layout preview.
@@ -687,6 +687,51 @@ private fun CameraContent(onBack: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+private val StillCaptureModeOverrideOptions: List<Pair<StillCaptureMode?, String>> = listOf(
+    null to "Auto",
+    StillCaptureMode.ZERO_SHUTTER_LAG to "ZSL",
+    StillCaptureMode.MINIMIZE_LATENCY to "Min latency",
+    StillCaptureMode.MAXIMIZE_QUALITY to "Max quality",
+)
+
+@Composable
+private fun StillCaptureModePicker(
+    selectedOverride: StillCaptureMode?,
+    currentMode: StillCaptureMode?,
+    onOverrideSelect: (StillCaptureMode?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            StillCaptureModeOverrideOptions.forEach { (mode, label) ->
+                Text(
+                    text = label,
+                    color = if (mode == selectedOverride) Color.Black else Color.White,
+                    style = CoreRegularTextStyle().copy(fontSize = 12.sp),
+                    modifier = Modifier
+                        .background(
+                            if (mode == selectedOverride) Color.White else Color.White.copy(alpha = 0.15f),
+                            RoundedCornerShape(8.dp),
+                        )
+                        .clickable { onOverrideSelect(mode) }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
+        }
+        Text(
+            text = "Still capture mode: ${currentMode?.name ?: "not available"}",
+            color = Color.White,
+            style = CoreRegularTextStyle().copy(fontSize = 12.sp),
+        )
     }
 }
 
