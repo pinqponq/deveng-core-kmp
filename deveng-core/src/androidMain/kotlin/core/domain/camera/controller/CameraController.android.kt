@@ -1486,7 +1486,6 @@ actual class CameraController(
         previewView?.let { bindCamera(it) }
     }
 
-
     actual fun setStillCaptureSettings(
         qualityPrioritization: QualityPrioritization,
         targetResolution: Pair<Int, Int>?,
