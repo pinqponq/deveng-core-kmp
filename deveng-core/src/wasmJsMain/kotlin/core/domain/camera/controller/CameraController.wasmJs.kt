@@ -9,6 +9,7 @@ import core.domain.camera.enums.Directory
 import core.domain.camera.enums.FlashMode
 import core.domain.camera.enums.ImageFormat
 import core.domain.camera.enums.QualityPrioritization
+import core.domain.camera.enums.StillCaptureMode
 import core.domain.camera.enums.TorchMode
 import core.domain.camera.plugins.CameraPlugin
 import core.domain.camera.result.ImageCaptureResult
@@ -188,6 +189,10 @@ actual class CameraController internal constructor(
         targetResolution: Pair<Int, Int>?,
         targetResolutionFront: Pair<Int, Int>?,
     ) {}
+    actual fun getStillCaptureMode(): StillCaptureMode? = null
+
+    actual suspend fun setStillCaptureModeOverride(mode: StillCaptureMode?) {}
+
     actual fun applyCaptureModeSessionPreset(isVideoMode: Boolean) {}
     actual fun isNightModeSupported(): Boolean = false
     actual fun setNightMode(enabled: Boolean) {}

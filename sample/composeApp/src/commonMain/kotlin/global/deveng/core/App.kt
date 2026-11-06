@@ -35,6 +35,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +62,7 @@ import core.domain.camera.enums.CameraLens
 import core.domain.camera.enums.FlashMode
 import core.domain.camera.enums.ImageFormat
 import core.domain.camera.enums.QualityPrioritization
+import core.domain.camera.enums.StillCaptureMode
 import core.domain.camera.permissions.Permissions
 import core.domain.camera.permissions.providePermissions
 import core.domain.camera.result.ImageCaptureResult
@@ -164,6 +166,7 @@ import deveng_core_kmp.sample.composeapp.generated.resources.ic_rotate_right
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_undo
 import deveng_core_kmp.sample.composeapp.generated.resources.theme
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format
 import org.jetbrains.compose.resources.painterResource
@@ -491,6 +494,7 @@ private fun CameraContent(onBack: () -> Unit) {
     var flashMode by remember { mutableStateOf(FlashMode.OFF) }
     var imageFormat by remember { mutableStateOf(ImageFormat.JPEG) }
     var qualityPrioritization by remember { mutableStateOf(QualityPrioritization.BALANCED) }
+    val captureRetryScope = rememberCoroutineScope()
 
     val config = remember(aspectRatio, flashMode, imageFormat, qualityPrioritization) {
         CameraConfiguration(
@@ -628,8 +632,22 @@ private fun CameraContent(onBack: () -> Unit) {
                                     }
                                 }
 
-                                is ImageCaptureResult.Error ->
-                                    println("Error: ${result.exception.message}")
+                                is ImageCaptureResult.Error -> {
+                                    val failedMode = state.controller.getStillCaptureMode()
+                                    println("Error: ${result.exception.message} mode=$failedMode")
+                                    val nextMode = when (failedMode) {
+                                        StillCaptureMode.ZERO_SHUTTER_LAG -> StillCaptureMode.MINIMIZE_LATENCY
+                                        StillCaptureMode.MINIMIZE_LATENCY -> StillCaptureMode.MAXIMIZE_QUALITY
+                                        else -> null
+                                    }
+                                    if (nextMode != null) {
+                                        captureRetryScope.launch {
+                                            state.controller.setStillCaptureModeOverride(nextMode)
+                                            val retry = state.controller.takePictureToFile()
+                                            println("Retry with $nextMode: ${retry::class.simpleName}")
+                                        }
+                                    }
+                                }
                             }
                         },
                         onGalleryClick = { /* TODO: open gallery */ },

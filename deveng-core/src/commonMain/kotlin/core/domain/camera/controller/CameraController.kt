@@ -5,6 +5,7 @@ import core.domain.camera.enums.CameraLens
 import core.domain.camera.enums.FlashMode
 import core.domain.camera.enums.ImageFormat
 import core.domain.camera.enums.QualityPrioritization
+import core.domain.camera.enums.StillCaptureMode
 import core.domain.camera.enums.TorchMode
 import androidx.compose.ui.graphics.ImageBitmap
 import core.domain.camera.result.ImageCaptureResult
@@ -230,6 +231,20 @@ expect class CameraController {
         targetResolution: Pair<Int, Int>?,
         targetResolutionFront: Pair<Int, Int>?,
     )
+
+    /**
+     * The mode the next still photo is taken with, after [setStillCaptureModeOverride] and
+     * [setStillCaptureSettings] are applied. Null on platforms without still capture modes (iOS,
+     * desktop, web).
+     */
+    fun getStillCaptureMode(): StillCaptureMode?
+
+    /**
+     * Forces the mode of the next still photos, e.g. to try another mode after a capture failed.
+     * Null returns to the mode that [setStillCaptureSettings] picks. Android rebinds the session and
+     * returns once the camera is ready again; the other platforms return at once and change nothing.
+     */
+    suspend fun setStillCaptureModeOverride(mode: StillCaptureMode?)
 
     /**
      * Aligns the native capture session with photo vs video UI mode (iOS: session preset).
