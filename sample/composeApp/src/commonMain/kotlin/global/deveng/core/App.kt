@@ -166,7 +166,6 @@ import deveng_core_kmp.sample.composeapp.generated.resources.ic_rotate_right
 import deveng_core_kmp.sample.composeapp.generated.resources.ic_undo
 import deveng_core_kmp.sample.composeapp.generated.resources.theme
 import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.format
 import org.jetbrains.compose.resources.painterResource
@@ -647,8 +646,8 @@ private fun CameraContent(onBack: () -> Unit) {
                         stillCaptureMode = state.controller.getStillCaptureMode()
                     }
                     StillCaptureModePicker(
-                        selectedOverride = stillCaptureModeOverride,
-                        currentMode = stillCaptureMode,
+                        options = stillCaptureModeOptions(selectedOverride = stillCaptureModeOverride),
+                        currentModeText = stillCaptureModeText(mode = stillCaptureMode),
                         onOverrideSelect = { mode -> stillCaptureModeOverride = mode },
                         modifier = Modifier
                             .align(Alignment.TopCenter)
@@ -690,17 +689,31 @@ private fun CameraContent(onBack: () -> Unit) {
     }
 }
 
-private val StillCaptureModeOverrideOptions: List<Pair<StillCaptureMode?, String>> = listOf(
+private data class StillCaptureModeOption(
+    val mode: StillCaptureMode?,
+    val label: String,
+    val isSelected: Boolean,
+)
+
+private val StillCaptureModeOverrideLabels: List<Pair<StillCaptureMode?, String>> = listOf(
     null to "Auto",
     StillCaptureMode.ZERO_SHUTTER_LAG to "ZSL",
     StillCaptureMode.MINIMIZE_LATENCY to "Min latency",
     StillCaptureMode.MAXIMIZE_QUALITY to "Max quality",
 )
 
+private fun stillCaptureModeOptions(selectedOverride: StillCaptureMode?): List<StillCaptureModeOption> =
+    StillCaptureModeOverrideLabels.map { (mode, label) ->
+        StillCaptureModeOption(mode = mode, label = label, isSelected = mode == selectedOverride)
+    }
+
+private fun stillCaptureModeText(mode: StillCaptureMode?): String =
+    "Still capture mode: ${mode?.name ?: "not available on this platform"}"
+
 @Composable
 private fun StillCaptureModePicker(
-    selectedOverride: StillCaptureMode?,
-    currentMode: StillCaptureMode?,
+    options: List<StillCaptureModeOption>,
+    currentModeText: String,
     onOverrideSelect: (StillCaptureMode?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -712,23 +725,23 @@ private fun StillCaptureModePicker(
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            StillCaptureModeOverrideOptions.forEach { (mode, label) ->
+            options.forEach { option ->
                 Text(
-                    text = label,
-                    color = if (mode == selectedOverride) Color.Black else Color.White,
+                    text = option.label,
+                    color = if (option.isSelected) Color.Black else Color.White,
                     style = CoreRegularTextStyle().copy(fontSize = 12.sp),
                     modifier = Modifier
                         .background(
-                            if (mode == selectedOverride) Color.White else Color.White.copy(alpha = 0.15f),
+                            if (option.isSelected) Color.White else Color.White.copy(alpha = 0.15f),
                             RoundedCornerShape(8.dp),
                         )
-                        .clickable { onOverrideSelect(mode) }
+                        .clickable { onOverrideSelect(option.mode) }
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }
         }
         Text(
-            text = "Still capture mode: ${currentMode?.name ?: "not available"}",
+            text = currentModeText,
             color = Color.White,
             style = CoreRegularTextStyle().copy(fontSize = 12.sp),
         )

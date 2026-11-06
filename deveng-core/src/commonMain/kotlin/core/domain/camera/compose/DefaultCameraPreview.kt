@@ -320,7 +320,7 @@ private fun formatRecordingProgress(elapsedMs: Long, maxDurationMs: Long): Strin
  * @param hostPlatform Host OS for tap-to-focus exposure slider placement: [Platform.IOS] or [Platform.NATIVE] places the slider to the right of the reticle; [Platform.ANDROID] keeps it below the ring (also used for [Platform.WEB] and [Platform.DESKTOP]). The app must pass the correct value; core does not detect the platform.
  * @param thumbnailSaveInProgress When true, shows a progress indicator on the last-capture thumbnail and blocks thumbnail taps (e.g. while persisting to disk). Thumbnail is also blocked for the in-flight interval from shutter until [onImageCaptured] returns.
  * @param onPhotoCaptureEngaged Invoked after the still-capture request is queued (before [onImageCaptured]) — use to flip app-level “saving” UI and avoid thumbnail races.
- * @param onPhotoCaptureFailed Invoked when still capture throws before [onImageCaptured] runs; pair with [onPhotoCaptureEngaged] to clear app state.
+ * @param onPhotoCaptureFailed Invoked with the thrown error when still capture throws before [onImageCaptured] runs; pair with [onPhotoCaptureEngaged] to clear app state.
  * @param showLastCaptureThumbnail When false, the last-capture thumbnail (and the gallery-icon fallback shown when no thumbnail exists yet) is not rendered — for capture flows where reviewing/re-opening a previous frame doesn't apply (e.g. single-shot / view-once capture).
  * @param singleCaptureModeEnabled When true, only one capture — a photo OR a video recording — is allowed per composition: the shutter is disabled after a photo is taken or a recording starts (an in-progress recording can still be stopped), and Photo/Video mode switching is disabled once that slot is claimed. To reset, recompose with a fresh key/controller (e.g. leaving and re-entering the camera screen).
  * @param shutterGlowColor When set, the shutter's outer ring takes this color and a candle-like glow of it flickers around the button, e.g. to show the next capture goes somewhere special. Null (default) keeps the plain white shutter.
@@ -339,7 +339,7 @@ fun DefaultCameraPreview(
     initialThumbnailBitmap: ImageBitmap? = null,
     thumbnailSaveInProgress: Boolean = false,
     onPhotoCaptureEngaged: () -> Unit = {},
-    onPhotoCaptureFailed: () -> Unit = {},
+    onPhotoCaptureFailed: (Throwable) -> Unit = {},
     thumbnailTopEndContent: @Composable () -> Unit = {},
     showLastCaptureThumbnail: Boolean = true,
     singleCaptureModeEnabled: Boolean = false,
@@ -624,12 +624,11 @@ fun DefaultCameraPreview(
                     shutterEffectTrigger++
                 }
             } catch (cancellation: CancellationException) {
-                if (singleCaptureModeEnabled) hasClaimedSingleCapture = false
                 throw cancellation
             } catch (t: Throwable) {
                 t.printStackTrace()
                 if (singleCaptureModeEnabled) hasClaimedSingleCapture = false
-                onPhotoCaptureFailed()
+                onPhotoCaptureFailed(t)
             } finally {
                 awaitingThumbnailUnlockAfterCapture = false
             }

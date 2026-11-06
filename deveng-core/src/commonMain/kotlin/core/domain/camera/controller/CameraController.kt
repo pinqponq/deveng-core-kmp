@@ -240,9 +240,9 @@ expect class CameraController {
     fun getStillCaptureMode(): StillCaptureMode?
 
     /**
-     * Forces the mode of the next still photos, e.g. to try another mode after a capture failed.
+     * Forces the mode of the next still photos, for example to try another mode after a capture failed.
      * Null returns to the mode that [setStillCaptureSettings] picks. Android rebinds the session and
-     * returns once the camera is ready again; the other platforms return at once and change nothing.
+     * returns once the camera is ready again. The other platforms return at once and change nothing.
      */
     suspend fun setStillCaptureModeOverride(mode: StillCaptureMode?)
 

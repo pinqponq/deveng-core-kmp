@@ -59,15 +59,15 @@ class StillCaptureModeResolverTest {
     }
 
     @Test
-    fun stillCaptureModeOverrideChanges_withTheSameMode_returnsFalse() {
-        assertFalse(stillCaptureModeOverrideChanges(StillCaptureMode.MINIMIZE_LATENCY, StillCaptureMode.MINIMIZE_LATENCY))
-        assertFalse(stillCaptureModeOverrideChanges(current = null, requested = null))
+    fun needsStillCaptureRebind_withTheSameMode_returnsFalse() {
+        assertFalse(needsStillCaptureRebind(StillCaptureMode.MINIMIZE_LATENCY, StillCaptureMode.MINIMIZE_LATENCY))
+        assertFalse(needsStillCaptureRebind(current = null, requested = null))
     }
 
     @Test
-    fun stillCaptureModeOverrideChanges_withAnotherModeOrNull_returnsTrue() {
-        assertTrue(stillCaptureModeOverrideChanges(StillCaptureMode.ZERO_SHUTTER_LAG, StillCaptureMode.MINIMIZE_LATENCY))
-        assertTrue(stillCaptureModeOverrideChanges(current = null, requested = StillCaptureMode.MAXIMIZE_QUALITY))
-        assertTrue(stillCaptureModeOverrideChanges(current = StillCaptureMode.MAXIMIZE_QUALITY, requested = null))
+    fun needsStillCaptureRebind_withAnotherModeOrNull_returnsTrue() {
+        assertTrue(needsStillCaptureRebind(StillCaptureMode.ZERO_SHUTTER_LAG, StillCaptureMode.MINIMIZE_LATENCY))
+        assertTrue(needsStillCaptureRebind(current = null, requested = StillCaptureMode.MAXIMIZE_QUALITY))
+        assertTrue(needsStillCaptureRebind(current = StillCaptureMode.MAXIMIZE_QUALITY, requested = null))
     }
 }

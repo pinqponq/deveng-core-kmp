@@ -18,7 +18,7 @@ internal fun resolveStillCaptureMode(
         if (flashMode == FlashMode.OFF) StillCaptureMode.ZERO_SHUTTER_LAG else StillCaptureMode.MINIMIZE_LATENCY
 }
 
-internal fun stillCaptureModeOverrideChanges(
+internal fun needsStillCaptureRebind(
     current: StillCaptureMode?,
     requested: StillCaptureMode?,
 ): Boolean = current != requested

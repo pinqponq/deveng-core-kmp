@@ -189,6 +189,7 @@ actual class CameraController internal constructor(
         targetResolution: Pair<Int, Int>?,
         targetResolutionFront: Pair<Int, Int>?,
     ) {}
+
     actual fun getStillCaptureMode(): StillCaptureMode? = null
 
     actual suspend fun setStillCaptureModeOverride(mode: StillCaptureMode?) {}
