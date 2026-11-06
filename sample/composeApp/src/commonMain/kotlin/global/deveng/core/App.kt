@@ -493,8 +493,8 @@ private fun CameraContent(onBack: () -> Unit) {
     var flashMode by remember { mutableStateOf(FlashMode.OFF) }
     var imageFormat by remember { mutableStateOf(ImageFormat.JPEG) }
     var qualityPrioritization by remember { mutableStateOf(QualityPrioritization.BALANCED) }
-    var stillCaptureModeOverride by remember { mutableStateOf<StillCaptureMode?>(null) }
-    var stillCaptureMode by remember { mutableStateOf<StillCaptureMode?>(null) }
+    val stillCaptureModePickerState = remember { StillCaptureModePickerState() }
+    var isShutterEnabled by remember { mutableStateOf(true) }
 
     val config = remember(aspectRatio, flashMode, imageFormat, qualityPrioritization) {
         CameraConfiguration(
@@ -633,22 +633,25 @@ private fun CameraContent(onBack: () -> Unit) {
                                 }
 
                                 is ImageCaptureResult.Error ->
-                                    println("Error: ${result.exception.message} mode=$stillCaptureMode")
+                                    println("Error: ${result.exception.message} mode=${stillCaptureModePickerState.currentMode}")
                             }
                         },
                         onGalleryClick = { /* TODO: open gallery */ },
                         onLastPhotoClick = { bitmap -> /* TODO: open viewer with bitmap */ },
                         stateHolder = cameraStateHolder,
+                        isShutterEnabled = isShutterEnabled,
                     )
 
-                    LaunchedEffect(state.controller, stillCaptureModeOverride) {
-                        state.controller.setStillCaptureModeOverride(stillCaptureModeOverride)
-                        stillCaptureMode = state.controller.getStillCaptureMode()
+                    LaunchedEffect(state.controller, stillCaptureModePickerState.selectedOverride) {
+                        isShutterEnabled = false
+                        state.controller.setStillCaptureModeOverride(stillCaptureModePickerState.selectedOverride)
+                        stillCaptureModePickerState.currentMode = state.controller.getStillCaptureMode()
+                        isShutterEnabled = true
                     }
                     StillCaptureModePicker(
-                        options = stillCaptureModeOptions(selectedOverride = stillCaptureModeOverride),
-                        currentModeText = stillCaptureModeText(mode = stillCaptureMode),
-                        onOverrideSelect = { mode -> stillCaptureModeOverride = mode },
+                        options = stillCaptureModePickerState.options,
+                        currentModeText = stillCaptureModePickerState.currentModeText,
+                        onOverrideSelect = { mode -> stillCaptureModePickerState.selectedOverride = mode },
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .padding(top = 48.dp),
@@ -702,13 +705,18 @@ private val StillCaptureModeOverrideLabels: List<Pair<StillCaptureMode?, String>
     StillCaptureMode.MAXIMIZE_QUALITY to "Max quality",
 )
 
-private fun stillCaptureModeOptions(selectedOverride: StillCaptureMode?): List<StillCaptureModeOption> =
-    StillCaptureModeOverrideLabels.map { (mode, label) ->
-        StillCaptureModeOption(mode = mode, label = label, isSelected = mode == selectedOverride)
-    }
+private class StillCaptureModePickerState {
+    var selectedOverride by mutableStateOf<StillCaptureMode?>(null)
+    var currentMode by mutableStateOf<StillCaptureMode?>(null)
 
-private fun stillCaptureModeText(mode: StillCaptureMode?): String =
-    "Still capture mode: ${mode?.name ?: "not available on this platform"}"
+    val options: List<StillCaptureModeOption>
+        get() = StillCaptureModeOverrideLabels.map { (mode, label) ->
+            StillCaptureModeOption(mode = mode, label = label, isSelected = mode == selectedOverride)
+        }
+
+    val currentModeText: String
+        get() = "Still capture mode: ${currentMode?.name ?: "not available on this platform"}"
+}
 
 @Composable
 private fun StillCaptureModePicker(

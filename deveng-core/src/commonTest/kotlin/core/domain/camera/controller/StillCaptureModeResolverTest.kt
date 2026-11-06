@@ -5,8 +5,6 @@ import core.domain.camera.enums.QualityPrioritization
 import core.domain.camera.enums.StillCaptureMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 
 class StillCaptureModeResolverTest {
 
@@ -56,18 +54,5 @@ class StillCaptureModeResolverTest {
             StillCaptureMode.ZERO_SHUTTER_LAG,
             resolveStillCaptureMode(StillCaptureMode.ZERO_SHUTTER_LAG, QualityPrioritization.QUALITY, FlashMode.ON),
         )
-    }
-
-    @Test
-    fun needsStillCaptureRebind_withTheSameMode_returnsFalse() {
-        assertFalse(needsStillCaptureRebind(StillCaptureMode.MINIMIZE_LATENCY, StillCaptureMode.MINIMIZE_LATENCY))
-        assertFalse(needsStillCaptureRebind(current = null, requested = null))
-    }
-
-    @Test
-    fun needsStillCaptureRebind_withAnotherModeOrNull_returnsTrue() {
-        assertTrue(needsStillCaptureRebind(StillCaptureMode.ZERO_SHUTTER_LAG, StillCaptureMode.MINIMIZE_LATENCY))
-        assertTrue(needsStillCaptureRebind(current = null, requested = StillCaptureMode.MAXIMIZE_QUALITY))
-        assertTrue(needsStillCaptureRebind(current = StillCaptureMode.MAXIMIZE_QUALITY, requested = null))
     }
 }

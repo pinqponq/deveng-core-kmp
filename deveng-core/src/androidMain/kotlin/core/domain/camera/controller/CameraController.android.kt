@@ -843,7 +843,7 @@ actual class CameraController(
     actual fun getStillCaptureMode(): StillCaptureMode? = currentStillCaptureMode()
 
     actual suspend fun setStillCaptureModeOverride(mode: StillCaptureMode?) {
-        if (!needsStillCaptureRebind(current = stillCaptureModeOverride, requested = mode)) return
+        if (stillCaptureModeOverride == mode) return
         stillCaptureModeOverride = mode
         Log.d("CameraK", "setStillCaptureModeOverride mode=$mode resolved=${currentStillCaptureMode()}")
         // The capture mode of ImageCapture is fixed once built, so the session is rebound.

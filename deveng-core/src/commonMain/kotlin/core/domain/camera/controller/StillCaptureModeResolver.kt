@@ -17,8 +17,3 @@ internal fun resolveStillCaptureMode(
     QualityPrioritization.SPEED, QualityPrioritization.BALANCED ->
         if (flashMode == FlashMode.OFF) StillCaptureMode.ZERO_SHUTTER_LAG else StillCaptureMode.MINIMIZE_LATENCY
 }
-
-internal fun needsStillCaptureRebind(
-    current: StillCaptureMode?,
-    requested: StillCaptureMode?,
-): Boolean = current != requested
