@@ -62,6 +62,7 @@ import core.domain.camera.enums.Directory
 import core.domain.camera.enums.FlashMode
 import core.domain.camera.enums.ImageFormat
 import core.domain.camera.enums.QualityPrioritization
+import core.domain.camera.enums.StillCaptureMode
 import core.domain.camera.enums.TorchMode
 import core.domain.camera.plugins.CameraPlugin
 import core.domain.camera.result.ImageCaptureResult
@@ -143,6 +144,8 @@ actual class CameraController(
     private var captureModeIsVideo: Boolean = false
 
     private var bindAwaitContinuation: CancellableContinuation<Unit>? = null
+
+    private var stillCaptureModeOverride: StillCaptureMode? = null
 
     actual var onPreviewTapListener: ((Float, Float) -> Unit)? = null
     actual var onPreviewDoubleTapListener: (() -> Unit)? = null
@@ -832,20 +835,19 @@ actual class CameraController(
         // Intentionally left blank.
     }
 
-    /**
-     * Prefer zero-shutter-lag so the saved frame matches the moment the user tapped capture,
-     * not a later preview frame after camera motion. ZSL is incompatible with flash ON/AUTO.
-     */
-    @OptIn(ExperimentalZeroShutterLag::class)
-    private fun resolveStillImageCaptureMode(): Int = when (qualityPriority) {
-        QualityPrioritization.QUALITY, QualityPrioritization.NONE ->
-            ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
-        QualityPrioritization.SPEED, QualityPrioritization.BALANCED ->
-            if (flashMode == FlashMode.OFF) {
-                ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG
-            } else {
-                ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
-            }
+    private fun resolveStillImageCaptureMode(): Int = currentStillCaptureMode().toImageCaptureMode()
+
+    private fun currentStillCaptureMode(): StillCaptureMode =
+        resolveStillCaptureMode(stillCaptureModeOverride, qualityPriority, flashMode)
+
+    actual fun getStillCaptureMode(): StillCaptureMode? = currentStillCaptureMode()
+
+    actual suspend fun setStillCaptureModeOverride(mode: StillCaptureMode?) {
+        if (stillCaptureModeOverride == mode) return
+        stillCaptureModeOverride = mode
+        Log.d("CameraK", "setStillCaptureModeOverride mode=$mode resolved=${currentStillCaptureMode()}")
+        // The capture mode of ImageCapture is fixed once built, so the session is rebound.
+        rebindCameraSession()
     }
 
     @OptIn(ExperimentalZeroShutterLag::class, ExperimentalCamera2Interop::class)

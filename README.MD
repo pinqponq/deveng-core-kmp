@@ -675,6 +675,14 @@ when (val state = cameraState) {
 - **`takePictureToFile()`** — Returns **`ImageCaptureResult.Success(byteArray, bitmap)`**. Does not write to disk; the app saves using `PhotoSaveUtils.savePhoto`.
 - **`ImageCaptureResult.Success`** — `byteArray`: JPEG/PNG bytes; `bitmap`: optional decoded bitmap for thumbnails. Use `PhotoSaveUtils.addLocationExif` and `PhotoSaveUtils.savePhoto` to persist.
 
+### Still capture mode
+
+- **`getStillCaptureMode()`** — The mode the next photo is taken with (`ZERO_SHUTTER_LAG`, `MINIMIZE_LATENCY`, `MAXIMIZE_QUALITY`). `setStillCaptureSettings` picks it: `SPEED` and `BALANCED` use zero shutter lag while the flash is off, `QUALITY` and `NONE` use maximize quality. Null on iOS, desktop and web.
+- **`setStillCaptureModeOverride(mode)`** — Forces a mode, for example to take the photo again with `MINIMIZE_LATENCY` after a zero shutter lag capture returned `ImageCaptureResult.Error`. Null returns to the mode `setStillCaptureSettings` picks. On Android it rebinds the session and returns once the camera is ready; on the other platforms it does nothing.
+- **`DefaultCameraPreview(onPhotoCaptureFailed = { throwable -> … })`** — Receives the error a still capture threw. A capture cancelled because the preview left the screen is not reported.
+- **`DefaultCameraPreview(isShutterEnabled = false)`** — Turns the shutter off, for example while the app takes the photo again with another mode, so a tap cannot start a second capture. A recording in progress can still be stopped.
+- The sample's camera screen has a still capture mode picker (Auto, ZSL, Min latency, Max quality) and shows `getStillCaptureMode()` (`StillCaptureModePicker` in `sample/composeApp`).
+
 ### Platform setup
 
 | Platform | Setup |

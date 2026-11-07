@@ -41,6 +41,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlin.coroutines.cancellation.CancellationException
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.State
@@ -319,11 +320,12 @@ private fun formatRecordingProgress(elapsedMs: Long, maxDurationMs: Long): Strin
  * @param hostPlatform Host OS for tap-to-focus exposure slider placement: [Platform.IOS] or [Platform.NATIVE] places the slider to the right of the reticle; [Platform.ANDROID] keeps it below the ring (also used for [Platform.WEB] and [Platform.DESKTOP]). The app must pass the correct value; core does not detect the platform.
  * @param thumbnailSaveInProgress When true, shows a progress indicator on the last-capture thumbnail and blocks thumbnail taps (e.g. while persisting to disk). Thumbnail is also blocked for the in-flight interval from shutter until [onImageCaptured] returns.
  * @param onPhotoCaptureEngaged Invoked after the still-capture request is queued (before [onImageCaptured]) — use to flip app-level “saving” UI and avoid thumbnail races.
- * @param onPhotoCaptureFailed Invoked when still capture throws before [onImageCaptured] runs; pair with [onPhotoCaptureEngaged] to clear app state.
+ * @param onPhotoCaptureFailed Invoked with the thrown error when still capture throws before [onImageCaptured] runs; pair with [onPhotoCaptureEngaged] to clear app state. A capture cancelled because the preview left the screen is not reported.
  * @param showLastCaptureThumbnail When false, the last-capture thumbnail (and the gallery-icon fallback shown when no thumbnail exists yet) is not rendered — for capture flows where reviewing/re-opening a previous frame doesn't apply (e.g. single-shot / view-once capture).
  * @param singleCaptureModeEnabled When true, only one capture — a photo OR a video recording — is allowed per composition: the shutter is disabled after a photo is taken or a recording starts (an in-progress recording can still be stopped), and Photo/Video mode switching is disabled once that slot is claimed. To reset, recompose with a fresh key/controller (e.g. leaving and re-entering the camera screen).
  * @param shutterGlowColor When set, the shutter's outer ring takes this color and a candle-like glow of it flickers around the button, e.g. to show the next capture goes somewhere special. Null (default) keeps the plain white shutter.
  * @param isShutterFlashEnabled When false, taking a photo does not briefly darken the preview. Defaults to true.
+ * @param isShutterEnabled When false, the shutter takes no photo and starts no recording, for example while the app takes a photo itself. An in-progress recording can still be stopped.
  * @param shutterCenterContent Drawn inside the shutter's inner circle (e.g. an icon and a "Send" label) while not recording. Null (default) keeps the plain inner circle.
  * @param extraBottomChromePadding Additional bottom padding added below the bottom control chrome (zoom chips, shutter, gallery, mode row), on top of the default gap, to lift it above a host overlay such as a floating bottom navigation bar. Defaults to 0.dp (no change); hosts with such an overlay pass a positive value.
  * @param modifier Modifier for the root layout.
@@ -338,7 +340,7 @@ fun DefaultCameraPreview(
     initialThumbnailBitmap: ImageBitmap? = null,
     thumbnailSaveInProgress: Boolean = false,
     onPhotoCaptureEngaged: () -> Unit = {},
-    onPhotoCaptureFailed: () -> Unit = {},
+    onPhotoCaptureFailed: (Throwable) -> Unit = {},
     thumbnailTopEndContent: @Composable () -> Unit = {},
     showLastCaptureThumbnail: Boolean = true,
     singleCaptureModeEnabled: Boolean = false,
@@ -355,6 +357,7 @@ fun DefaultCameraPreview(
     shutterGlowColor: Color? = null,
     shutterCenterContent: (@Composable () -> Unit)? = null,
     isShutterFlashEnabled: Boolean = true,
+    isShutterEnabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -592,7 +595,7 @@ fun DefaultCameraPreview(
         // second tap landing in that window would otherwise queue a second real capture before
         // the disabled-shutter recomposition ever lands. Setting the flag synchronously here
         // (not after the capture resolves) closes that race down to a single Compose frame.
-        if (singleCaptureModeEnabled && hasClaimedSingleCapture) return@capturePhoto
+        if (!isShutterUsable(isShutterEnabled, singleCaptureModeEnabled, hasClaimedSingleCapture)) return@capturePhoto
         if (singleCaptureModeEnabled) hasClaimedSingleCapture = true
         awaitingThumbnailUnlockAfterCapture = true
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
@@ -622,10 +625,12 @@ fun DefaultCameraPreview(
                     showShutterFlash = true
                     shutterEffectTrigger++
                 }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (t: Throwable) {
                 t.printStackTrace()
                 if (singleCaptureModeEnabled) hasClaimedSingleCapture = false
-                onPhotoCaptureFailed()
+                onPhotoCaptureFailed(t)
             } finally {
                 awaitingThumbnailUnlockAfterCapture = false
             }
@@ -1074,14 +1079,12 @@ fun DefaultCameraPreview(
                         isRecording = recordingUiState.isRecording,
                         recordingDurationMs = recordingUiState.recordingDurationMs,
                         stateHolder = stateHolder,
-                        // Disabled once the single-capture slot is claimed (photo taken, or video
-                        // recording started) — EXCEPT while actively recording, so the in-progress
-                        // recording can still be stopped via this same button.
-                        enabled = !(
-                            singleCaptureModeEnabled &&
-                                hasClaimedSingleCapture &&
-                                !recordingUiState.isRecording
-                            ),
+                        enabled = isShutterButtonEnabled(
+                            isShutterEnabled = isShutterEnabled,
+                            singleCaptureModeEnabled = singleCaptureModeEnabled,
+                            hasClaimedSingleCapture = hasClaimedSingleCapture,
+                            isRecording = recordingUiState.isRecording,
+                        ),
                         onPhotoCapture = capturePhotoDuringPreview,
                         onVideoStart = {
                             // Claim synchronously at record-start, mirroring capturePhotoDuringPreview's
