@@ -1,0 +1,693 @@
+<title>{{TITLE}}</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout concept: a schematic with six lanes, left to right: people, backend, agent, outside services, data and infrastructure, development loop. Click a box to light up what it touches. */
+:root {
+  --bg: #f3f5f4;
+  --surface: #ffffff;
+  --surface-2: #e9eeec;
+  --line: #c9d3cf;
+  --fg: #15211e;
+  --fg-soft: #4a5b56;
+  --accent: #0b7a6d;
+  --accent-ink: #ffffff;
+  --k-person: #8a5a00;
+  --k-client: #1f5fbf;
+  --k-service: #0b7a6d;
+  --k-agent: #7b3fb8;
+  --k-external: #b3402e;
+  --k-infra: #4d5d57;
+  --k-dev: #a1307a;
+  --e-call: #0b7a6d;
+  --e-data: #8a5a00;
+  --e-ai: #7b3fb8;
+  --e-log: #1f5fbf;
+  --e-config: #4d5d57;
+  --e-deploy: #b3402e;
+  --ok: #1d7a3a;
+  --warn: #9a6200;
+  --halo: #f3f5f4;
+  --font-body: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1715;
+    --surface: #17211e;
+    --surface-2: #1f2c28;
+    --line: #2e403a;
+    --fg: #e5eeeb;
+    --fg-soft: #9db1aa;
+    --accent: #4fd1bd;
+    --accent-ink: #072620;
+    --k-person: #e3b04a;
+    --k-client: #7fb0ff;
+    --k-service: #4fd1bd;
+    --k-agent: #c79bf2;
+    --k-external: #ff8f7a;
+    --k-infra: #a9bbb4;
+    --k-dev: #f08ccb;
+    --e-call: #4fd1bd;
+    --e-data: #e3b04a;
+    --e-ai: #c79bf2;
+    --e-log: #7fb0ff;
+    --e-config: #a9bbb4;
+    --e-deploy: #ff8f7a;
+    --ok: #66d38a;
+    --warn: #e3b04a;
+    --halo: #0f1715;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1715;
+  --surface: #17211e;
+  --surface-2: #1f2c28;
+  --line: #2e403a;
+  --fg: #e5eeeb;
+  --fg-soft: #9db1aa;
+  --accent: #4fd1bd;
+  --accent-ink: #072620;
+  --k-person: #e3b04a;
+  --k-client: #7fb0ff;
+  --k-service: #4fd1bd;
+  --k-agent: #c79bf2;
+  --k-external: #ff8f7a;
+  --k-infra: #a9bbb4;
+  --k-dev: #f08ccb;
+  --e-call: #4fd1bd;
+  --e-data: #e3b04a;
+  --e-ai: #c79bf2;
+  --e-log: #7fb0ff;
+  --e-config: #a9bbb4;
+  --e-deploy: #ff8f7a;
+  --ok: #66d38a;
+  --warn: #e3b04a;
+  --halo: #0f1715;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px; max-width: 1560px; margin: 0 auto; }
+header { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: end; justify-content: space-between; margin-bottom: 16px; }
+h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.1; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+.sub { margin: 6px 0 0; color: var(--fg-soft); max-width: 62ch; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+input[type="search"] { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; min-width: min(280px, 100%); }
+input[type="search"]:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tabs { display: flex; gap: 4px; background: var(--surface-2); padding: 4px; border-radius: 10px; }
+.tab { font: inherit; font-weight: 600; color: var(--fg-soft); background: transparent; border: 0; border-radius: 7px; padding: 7px 14px; cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 0 var(--line); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; padding: 0; list-style: none; }
+.chip { font: inherit; font-size: 13px; display: inline-flex; gap: 7px; align-items: center; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; cursor: pointer; }
+.chip i { width: 10px; height: 10px; border-radius: 3px; display: block; background: var(--c); }
+.chip[aria-pressed="false"] { opacity: 0.45; }
+.edge-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 14px; font-size: 13px; color: var(--fg-soft); }
+.edge-legend span { display: inline-flex; gap: 7px; align-items: center; }
+.edge-legend b { display: block; width: 22px; height: 0; border-top: 2px solid var(--c); }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.map { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.map svg { display: block; min-width: 1420px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow-y: auto; min-width: 0; }
+.panel h2 { font-size: 1.15rem; margin: 0 0 4px; line-height: 1.25; }
+.badge-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+.badge { font-size: 12px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; border-radius: 5px; padding: 2px 7px; border: 1px solid currentColor; }
+.panel p { margin: 0 0 10px; }
+.panel h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-soft); margin: 16px 0 6px; }
+.panel ul { margin: 0; padding-left: 18px; }
+.panel li { margin-bottom: 4px; overflow-wrap: anywhere; }
+.rel { list-style: none; padding: 0; }
+.rel li { padding: 0; margin: 0 0 4px; }
+.rel button { font: inherit; text-align: left; width: 100%; background: var(--surface-2); color: var(--fg); border: 0; border-radius: 7px; padding: 6px 10px; cursor: pointer; display: grid; gap: 1px; }
+.rel button:hover { background: var(--line); }
+.rel small { color: var(--fg-soft); font-size: 12.5px; }
+.empty { color: var(--fg-soft); }
+.hint { color: var(--fg-soft); font-size: 13px; margin: 8px 0 0; }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+.lane-title { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; fill: var(--fg-soft); }
+.lane-bg { fill: var(--surface-2); opacity: 0.45; }
+.node { cursor: pointer; }
+.node rect.box { fill: var(--surface); stroke: var(--c); stroke-width: 1.5; }
+.node .name { font-family: var(--font-body); font-size: 13px; font-weight: 600; fill: var(--fg); }
+.node .tag { font-family: var(--font-mono); font-size: 10.5px; fill: var(--c); }
+.node.sel rect.box { fill: var(--surface-2); stroke-width: 3; }
+.node.dim, .node.off { opacity: 0.22; }
+.node.off { pointer-events: none; opacity: 0.1; }
+.node:focus-visible rect.box { stroke-width: 3; }
+.edge { fill: none; stroke: var(--c); stroke-width: 1.2; opacity: 0.28; }
+.edge.on { opacity: 1; stroke-width: 2.4; }
+.edge.faded { opacity: 0.05; }
+.edge-label { font-family: var(--font-body); font-size: 11.5px; font-weight: 600; fill: var(--fg); paint-order: stroke; stroke: var(--halo); stroke-width: 4px; stroke-linejoin: round; }
+.view { margin-top: 4px; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-soft); position: sticky; top: 0; background: var(--surface); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag-pill { font-size: 12.5px; background: var(--surface-2); border-radius: 6px; padding: 2px 8px; border: 0; color: var(--fg); font-family: inherit; }
+button.tag-pill { cursor: pointer; }
+button.tag-pill:hover { background: var(--line); }
+.who { font-weight: 700; white-space: nowrap; }
+.status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 18px; }
+.status-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+.status-card h3 { margin: 0 0 4px; font-size: 14px; display: flex; gap: 8px; align-items: center; }
+.status-card p { margin: 0; color: var(--fg-soft); font-size: 14px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); display: inline-block; flex: none; }
+.foot { margin-top: 22px; color: var(--fg-soft); font-size: 13px; }
+.stepper { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 14px; display: grid; gap: 10px; }
+.step-list { display: flex; gap: 6px; overflow-x: auto; margin: 0; padding: 2px 2px 6px; list-style: none; }
+.step-dot { font: inherit; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; min-width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface); color: var(--fg-soft); cursor: pointer; flex: none; }
+.step-dot[aria-current="step"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.step-dot.done { border-color: var(--accent); color: var(--accent); }
+.step-nav { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.step-nav .title { font-weight: 700; min-width: 0; }
+.btn { font: inherit; font-weight: 600; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.step-kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin: 0 0 4px; }
+.example { background: var(--surface-2); border-radius: 8px; padding: 10px 12px; margin: 0 0 10px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.example-label { display: inline-block; font-family: var(--font-body); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--warn); margin-bottom: 4px; }
+.touch-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.selected-box { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+.node.act rect.box { stroke-width: 3; }
+.node.t-far { opacity: 0.12; }
+.node.t-mid { opacity: 0.55; }
+.node.t-mid rect.box { stroke-dasharray: 5 4; }
+.node.t-passive { opacity: 1; }
+.node.t-passive rect.box { stroke-dasharray: none; fill: var(--surface-2); }
+.node.t-hot, .node.t-passive { opacity: 1; }
+.edge.mid { opacity: 0.55; stroke-width: 1.8; stroke-dasharray: 5 4; }
+.rel button.act-row { border-left: 4px solid var(--c); border-radius: 4px 7px 7px 4px; }
+.rel button.act-row.hover { background: var(--line); }
+.act-main { font-weight: 600; }
+@keyframes flow { to { stroke-dashoffset: -28; } }
+@media (max-width: 980px) {
+  .stage { grid-template-columns: minmax(0, 1fr); }
+  .panel { position: static; max-height: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .edge, .node { transition: opacity 0.15s; }
+  .edge.flow { stroke-dasharray: 8 6; animation: flow 1.1s linear infinite; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>{{TITLE}}</h1>
+      <p class="sub">{{SUBTITLE}}</p>
+    </div>
+    <div class="controls">
+      <div class="tabs" role="tablist" aria-label="Görünüm">
+        <button class="tab" role="tab" id="tab-journey" aria-selected="true" data-view="journey">Yolculuk</button>
+        <button class="tab" role="tab" id="tab-who" aria-selected="false" data-view="who">Kim ne kullanır</button>
+      </div>
+      <input id="search" type="search" placeholder="{{SEARCH_HINT}}" aria-label="Ara">
+    </div>
+  </header>
+
+  <ul class="legend" id="legend" aria-label="Kutu türleri"></ul>
+
+  <section class="view" id="view-map">
+    <div class="stepper" id="stepper">
+      <ol class="step-list" id="step-list" aria-label="Adımlar"></ol>
+      <div class="step-nav">
+        <button class="btn" type="button" id="prev">Önceki</button>
+        <span class="title" id="step-title"></span>
+        <button class="btn primary" type="button" id="next">Sonraki</button>
+      </div>
+    </div>
+    <div class="edge-legend" id="edge-legend"></div>
+    <div class="stage">
+      <div class="map"><svg id="svg" role="img" aria-label="{{TITLE}}"></svg></div>
+      <aside class="panel" id="panel" aria-live="polite"></aside>
+    </div>
+  </section>
+
+  <section class="view" id="view-who" hidden>
+    <div class="table-wrap"><table id="who-table"></table></div>
+    <p class="hint">Bir etikete tıklarsan haritada ilgili kutu açılır. Anahtar değerleri burada yok, yalnızca Vault'taki alan adları var.</p>
+  </section>
+
+
+  <p class="foot">{{FOOTNOTE}}</p>
+</div>
+
+<script>
+/*MAP_DATA*/
+const state = { selected: null, off: new Set(), query: "", view: "journey", step: 0, hover: null };
+const byId = Object.fromEntries(NODES.map(n => [n.id, n]));
+const W = 196, H = 46, LANE_W = 236, TOP = 54, STEP = 58, LEFT = 14;
+
+function pos(n) {
+  const lane = NODES.filter(m => m.lane === n.lane);
+  const index = lane.indexOf(n);
+  return { x: LEFT + n.lane * LANE_W, y: TOP + index * STEP };
+}
+function el(tag, attrs, parent) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const k in attrs) node.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(node);
+  return node;
+}
+function edgePath(a, b) {
+  const pa = pos(a), pb = pos(b);
+  const ay = pa.y + H / 2, by = pb.y + H / 2;
+  if (a.lane === b.lane) {
+    const x = pa.x + W;
+    return { d: `M${x},${ay} C${x + 46},${ay} ${x + 46},${by} ${x},${by}`, mx: x + 36, my: (ay + by) / 2 };
+  }
+  const forward = b.lane > a.lane;
+  const x1 = forward ? pa.x + W : pa.x;
+  const x2 = forward ? pb.x : pb.x + W;
+  const dx = Math.max(40, Math.abs(x2 - x1) * 0.45) * (forward ? 1 : -1);
+  return { d: `M${x1},${ay} C${x1 + dx},${ay} ${x2 - dx},${by} ${x2},${by}`, mx: (x1 + x2) / 2, my: (ay + by) / 2 };
+}
+
+const svg = document.getElementById("svg");
+const rows = Math.max(...LANES.map((_, i) => NODES.filter(n => n.lane === i).length));
+const svgH = TOP + rows * STEP + 10;
+const svgW = LEFT + LANES.length * LANE_W;
+svg.setAttribute("viewBox", `0 0 ${svgW} ${svgH}`);
+svg.setAttribute("width", svgW);
+svg.setAttribute("height", svgH);
+
+const gLanes = el("g", {}, svg);
+LANES.forEach((title, i) => {
+  el("rect", { class: "lane-bg", x: LEFT + i * LANE_W - 6, y: 8, width: W + 12, height: svgH - 16, rx: 10 }, gLanes);
+  const t = el("text", { class: "lane-title", x: LEFT + i * LANE_W, y: 32 }, gLanes);
+  t.textContent = title;
+});
+const gEdges = el("g", {}, svg);
+const gNodes = el("g", {}, svg);
+const gLabels = el("g", {}, svg);
+
+const edgeEls = EDGES.map(([from, to, label, kind]) => {
+  const a = byId[from], b = byId[to];
+  const geometry = edgePath(a, b);
+  const path = el("path", { class: "edge", d: geometry.d, style: `--c: var(${EDGE_KINDS[kind].cssVar})` }, gEdges);
+  return { from, to, label, kind, geometry, path };
+});
+
+const nodeEls = {};
+NODES.forEach(n => {
+  const p = pos(n);
+  const g = el("g", { class: "node", transform: `translate(${p.x},${p.y})`, tabindex: 0, role: "button", "aria-label": n.name, style: `--c: var(${KINDS[n.kind].cssVar})` }, gNodes);
+  el("rect", { class: "box", width: W, height: H, rx: 9 }, g);
+  const name = el("text", { class: "name", x: 12, y: 20 }, g);
+  name.textContent = n.name;
+  const tag = el("text", { class: "tag", x: 12, y: 36 }, g);
+  tag.textContent = KINDS[n.kind].label + (n.status ? " · " + STATUS[n.status][0] : "");
+  g.addEventListener("click", ev => { ev.stopPropagation(); select(state.selected === n.id ? null : n.id); });
+  g.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); select(state.selected === n.id ? null : n.id); } });
+  nodeEls[n.id] = g;
+});
+svg.addEventListener("click", () => select(null));
+
+function matches(n, q) {
+  if (!q) return true;
+  const hay = (n.name + " " + n.desc + " " + n.facts.join(" ")).toLowerCase();
+  return hay.includes(q);
+}
+function related(id) {
+  const set = new Set([id]);
+  EDGES.forEach(([f, t]) => { if (f === id) set.add(t); if (t === id) set.add(f); });
+  return set;
+}
+function stepEdgeSet(step) {
+  const map = new Map();
+  step.edges.forEach(([from, to, label]) => map.set(from + ">" + to, label));
+  return map;
+}
+function stepNodeSet(step) {
+  const set = new Set(step.extra);
+  step.edges.forEach(([from, to]) => { set.add(from); set.add(to); });
+  return set;
+}
+/* Boxes that work quietly in the background stay lit in every journey step they belong to. */
+const PASSIVE = new Set(PASSIVE_IDS);
+function paint() {
+  const q = state.query.trim().toLowerCase();
+  const journey = state.view === "journey";
+  const step = STEPS[state.step];
+  const stepNodes = journey ? stepNodeSet(step) : null;
+  const stepEdges = journey ? stepEdgeSet(step) : null;
+  const hoverKey = journey && state.hover !== null ? step.edges[state.hover][0] + ">" + step.edges[state.hover][1] : null;
+  const hoverNodes = hoverKey ? new Set(hoverKey.split(">")) : null;
+  const touch = !journey && state.selected ? related(state.selected) : null;
+  NODES.forEach(n => {
+    const g = nodeEls[n.id];
+    g.classList.toggle("off", !journey && state.off.has(n.kind));
+    g.classList.toggle("sel", n.id === state.selected);
+    let tier = "";
+    if (journey) {
+      const inStep = stepNodes.has(n.id);
+      if (!inStep) tier = "far";
+      else if (!hoverNodes || hoverNodes.has(n.id)) tier = "hot";
+      else if (PASSIVE.has(n.id)) tier = "passive";
+      else tier = "mid";
+    }
+    ["far", "hot", "passive", "mid"].forEach(t => g.classList.toggle("t-" + t, tier === t));
+    g.classList.toggle("act", tier === "hot" || tier === "passive");
+    const dimmed = (touch && !touch.has(n.id)) || (q && !matches(n, q));
+    g.classList.toggle("dim", Boolean(dimmed));
+  });
+  gLabels.replaceChildren();
+  edgeEls.forEach(e => {
+    const key = e.from + ">" + e.to;
+    const hidden = !journey && (state.off.has(byId[e.from].kind) || state.off.has(byId[e.to].kind));
+    const stepLabel = stepEdges ? stepEdges.get(key) : undefined;
+    const inStep = stepLabel !== undefined;
+    const hot = journey ? inStep && (!hoverKey || key === hoverKey) : Boolean(state.selected && (e.from === state.selected || e.to === state.selected));
+    const mid = journey && inStep && !hot;
+    e.path.classList.toggle("on", hot);
+    e.path.classList.toggle("flow", journey && hot);
+    e.path.classList.toggle("mid", mid);
+    e.path.classList.toggle("faded", hidden || (!hot && !mid && (journey || Boolean(state.selected))));
+    if (hot && !hidden) {
+      const t = el("text", { class: "edge-label", x: e.geometry.mx, y: e.geometry.my - 4, "text-anchor": "middle" }, gLabels);
+      t.textContent = stepLabel || e.label;
+    }
+  });
+  document.querySelectorAll(".act-row").forEach((row, i) => row.classList.toggle("hover", state.hover === i));
+}
+function render() {
+  renderStepper();
+  renderPanel();
+  paint();
+}
+function renderStepper() {
+  const stepper = document.getElementById("stepper");
+  stepper.hidden = state.view !== "journey";
+  if (state.view !== "journey") return;
+  const list = document.getElementById("step-list");
+  if (!list.children.length) {
+    STEPS.forEach((s, i) => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "step-dot";
+      b.textContent = String(i + 1);
+      b.setAttribute("aria-label", "Adım " + (i + 1) + ": " + s.title);
+      b.addEventListener("click", () => goStep(i));
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+  }
+  [...list.children].forEach((li, i) => {
+    const b = li.firstChild;
+    if (i === state.step) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
+    b.classList.toggle("done", i < state.step);
+  });
+  document.getElementById("step-title").textContent = "Adım " + (state.step + 1) + " / " + STEPS.length + ": " + STEPS[state.step].title;
+  document.getElementById("prev").disabled = state.step === 0;
+  document.getElementById("next").disabled = state.step === STEPS.length - 1;
+}
+function goStep(i) {
+  state.step = Math.max(0, Math.min(STEPS.length - 1, i));
+  state.selected = null;
+  state.hover = null;
+  render();
+  const lanes = [...stepNodeSet(STEPS[state.step])].map(id => byId[id].lane);
+  const box = document.querySelector(".map");
+  if (box && lanes.length) box.scrollTo({ left: Math.max(0, LEFT + Math.min(...lanes) * LANE_W - 12), behavior: "smooth" });
+  const dot = document.getElementById("step-list").children[state.step];
+  if (dot) dot.scrollIntoView({ block: "nearest", inline: "center" });
+}
+function select(id) {
+  state.selected = id;
+  render();
+  if (id && window.matchMedia("(max-width: 980px)").matches) document.getElementById("panel").scrollIntoView({ block: "nearest" });
+}
+
+function pill(text) {
+  const s = document.createElement("span");
+  s.className = "tag-pill";
+  s.textContent = text;
+  return s;
+}
+function relList(items, title) {
+  const wrap = document.createDocumentFragment();
+  const h = document.createElement("h3");
+  h.textContent = title;
+  wrap.appendChild(h);
+  if (!items.length) {
+    const p = document.createElement("p");
+    p.className = "empty";
+    p.textContent = "Yok";
+    wrap.appendChild(p);
+    return wrap;
+  }
+  const ul = document.createElement("ul");
+  ul.className = "rel";
+  items.forEach(({ id, label }) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    const name = document.createElement("span");
+    name.textContent = byId[id].name;
+    const small = document.createElement("small");
+    small.textContent = label;
+    b.append(name, small);
+    b.addEventListener("click", () => select(id));
+    li.appendChild(b);
+    ul.appendChild(li);
+  });
+  wrap.appendChild(ul);
+  return wrap;
+}
+function renderJourneyPanel(panel) {
+  const step = STEPS[state.step];
+  const kicker = document.createElement("p");
+  kicker.className = "step-kicker";
+  kicker.textContent = "Adım " + (state.step + 1) + " / " + STEPS.length;
+  const h = document.createElement("h2");
+  h.textContent = step.title;
+  const what = document.createElement("p");
+  what.textContent = step.what;
+  panel.append(kicker, h, what);
+  const ah = document.createElement("h3");
+  ah.textContent = "Bu adımda olanlar";
+  const alist = document.createElement("ul");
+  alist.className = "rel";
+  step.edges.forEach(([from, to, text], i) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "act-row";
+    const kind = (EDGES.find(e => e[0] === from && e[1] === to) || [])[3] || "call";
+    b.style.setProperty("--c", `var(${EDGE_KINDS[kind].cssVar})`);
+    const main = document.createElement("span");
+    main.className = "act-main";
+    main.textContent = text;
+    const small = document.createElement("small");
+    small.textContent = byId[from].name + " → " + byId[to].name;
+    b.append(main, small);
+    const on = () => { state.hover = i; paint(); };
+    const off = () => { state.hover = null; paint(); };
+    b.addEventListener("mouseenter", on);
+    b.addEventListener("focus", on);
+    b.addEventListener("mouseleave", off);
+    b.addEventListener("blur", off);
+    b.addEventListener("click", () => { state.hover = state.hover === i ? null : i; paint(); });
+    li.appendChild(b);
+    alist.appendChild(li);
+  });
+  panel.append(ah, alist);
+  const label = document.createElement("span");
+  label.className = "example-label";
+  label.textContent = "Örnek, uydurma veri";
+  const ex = document.createElement("pre");
+  ex.className = "example";
+  ex.textContent = step.example;
+  panel.append(label, ex);
+  const nh = document.createElement("h3");
+  nh.textContent = "Bilmen gerekenler";
+  const ul = document.createElement("ul");
+  step.notes.forEach(t => { const li = document.createElement("li"); li.textContent = t; ul.appendChild(li); });
+  panel.append(nh, ul);
+  const th = document.createElement("h3");
+  th.textContent = "Dokunulan yerler";
+  const row = document.createElement("div");
+  row.className = "touch-row";
+  [...stepNodeSet(step)].forEach(id => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tag-pill";
+    b.textContent = byId[id].name;
+    b.addEventListener("click", () => select(state.selected === id ? null : id));
+    row.appendChild(b);
+  });
+  panel.append(th, row);
+  const n = state.selected ? byId[state.selected] : null;
+  if (n) {
+    const box = document.createElement("div");
+    box.className = "selected-box";
+    const t = document.createElement("h3");
+    t.textContent = "Seçili kutu: " + n.name;
+    const d = document.createElement("p");
+    d.textContent = n.desc;
+    const fu = document.createElement("ul");
+    n.facts.forEach(f => { const li = document.createElement("li"); li.textContent = f; fu.appendChild(li); });
+    box.append(t, d, fu);
+    panel.appendChild(box);
+  }
+}
+function renderPanel() {
+  const panel = document.getElementById("panel");
+  panel.replaceChildren();
+  if (state.view === "journey") { renderJourneyPanel(panel); return; }
+  const n = state.selected ? byId[state.selected] : null;
+  if (!n) {
+    const h = document.createElement("h2");
+    h.textContent = "Bir kutu seç";
+    const p = document.createElement("p");
+    p.textContent = "Ne işe yaradığını, hangi ayarları kullandığını ve kimlerle konuştuğunu burada görürsün. Soldan sağa: kullanıcılar, backend, ajan, dış servisler, veri ve altyapı, geliştirme döngüsü.";
+    const p2 = document.createElement("p");
+    p2.className = "hint";
+    p2.textContent = "Türlere tıklayarak bir grubu soluklaştırabilir, üstteki arama kutusuyla kutuları süzebilirsin.";
+    panel.append(h, p, p2);
+    return;
+  }
+  const h = document.createElement("h2");
+  h.textContent = n.name;
+  const badges = document.createElement("div");
+  badges.className = "badge-row";
+  const kb = document.createElement("span");
+  kb.className = "badge";
+  kb.style.color = `var(${KINDS[n.kind].cssVar})`;
+  kb.textContent = KINDS[n.kind].label;
+  badges.appendChild(kb);
+  if (n.status) {
+    const sb = document.createElement("span");
+    sb.className = "badge";
+    sb.style.color = `var(${STATUS[n.status][1]})`;
+    sb.textContent = STATUS[n.status][0];
+    badges.appendChild(sb);
+  }
+  const p = document.createElement("p");
+  p.textContent = n.desc;
+  panel.append(h, badges, p);
+  const fh = document.createElement("h3");
+  fh.textContent = "Ayrıntılar";
+  const ul = document.createElement("ul");
+  n.facts.forEach(f => { const li = document.createElement("li"); li.textContent = f; ul.appendChild(li); });
+  panel.append(fh, ul);
+  if (n.links) {
+    const lh = document.createElement("h3");
+    lh.textContent = "Bağlantılar";
+    const lu = document.createElement("ul");
+    n.links.forEach(([label, href]) => {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = href; a.textContent = label; a.target = "_blank"; a.rel = "noopener";
+      li.appendChild(a); lu.appendChild(li);
+    });
+    panel.append(lh, lu);
+  }
+  const out = EDGES.filter(e => e[0] === n.id).map(e => ({ id: e[1], label: "→ " + e[2] }));
+  const inc = EDGES.filter(e => e[1] === n.id).map(e => ({ id: e[0], label: "← " + e[2] }));
+  panel.appendChild(relList(out, "Kullandıkları ve çağırdıkları"));
+  panel.appendChild(relList(inc, "Onu kullananlar"));
+}
+
+function buildLegend() {
+  const ul = document.getElementById("legend");
+  Object.entries(KINDS).forEach(([k, v]) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.style.setProperty("--c", `var(${v.cssVar})`);
+    b.setAttribute("aria-pressed", "true");
+    const i = document.createElement("i");
+    b.append(i, document.createTextNode(v.label));
+    b.addEventListener("click", () => {
+      if (state.off.has(k)) state.off.delete(k); else state.off.add(k);
+      b.setAttribute("aria-pressed", String(!state.off.has(k)));
+      render();
+    });
+    li.appendChild(b);
+    ul.appendChild(li);
+  });
+  const el2 = document.getElementById("edge-legend");
+  Object.values(EDGE_KINDS).forEach(v => {
+    const s = document.createElement("span");
+    s.style.setProperty("--c", `var(${v.cssVar})`);
+    const b = document.createElement("b");
+    s.append(b, document.createTextNode(v.label));
+    el2.appendChild(s);
+  });
+}
+function chipCell(items, nodeId) {
+  const td = document.createElement("td");
+  const wrap = document.createElement("div");
+  wrap.className = "chips";
+  items.forEach(text => wrap.appendChild(pill(text)));
+  if (!items.length) { const s = document.createElement("span"); s.className = "empty"; s.textContent = "Yok"; wrap.appendChild(s); }
+  td.appendChild(wrap);
+  return td;
+}
+function buildWho() {
+  const t = document.getElementById("who-table");
+  t.replaceChildren();
+  const head = document.createElement("tr");
+  ["Kim", "Skill'ler", "MCP", "API ve servisler", "Araç ve paketler"].forEach(h => { const th = document.createElement("th"); th.textContent = h; head.appendChild(th); });
+  const thead = document.createElement("thead");
+  thead.appendChild(head);
+  t.appendChild(thead);
+  const body = document.createElement("tbody");
+  const q = state.query.trim().toLowerCase();
+  WHO.forEach(r => {
+    const hay = (r.who + " " + [...r.skills, ...r.mcp, ...r.apis, ...r.other].join(" ")).toLowerCase();
+    if (q && !hay.includes(q)) return;
+    const tr = document.createElement("tr");
+    const who = document.createElement("td");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tag-pill who";
+    b.textContent = r.who;
+    b.addEventListener("click", () => { setView("journey"); select(r.node); });
+    who.appendChild(b);
+    tr.append(who, chipCell(r.skills), chipCell(r.mcp), chipCell(r.apis), chipCell(r.other));
+    body.appendChild(tr);
+  });
+  t.appendChild(body);
+}
+const VIEWS = ["journey", "who"];
+function setView(view) {
+  state.view = view;
+  const showMap = view === "journey";
+  document.getElementById("view-map").hidden = !showMap;
+  document.getElementById("view-who").hidden = view !== "who";
+
+  VIEWS.forEach(v => document.getElementById("tab-" + v).setAttribute("aria-selected", String(v === view)));
+  document.getElementById("legend").hidden = view !== "map";
+  try { localStorage.setItem("{{STORAGE_KEY}}", view); } catch (e) { /* storage may be blocked */ }
+  if (showMap) render();
+  if (view === "who") buildWho();
+}
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => setView(b.dataset.view)));
+document.getElementById("prev").addEventListener("click", () => goStep(state.step - 1));
+document.getElementById("next").addEventListener("click", () => goStep(state.step + 1));
+document.addEventListener("keydown", ev => {
+  if (state.view !== "journey" || ev.target.matches("input")) return;
+  if (ev.key === "ArrowRight") goStep(state.step + 1);
+  if (ev.key === "ArrowLeft") goStep(state.step - 1);
+});
+document.getElementById("search").addEventListener("input", ev => {
+  state.query = ev.target.value;
+  render();
+  if (state.view === "who") buildWho();
+});
+
+buildLegend();
+let startView = "journey";
+try {
+  const saved = localStorage.getItem("{{STORAGE_KEY}}");
+  if (saved && VIEWS.includes(saved)) startView = saved;
+} catch (e) { /* storage may be blocked */ }
+setView(startView);
+</script>
