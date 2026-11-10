@@ -87,6 +87,15 @@ The template already contains all motion; a map does not add any.
 
 The motion is plain CSS (`@keyframes flow`, `transition`) and a few lines of script. No library and no video is used. Do not add motion that carries meaning only by moving; the lit boxes and the step text must say the same thing without it.
 
+## Layout in the template
+
+The map must be easy to follow on a normal laptop screen, so the template is wide on purpose.
+
+- Each box is 210 wide and each lane 272 wide, so the arrows between lanes have room and their labels can be read.
+- The map drawing scales to the width of its frame (`width: 100%`) but never below 1150 px; below that, only the map frame scrolls sideways. The side panel is 280 px wide and moves under the map on screens narrower than 980 px.
+- The page content is at most 1920 px wide. When you embed the page in another page (for example an iframe in a dashboard), give the frame the full width of the window and do not put it inside a narrow column.
+- Keep the lane count at six or fewer and a lane at 12 boxes or fewer. A seventh lane makes the map too small to read.
+
 ## Errors
 
 | Situation | What to do |
@@ -95,6 +104,7 @@ The motion is plain CSS (`@keyframes flow`, `transition`) and a few lines of scr
 | An arrow points to an unknown box | Add the box or fix the id. Do not delete the arrow just to pass the check. |
 | A fact cannot be verified | Leave it out, or mark the box `pending` and say why in `desc`. |
 | The Vault, the logs or a repository cannot be read | Say which source was missing in the footnote and in your reply. Do not guess. |
+| The map is too small to read | Check the frame width first (see Layout in the template). Then reduce the number of lanes or boxes instead of shrinking the drawing. |
 | The page is wider than the phone screen | Only the map itself scrolls sideways. Check that no table or text block has a fixed width. |
 
 ## Tests

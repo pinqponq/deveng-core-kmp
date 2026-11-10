@@ -89,7 +89,7 @@
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
-.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px; max-width: 1560px; margin: 0 auto; }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px; max-width: 1920px; margin: 0 auto; }
 header { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: end; justify-content: space-between; margin-bottom: 16px; }
 h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.1; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
 .sub { margin: 6px 0 0; color: var(--fg-soft); max-width: 62ch; }
@@ -106,9 +106,9 @@ input[type="search"]:focus-visible, button:focus-visible, [tabindex]:focus-visib
 .edge-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 14px; font-size: 13px; color: var(--fg-soft); }
 .edge-legend span { display: inline-flex; gap: 7px; align-items: center; }
 .edge-legend b { display: block; width: 22px; height: 0; border-top: 2px solid var(--c); }
-.stage { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 16px; align-items: start; }
 .map { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
-.map svg { display: block; min-width: 1420px; }
+.map svg { display: block; width: 100%; height: auto; min-width: 1150px; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow-y: auto; min-width: 0; }
 .panel h2 { font-size: 1.15rem; margin: 0 0 4px; line-height: 1.25; }
 .badge-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
@@ -239,7 +239,7 @@ button.tag-pill:hover { background: var(--line); }
 /*MAP_DATA*/
 const state = { selected: null, off: new Set(), query: "", view: "journey", step: 0, hover: null };
 const byId = Object.fromEntries(NODES.map(n => [n.id, n]));
-const W = 196, H = 46, LANE_W = 236, TOP = 54, STEP = 58, LEFT = 14;
+const W = 210, H = 46, LANE_W = 272, TOP = 54, STEP = 58, LEFT = 14;
 
 function pos(n) {
   const lane = NODES.filter(m => m.lane === n.lane);
@@ -412,7 +412,7 @@ function goStep(i) {
   render();
   const lanes = [...stepNodeSet(STEPS[state.step])].map(id => byId[id].lane);
   const box = document.querySelector(".map");
-  if (box && lanes.length) box.scrollTo({ left: Math.max(0, LEFT + Math.min(...lanes) * LANE_W - 12), behavior: "smooth" });
+  if (box && lanes.length) box.scrollTo({ left: Math.max(0, (LEFT + Math.min(...lanes) * LANE_W - 12) * (svg.getBoundingClientRect().width / svgW)), behavior: "smooth" });
   const dot = document.getElementById("step-list").children[state.step];
   if (dot) dot.scrollIntoView({ block: "nearest", inline: "center" });
 }
