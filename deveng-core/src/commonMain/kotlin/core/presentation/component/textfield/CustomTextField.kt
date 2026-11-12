@@ -247,7 +247,6 @@ fun CustomTextField(
         val accepted = isEditable && newValue.text.length <= maxLength
         if (accepted) {
             val textChanged = newValue.text != textFieldValueState.text
-            // The field keeps the caret where the user put it. The caller only hears about changes to the text.
             textFieldValueState = newValue
             if (textChanged) {
                 onValueChange(newValue.text)
@@ -326,7 +325,7 @@ fun CustomTextField(
                     onValueChange = updateTextFieldValue,
                     modifier = textFieldModifier
                         .onPreviewKeyEvent { keyEvent ->
-                            val isLineBreakAllowed = !singleLine && enabled && !readOnly
+                            val isLineBreakAllowed = !singleLine && !readOnly
                             if (!isLineBreakAllowed || !keyEvent.isShiftEnterPress()) return@onPreviewKeyEvent false
 
                             updateTextFieldValue(textFieldValueState.withLineBreakAtSelection())
