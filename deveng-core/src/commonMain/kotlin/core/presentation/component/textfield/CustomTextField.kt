@@ -243,16 +243,15 @@ fun CustomTextField(
 
     val focusManager = LocalFocusManager.current
 
-    val updateTextFieldValue: (TextFieldValue) -> Unit = { newValue ->
-        val accepted = isEditable && newValue.text.length <= maxLength
-        if (accepted) {
-            val textChanged = newValue.text != textFieldValueState.text
-            textFieldValueState = newValue
-            if (textChanged) {
-                onValueChange(newValue.text)
-            }
+    val updateTextFieldValue: (TextFieldValue) -> Unit = update@{ newValue ->
+        val isAccepted = isEditable && newValue.text.length <= maxLength
+        if (!isAccepted) return@update
+
+        val isTextChanged = newValue.text != textFieldValueState.text
+        textFieldValueState = newValue
+        if (isTextChanged) {
+            onValueChange(newValue.text)
         }
-        // A rejected change leaves the field as it was, so the extra character is dropped and the caret does not move.
     }
 
     LaunchedEffect(key1 = requestFocus) {
