@@ -30,6 +30,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -242,6 +243,17 @@ fun CustomTextField(
 
     val focusManager = LocalFocusManager.current
 
+    val updateTextFieldValue: (TextFieldValue) -> Unit = update@{ newValue ->
+        val isAccepted = isEditable && newValue.text.length <= maxLength
+        if (!isAccepted) return@update
+
+        val isTextChanged = newValue.text != textFieldValueState.text
+        textFieldValueState = newValue
+        if (isTextChanged) {
+            onValueChange(newValue.text)
+        }
+    }
+
     LaunchedEffect(key1 = requestFocus) {
         if (requestFocus) {
             focusRequester.requestFocus()
@@ -309,21 +321,15 @@ fun CustomTextField(
             Box {
                 TextField(
                     value = textFieldValueState,
-                    onValueChange = { newValue ->
-                        val accepted = isEditable && newValue.text.length <= maxLength
-                        if (accepted) {
-                            val textChanged = newValue.text != textFieldValueState.text
-                            // Keep the user's caret/selection exactly where they put it; only report
-                            // the plain-text change upward when the text actually changed.
-                            textFieldValueState = newValue
-                            if (textChanged) {
-                                onValueChange(newValue.text)
-                            }
-                        }
-                        // Rejected (maxLength / not editable): leave textFieldValueState untouched so
-                        // the extra character is dropped and the caret does not move.
-                    },
+                    onValueChange = updateTextFieldValue,
                     modifier = textFieldModifier
+                        .onPreviewKeyEvent { keyEvent ->
+                            val isLineBreakAllowed = !singleLine && !readOnly
+                            if (!isLineBreakAllowed || !keyEvent.isShiftEnterPress()) return@onPreviewKeyEvent false
+
+                            updateTextFieldValue(textFieldValueState.withLineBreakAtSelection())
+                            true
+                        }
                         .fillMaxWidth()
                         .onFocusEvent {
                             isFocused = it.isFocused
