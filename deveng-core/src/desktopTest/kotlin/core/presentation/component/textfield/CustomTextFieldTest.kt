@@ -181,6 +181,13 @@ class CustomTextFieldTest {
     }
 
     @Test
+    fun pressShiftEnter_inAMultiLineField_showsTheLineBreakInTheField() = runDesktopComposeUiTest {
+        pressShiftEnterIn(singleLine = false)
+
+        onNodeWithText("$FIRST_VALUE\n").assertExists()
+    }
+
+    @Test
     fun pressShiftEnter_inASingleLineField_addsNothing() = runDesktopComposeUiTest {
         assertEquals(FIRST_VALUE, pressShiftEnterIn(singleLine = true))
     }
