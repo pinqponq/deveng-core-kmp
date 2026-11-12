@@ -247,15 +247,13 @@ fun CustomTextField(
         val accepted = isEditable && newValue.text.length <= maxLength
         if (accepted) {
             val textChanged = newValue.text != textFieldValueState.text
-            // Keep the user's caret/selection exactly where they put it; only report
-            // the plain-text change upward when the text actually changed.
+            // The field keeps the caret where the user put it. The caller only hears about changes to the text.
             textFieldValueState = newValue
             if (textChanged) {
                 onValueChange(newValue.text)
             }
         }
-        // Rejected (maxLength / not editable): leave textFieldValueState untouched so
-        // the extra character is dropped and the caret does not move.
+        // A rejected change leaves the field as it was, so the extra character is dropped and the caret does not move.
     }
 
     LaunchedEffect(key1 = requestFocus) {

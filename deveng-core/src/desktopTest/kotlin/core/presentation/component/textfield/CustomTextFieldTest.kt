@@ -3,10 +3,13 @@ package core.presentation.component.textfield
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.keyDown
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
@@ -41,29 +44,133 @@ class CustomTextFieldTest {
         onNodeWithText(SECOND_VALUE).assertIsFocused()
     }
 
-    private fun DesktopComposeUiTest.pressShiftEnterIn(
-        singleLine: Boolean,
-        readOnly: Boolean = false,
-        maxLength: Int = 254
-    ): String {
+    private class FieldRecord {
         var value by mutableStateOf(FIRST_VALUE)
+        var valueChangeCount = 0
+        var keyEventsReachingParentCount = 0
+    }
+
+    private fun DesktopComposeUiTest.setMultiLineField(
+        singleLine: Boolean = false,
+        readOnly: Boolean = false,
+        isEditable: Boolean = true,
+        maxLength: Int = 254
+    ): FieldRecord {
+        val record = FieldRecord()
         setContent {
             AppTheme(darkTheme = false) {
                 CustomTextField(
-                    value = value,
+                    containerModifier = Modifier.onKeyEvent {
+                        record.keyEventsReachingParentCount++
+                        false
+                    },
+                    value = record.value,
                     singleLine = singleLine,
                     readOnly = readOnly,
+                    isEditable = isEditable,
                     maxLength = maxLength,
-                    onValueChange = { value = it }
+                    onValueChange = {
+                        record.valueChangeCount++
+                        record.value = it
+                    }
                 )
             }
         }
         val field = onNodeWithText(FIRST_VALUE)
         // A read-only field refuses the focus request, but a click still focuses it.
         if (readOnly) field.performClick() else field.requestFocus()
-        field.performKeyInput { withKeyDown(Key.ShiftLeft) { pressKey(Key.Enter) } }
+        return record
+    }
+
+    private fun DesktopComposeUiTest.pressShiftEnterIn(
+        singleLine: Boolean,
+        readOnly: Boolean = false,
+        maxLength: Int = 254
+    ): String {
+        val record = setMultiLineField(singleLine = singleLine, readOnly = readOnly, maxLength = maxLength)
+        onNodeWithText(FIRST_VALUE).performKeyInput { withKeyDown(Key.ShiftLeft) { pressKey(Key.Enter) } }
         waitForIdle()
-        return value
+        return record.value
+    }
+
+    @Test
+    fun pressShiftEnter_inAMultiLineField_isNotPassedToTheParent() = runDesktopComposeUiTest {
+        val record = setMultiLineField()
+
+        onNodeWithText(FIRST_VALUE).performKeyInput { withKeyDown(Key.ShiftLeft) { pressKey(Key.Enter) } }
+        waitForIdle()
+
+        assertEquals(0, record.keyEventsReachingParentCount)
+    }
+
+    @Test
+    fun holdShiftEnterDown_inAMultiLineField_addsTheLineBreakBeforeTheKeyIsReleased() = runDesktopComposeUiTest {
+        val record = setMultiLineField()
+
+        onNodeWithText(FIRST_VALUE).performKeyInput {
+            keyDown(Key.ShiftLeft)
+            keyDown(Key.Enter)
+        }
+        waitForIdle()
+
+        assertEquals("$FIRST_VALUE\n", record.value)
+    }
+
+    @Test
+    fun pressShiftNumPadEnter_inAMultiLineField_addsALineBreak() = runDesktopComposeUiTest {
+        val record = setMultiLineField()
+
+        onNodeWithText(FIRST_VALUE).performKeyInput { withKeyDown(Key.ShiftLeft) { pressKey(Key.NumPadEnter) } }
+        waitForIdle()
+
+        assertEquals("$FIRST_VALUE\n", record.value)
+    }
+
+    @Test
+    fun pressCtrlShiftEnter_inAMultiLineField_addsNothing() = runDesktopComposeUiTest {
+        val record = setMultiLineField()
+
+        onNodeWithText(FIRST_VALUE).performKeyInput {
+            withKeyDown(Key.CtrlLeft) { withKeyDown(Key.ShiftLeft) { pressKey(Key.Enter) } }
+        }
+        waitForIdle()
+
+        assertEquals(FIRST_VALUE, record.value)
+    }
+
+    @Test
+    fun typeALetter_inAMultiLineField_stillReachesTheField() = runDesktopComposeUiTest {
+        val record = setMultiLineField()
+
+        onNodeWithText(FIRST_VALUE).performKeyInput { pressKey(Key.A) }
+        waitForIdle()
+
+        assertEquals("${FIRST_VALUE}a", record.value)
+    }
+
+    @Test
+    fun pressShiftEnter_inANotEditableField_addsNothing() = runDesktopComposeUiTest {
+        val record = setMultiLineField(isEditable = false)
+
+        onNodeWithText(FIRST_VALUE).performKeyInput { withKeyDown(Key.ShiftLeft) { pressKey(Key.Enter) } }
+        waitForIdle()
+
+        assertEquals(FIRST_VALUE, record.value)
+    }
+
+    @Test
+    fun pressShiftEnter_withRoomForExactlyOneMoreCharacter_addsALineBreak() = runDesktopComposeUiTest {
+        assertEquals("$FIRST_VALUE\n", pressShiftEnterIn(singleLine = false, maxLength = FIRST_VALUE.length + 1))
+    }
+
+    @Test
+    fun moveTheCaret_inAMultiLineField_doesNotReportAValueChange() = runDesktopComposeUiTest {
+        val record = setMultiLineField()
+
+        onNodeWithText(FIRST_VALUE).performKeyInput { pressKey(Key.DirectionLeft) }
+        waitForIdle()
+
+        assertEquals(0, record.valueChangeCount)
     }
 
     @Test
