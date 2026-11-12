@@ -5,8 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsFocused
@@ -47,7 +49,7 @@ class CustomTextFieldTest {
     private class FieldRecord {
         var value by mutableStateOf(FIRST_VALUE)
         var valueChangeCount = 0
-        var enterEventsReachingParentCount = 0
+        var enterPressesReachingParentCount = 0
     }
 
     private fun DesktopComposeUiTest.setMultiLineField(
@@ -61,7 +63,7 @@ class CustomTextFieldTest {
             AppTheme(darkTheme = false) {
                 CustomTextField(
                     containerModifier = Modifier.onKeyEvent { keyEvent ->
-                        if (keyEvent.key == Key.Enter) record.enterEventsReachingParentCount++
+                        if (keyEvent.key == Key.Enter && keyEvent.type == KeyEventType.KeyDown) record.enterPressesReachingParentCount++
                         false
                     },
                     value = record.value,
@@ -100,7 +102,7 @@ class CustomTextFieldTest {
         onNodeWithText(FIRST_VALUE).performKeyInput { withKeyDown(Key.ShiftLeft) { pressKey(Key.Enter) } }
         waitForIdle()
 
-        assertEquals(0, record.enterEventsReachingParentCount)
+        assertEquals(0, record.enterPressesReachingParentCount)
     }
 
     @Test
