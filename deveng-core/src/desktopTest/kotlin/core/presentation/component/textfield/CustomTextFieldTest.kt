@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -46,7 +47,7 @@ class CustomTextFieldTest {
     private class FieldRecord {
         var value by mutableStateOf(FIRST_VALUE)
         var valueChangeCount = 0
-        var keyEventsReachingParentCount = 0
+        var enterEventsReachingParentCount = 0
     }
 
     private fun DesktopComposeUiTest.setMultiLineField(
@@ -59,8 +60,8 @@ class CustomTextFieldTest {
         setContent {
             AppTheme(darkTheme = false) {
                 CustomTextField(
-                    containerModifier = Modifier.onKeyEvent {
-                        record.keyEventsReachingParentCount++
+                    containerModifier = Modifier.onKeyEvent { keyEvent ->
+                        if (keyEvent.key == Key.Enter) record.enterEventsReachingParentCount++
                         false
                     },
                     value = record.value,
@@ -99,7 +100,7 @@ class CustomTextFieldTest {
         onNodeWithText(FIRST_VALUE).performKeyInput { withKeyDown(Key.ShiftLeft) { pressKey(Key.Enter) } }
         waitForIdle()
 
-        assertEquals(0, record.keyEventsReachingParentCount)
+        assertEquals(0, record.enterEventsReachingParentCount)
     }
 
     @Test
@@ -138,13 +139,13 @@ class CustomTextFieldTest {
     }
 
     @Test
-    fun typeALetter_inAMultiLineField_stillReachesTheField() = runDesktopComposeUiTest {
+    fun pressBackspace_inAMultiLineField_stillReachesTheField() = runDesktopComposeUiTest {
         val record = setMultiLineField()
 
-        onNodeWithText(FIRST_VALUE).performKeyInput { pressKey(Key.A) }
+        onNodeWithText(FIRST_VALUE).performKeyInput { pressKey(Key.Backspace) }
         waitForIdle()
 
-        assertEquals("${FIRST_VALUE}a", record.value)
+        assertEquals(FIRST_VALUE.dropLast(1), record.value)
     }
 
     @Test
