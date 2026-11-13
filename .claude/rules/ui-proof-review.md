@@ -32,7 +32,7 @@ The reviewer answers every row with `ok`, `defect` or `not-shown`, and says in o
 | `STATES` | A loading, error, empty or retry state that is missing, bare or unreachable: a spinner with no label or cancel, an error with no retry. A state that cannot be reached in the proof is listed as `not-shown`. |
 | `PREVIEWS` | Thumbnails and previews that are blank, black, tiny or cropped so the content cannot be recognised. |
 | `TEXT_FIT` | Text that is cut off, overlaps another element or runs out of its container. |
-| `SPACING` | Spacing, corner radius and elevation that differ from the neighbouring screens or from the rest of the app. |
+| `SPACING` | Spacing, corner radius and elevation that differ from the neighbouring screens or from the rest of the app. An empty block inside a container next to a control (for example free space beside a chip in a message bubble, left over from a column the container adds) is a defect: the free width belongs to the element that can use it. |
 | `CONSISTENCY` | The screen looks different from the reference product or the deveng-core components it should reuse (menu, dialog, bubble, button shape and weight). |
 | `THEMES` | Light and dark mode. When the proof shows one mode only, the check is `not-shown`, and a screen that sets its own colours without tokens is a `COLOURS` defect. |
 | `TEXT_SIZE` | Small and large font. When the proof shows one size only, the check is `not-shown`. Mechanical large-font checks are in the section below. |
@@ -52,5 +52,6 @@ Where the stack allows it, a test catches the defect before anyone watches a vid
 
 - **Touch targets:** a Compose UI behavior test asserts that every clickable node of the screen is at least 48dp wide and high.
 - **Contrast:** a unit test computes the contrast ratio of the theme token pairs the screen uses and asserts the 4.5:1 and 3:1 limits.
+- **When a pair fails contrast, change the shade, not only the text colour.** Measure the ratio, then darken or lighten the fill (or the text) until it passes, keeping its meaning (a green save button stays green). Do not offer "black text or white text" as the only two choices, and do not leave it as an open question: put the measured ratios of every text and icon on the screen in the pull request.
 - **Theme tokens:** the colour of a new component comes from `MaterialTheme.colorScheme` or the core theme, never from a colour literal; `pinq_code-review` reports a literal.
 - **Golden screenshots** already exist (`kotlin-testing.md`) and stay: they catch changes to a screen, the review catches a screen that was wrong from the start.
