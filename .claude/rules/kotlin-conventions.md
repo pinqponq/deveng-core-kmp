@@ -28,6 +28,8 @@ isMuted
 isMutedIconVisible
 ```
 
+- A text in a `Row` with `weight(1f)` next to fixed-size siblings (tiles, buttons) gets only the width they leave; on a 360 dp phone that can be a few dp and the text breaks one word per line. Put a sentence that must stay readable on its own full-width line, and test it at 360 dp width (one line: `TextLayoutResult.lineCount == 1`).
+
 - Visibility states must use positive framing:
 
 ```kotlin
