@@ -85,7 +85,9 @@ import core.domain.camera.state.CameraUIState
 import core.domain.camera.video.VideoCaptureResult
 import core.domain.camera.video.VideoConfiguration
 import kotlinx.coroutines.flow.collect
+import kotlin.math.abs
 import kotlin.math.roundToInt
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import core.domain.camera.enums.CameraDeviceType
 import core.domain.camera.enums.CameraLens
@@ -1205,7 +1207,7 @@ fun DefaultCameraPreview(
                     .zIndex(4.5f)
                     .padding(top = topChromeRowPaddingTop, end = 8.dp),
                 currentCameraLens = currentCameraLens,
-                currentFlashMode = currentFlashMode,
+                isFlashOn = isFlashIndicatorOn(currentFlashMode),
                 isLowLightBoostOn = isLowLightBoostOn,
                 isCompositionGridVisible = isCompositionGridVisible,
                 showMoonButton = nightModeSupported,
@@ -1228,7 +1230,7 @@ fun DefaultCameraPreview(
 private fun DefaultCameraPreviewTopLensChromeRow(
     modifier: Modifier = Modifier,
     currentCameraLens: CameraLens,
-    currentFlashMode: FlashMode,
+    isFlashOn: Boolean,
     isLowLightBoostOn: Boolean,
     isCompositionGridVisible: Boolean,
     showMoonButton: Boolean,
@@ -1246,7 +1248,7 @@ private fun DefaultCameraPreviewTopLensChromeRow(
             CustomIconButton(
                 icon = CameraIcons.flash,
                 iconDescription = "Flash",
-                iconTint = cameraChromeIconTint(isOn = isFlashIndicatorOn(currentFlashMode)),
+                iconTint = cameraChromeIconTint(isOn = isFlashOn),
                 backgroundColor = Color.Transparent,
                 shadowElevation = 0.dp,
                 clickDebounceMillis = CameraChromeClickDebounceMillis,
@@ -1475,11 +1477,76 @@ private fun ShutterGlow(glowColor: Color) {
 private val ShutterGlowDiameter = 136.dp
 private const val ShutterGlowFlickerCycleMillis = 1700
 
-internal val CameraChipTouchTargetSize = 48.dp
+private val CameraChipTouchTargetSize = 48.dp
 private val CameraChipCircleSize = 40.dp
 private val CameraChipLabelFontSize = 12.sp
 private const val CameraChipInactiveContentAlpha = 0.85f
+private const val CameraChipDisabledAlpha = 0.45f
+private const val CameraChipHighlightAlpha = 0.25f
 private const val CameraChromeInactiveIconAlpha = 0.75f
+private const val ZoomStopMatchTolerance = 0.15f
+private const val UltraWideZoomThreshold = 0.75f
+private const val UltraWideZoomStop = 0.5f
+private const val MaximumZoomChipStop = 10f
+
+internal data class CameraZoomChip(
+    val zoomLevel: Float,
+    val label: String,
+    val isSelected: Boolean,
+)
+
+internal data class FrontCameraModeChip(
+    val isWideSelfie: Boolean,
+    val icon: DrawableResource,
+    val description: String,
+    val isSelected: Boolean,
+)
+
+internal fun backCameraZoomChips(
+    zoomLevel: Float,
+    cameraDeviceType: CameraDeviceType,
+    maxZoom: Float,
+): List<CameraZoomChip> {
+    val isUltraWide = zoomLevel < UltraWideZoomThreshold || cameraDeviceType == CameraDeviceType.ULTRA_WIDE
+    val effectiveZoomLevel = if (isUltraWide) UltraWideZoomStop else zoomLevel
+    val chipMaxZoom = MaximumZoomChipStop.coerceAtMost(maxZoom)
+    val stops = buildList {
+        add(UltraWideZoomStop)
+        add(1f)
+        if (maxZoom >= 2f) add(2f)
+        if (chipMaxZoom > 2f) add(chipMaxZoom)
+    }.distinct()
+    return stops.map { stop ->
+        CameraZoomChip(
+            zoomLevel = stop,
+            label = zoomChipLabel(stop),
+            isSelected = abs(effectiveZoomLevel - stop) < ZoomStopMatchTolerance,
+        )
+    }
+}
+
+private fun zoomChipLabel(stop: Float): String =
+    if (stop == stop.toLong().toFloat()) {
+        "${stop.toInt()}x"
+    } else {
+        "${(stop * 10).toInt() / 10f}x"
+    }
+
+internal fun frontCameraModeChips(isWideSelfie: Boolean): List<FrontCameraModeChip> =
+    listOf(
+        FrontCameraModeChip(
+            isWideSelfie = false,
+            icon = CameraIcons.person,
+            description = "Person",
+            isSelected = !isWideSelfie,
+        ),
+        FrontCameraModeChip(
+            isWideSelfie = true,
+            icon = CameraIcons.group,
+            description = "Group",
+            isSelected = isWideSelfie,
+        ),
+    )
 
 internal fun cameraChipContentColor(isActive: Boolean): Color =
     if (isActive) Color.White else Color.White.copy(alpha = CameraChipInactiveContentAlpha)
@@ -1489,10 +1556,10 @@ internal fun cameraChromeIconTint(isOn: Boolean): Color =
 
 internal fun isFlashIndicatorOn(flashMode: FlashMode): Boolean = flashMode != FlashMode.OFF
 
-internal fun cameraChipPillAlpha(enabled: Boolean): Float = if (enabled) 1f else 0.45f
+internal fun cameraChipPillAlpha(enabled: Boolean): Float = if (enabled) 1f else CameraChipDisabledAlpha
 
 internal fun cameraChipHighlightColor(isActive: Boolean): Color =
-    if (isActive) Color.White.copy(alpha = 0.25f) else Color.Transparent
+    if (isActive) Color.White.copy(alpha = CameraChipHighlightAlpha) else Color.Transparent
 
 @Composable
 private fun CameraChipPill(
@@ -1549,15 +1616,12 @@ internal fun FrontCameraModeChips(
     modifier: Modifier = Modifier,
 ) {
     CameraChipPill(enabled = enabled, modifier = modifier) {
-        listOf(false, true).forEach { wide ->
-            val active = wide == isWideSelfie
-            CameraChip(isActive = active, enabled = enabled, onClick = { onSelect(wide) }) {
+        frontCameraModeChips(isWideSelfie).forEach { chip ->
+            CameraChip(isActive = chip.isSelected, enabled = enabled, onClick = { onSelect(chip.isWideSelfie) }) {
                 Icon(
-                    painter = painterResource(
-                        if (wide) CameraIcons.group else CameraIcons.person,
-                    ),
-                    contentDescription = if (wide) "Group" else "Person",
-                    tint = cameraChipContentColor(isActive = active),
+                    painter = painterResource(chip.icon),
+                    contentDescription = chip.description,
+                    tint = cameraChipContentColor(isActive = chip.isSelected),
                     modifier = Modifier.size(18.dp),
                 )
             }
@@ -1657,27 +1721,13 @@ internal fun BackCameraZoomChips(
     maxZoom: Float,
     onZoomChange: (Float) -> Unit,
 ) {
-    val effectiveZoomLevel = if (zoomLevel < 0.75f || cameraDeviceType == CameraDeviceType.ULTRA_WIDE) 0.5f else zoomLevel
-    val chipMaxZoom = 10f.coerceAtMost(maxZoom)
-    val stops = buildList {
-        add(0.5f)
-        add(1f)
-        if (maxZoom >= 2f) add(2f)
-        if (chipMaxZoom > 2f) add(chipMaxZoom)
-    }.distinct()
-
+    val chips = backCameraZoomChips(zoomLevel, cameraDeviceType, maxZoom)
     CameraChipPill(enabled = enabled, modifier = modifier) {
-        stops.forEach { stop ->
-            val isActive = (effectiveZoomLevel - stop).let { it > -0.15f && it < 0.15f }
-            val label = if (stop == stop.toLong().toFloat()) {
-                "${stop.toInt()}x"
-            } else {
-                "${(stop * 10).toInt() / 10f}x"
-            }
-            CameraChip(isActive = isActive, enabled = enabled, onClick = { onZoomChange(stop) }) {
+        chips.forEach { chip ->
+            CameraChip(isActive = chip.isSelected, enabled = enabled, onClick = { onZoomChange(chip.zoomLevel) }) {
                 Text(
-                    text = label,
-                    color = cameraChipContentColor(isActive = isActive),
+                    text = chip.label,
+                    color = cameraChipContentColor(isActive = chip.isSelected),
                     style = CoreRegularTextStyle().copy(fontSize = CameraChipLabelFontSize),
                 )
             }

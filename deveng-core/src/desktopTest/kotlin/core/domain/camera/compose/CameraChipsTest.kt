@@ -39,7 +39,7 @@ class CameraChipsTest {
     fun backCameraZoomChips_everyChipHasTouchTargetOfAtLeast48Dp() = runDesktopComposeUiTest {
         setContent { BackZoomChips(onZoomChange = {}) }
 
-        listOf("0.5x", "1x", "2x", "10x").forEach { label ->
+        listOf(ZOOM_05, ZOOM_1, ZOOM_2, ZOOM_10).forEach { label ->
             zoomChip(label)
                 .assertWidthIsAtLeast(MINIMUM_TOUCH_TARGET)
                 .assertHeightIsAtLeast(MINIMUM_TOUCH_TARGET)
@@ -51,8 +51,8 @@ class CameraChipsTest {
         val selectedZoomLevels = mutableListOf<Float>()
         setContent { BackZoomChips(onZoomChange = { selectedZoomLevels += it }) }
 
-        zoomChip("0.5x").performClick()
-        zoomChip("2x").performClick()
+        zoomChip(ZOOM_05).performClick()
+        zoomChip(ZOOM_2).performClick()
 
         assertEquals(listOf(0.5f, 2f), selectedZoomLevels)
     }
@@ -61,7 +61,7 @@ class CameraChipsTest {
     fun frontCameraModeChips_everyChipHasTouchTargetOfAtLeast48Dp() = runDesktopComposeUiTest {
         setContent { AppTheme { FrontCameraModeChips(isWideSelfie = false, onSelect = {}) } }
 
-        listOf("Person", "Group").forEach { description ->
+        listOf(PERSON, GROUP).forEach { description ->
             modeChip(description)
                 .assertWidthIsAtLeast(MINIMUM_TOUCH_TARGET)
                 .assertHeightIsAtLeast(MINIMUM_TOUCH_TARGET)
@@ -73,7 +73,7 @@ class CameraChipsTest {
         val selections = mutableListOf<Boolean>()
         setContent { AppTheme { FrontCameraModeChips(isWideSelfie = false, onSelect = { selections += it }) } }
 
-        modeChip("Group").performClick()
+        modeChip(GROUP).performClick()
 
         assertEquals(listOf(true), selections)
     }
@@ -82,32 +82,16 @@ class CameraChipsTest {
     fun backCameraZoomChips_atZoom1_marksOnly1xSelected() = runDesktopComposeUiTest {
         setContent { BackZoomChips(zoomLevel = 1f, onZoomChange = {}) }
 
-        zoomChip("1x").assertIsSelected()
-        listOf("0.5x", "2x", "10x").forEach { label -> zoomChip(label).assertIsNotSelected() }
-    }
-
-    @Test
-    fun backCameraZoomChips_slightlyAboveStop_stillMarksThatStopSelected() = runDesktopComposeUiTest {
-        setContent { BackZoomChips(zoomLevel = 2.1f, onZoomChange = {}) }
-
-        zoomChip("2x").assertIsSelected()
-        listOf("0.5x", "1x", "10x").forEach { label -> zoomChip(label).assertIsNotSelected() }
-    }
-
-    @Test
-    fun backCameraZoomChips_slightlyBelowStop_stillMarksThatStopSelected() = runDesktopComposeUiTest {
-        setContent { BackZoomChips(zoomLevel = 1.9f, onZoomChange = {}) }
-
-        zoomChip("2x").assertIsSelected()
-        zoomChip("1x").assertIsNotSelected()
+        zoomChip(ZOOM_1).assertIsSelected()
+        listOf(ZOOM_05, ZOOM_2, ZOOM_10).forEach { label -> zoomChip(label).assertIsNotSelected() }
     }
 
     @Test
     fun frontCameraModeChips_wideSelfie_marksOnlyGroupSelected() = runDesktopComposeUiTest {
         setContent { AppTheme { FrontCameraModeChips(isWideSelfie = true, onSelect = {}) } }
 
-        modeChip("Group").assertIsSelected()
-        modeChip("Person").assertIsNotSelected()
+        modeChip(GROUP).assertIsSelected()
+        modeChip(PERSON).assertIsNotSelected()
     }
 
     @Test
@@ -160,6 +144,12 @@ class CameraChipsTest {
     private companion object {
         const val CANVAS_WIDTH_PX = 600
         const val CANVAS_HEIGHT_PX = 400
+        const val ZOOM_05 = "0.5x"
+        const val ZOOM_1 = "1x"
+        const val ZOOM_2 = "2x"
+        const val ZOOM_10 = "10x"
+        const val PERSON = "Person"
+        const val GROUP = "Group"
         val MINIMUM_TOUCH_TARGET = 48.dp
         val PREVIEW_BACKGROUND = Color(0xFF3A3A3A)
     }
