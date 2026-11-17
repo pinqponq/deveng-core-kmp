@@ -107,7 +107,7 @@ class CameraChipsTest {
                         BackCameraZoomChips(
                             zoomLevel = 1f,
                             cameraDeviceType = CameraDeviceType.DEFAULT,
-                            maxZoom = 10f,
+                            maxZoom = MAX_ZOOM,
                             onZoomChange = {},
                         )
                         Box(modifier = Modifier.padding(top = 16.dp)) {
@@ -129,7 +129,7 @@ class CameraChipsTest {
             BackCameraZoomChips(
                 zoomLevel = zoomLevel,
                 cameraDeviceType = CameraDeviceType.DEFAULT,
-                maxZoom = 10f,
+                maxZoom = MAX_ZOOM,
                 onZoomChange = onZoomChange,
             )
         }
@@ -144,6 +144,7 @@ class CameraChipsTest {
     private companion object {
         const val CANVAS_WIDTH_PX = 600
         const val CANVAS_HEIGHT_PX = 400
+        const val MAX_ZOOM = 10f
         const val ZOOM_05 = "0.5x"
         const val ZOOM_1 = "1x"
         const val ZOOM_2 = "2x"

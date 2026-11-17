@@ -9,7 +9,7 @@ class CameraChipModelsTest {
 
     @Test
     fun backCameraZoomChips_withMaxZoom10_listsFourStops() {
-        assertEquals(listOf(0.5f, 1f, 2f, MAX_ZOOM), zoomChips(zoomLevel = 1f).map { it.zoomLevel })
+        assertEquals(listOf(ZOOM_05, ZOOM_1, ZOOM_2, MAX_ZOOM), zoomChips(zoomLevel = 1f).map { it.zoomLevel })
     }
 
     @Test
@@ -19,7 +19,7 @@ class CameraChipModelsTest {
 
     @Test
     fun backCameraZoomChips_withMaxZoomBelow2_listsOnly05And1() {
-        assertEquals(listOf(0.5f, 1f), zoomChips(zoomLevel = 1f, maxZoom = 1.5f).map { it.zoomLevel })
+        assertEquals(listOf(ZOOM_05, ZOOM_1), zoomChips(zoomLevel = 1f, maxZoom = 1.5f).map { it.zoomLevel })
     }
 
     @Test
@@ -29,7 +29,7 @@ class CameraChipModelsTest {
 
     @Test
     fun backCameraZoomChips_withMaxZoomExactly2_listsTwoOnce() {
-        assertEquals(listOf(0.5f, 1f, 2f), zoomChips(zoomLevel = 1f, maxZoom = 2f).map { it.zoomLevel })
+        assertEquals(listOf(ZOOM_05, ZOOM_1, ZOOM_2), zoomChips(zoomLevel = 1f, maxZoom = 2f).map { it.zoomLevel })
     }
 
     @Test
@@ -96,6 +96,9 @@ class CameraChipModelsTest {
 
     private companion object {
         const val MAX_ZOOM = 10f
+        const val ZOOM_05 = 0.5f
+        const val ZOOM_1 = 1f
+        const val ZOOM_2 = 2f
         const val ZOOM_05_LABEL = "0.5x"
         const val ZOOM_1_LABEL = "1x"
         const val ZOOM_2_LABEL = "2x"

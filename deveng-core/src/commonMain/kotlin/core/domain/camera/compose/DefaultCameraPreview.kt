@@ -1207,7 +1207,7 @@ fun DefaultCameraPreview(
                     .zIndex(4.5f)
                     .padding(top = topChromeRowPaddingTop, end = 8.dp),
                 currentCameraLens = currentCameraLens,
-                isFlashOn = isFlashIndicatorOn(currentFlashMode),
+                isFlashIndicatorOn = isFlashIndicatorOn(currentFlashMode),
                 isLowLightBoostOn = isLowLightBoostOn,
                 isCompositionGridVisible = isCompositionGridVisible,
                 showMoonButton = nightModeSupported,
@@ -1230,7 +1230,7 @@ fun DefaultCameraPreview(
 private fun DefaultCameraPreviewTopLensChromeRow(
     modifier: Modifier = Modifier,
     currentCameraLens: CameraLens,
-    isFlashOn: Boolean,
+    isFlashIndicatorOn: Boolean,
     isLowLightBoostOn: Boolean,
     isCompositionGridVisible: Boolean,
     showMoonButton: Boolean,
@@ -1248,7 +1248,7 @@ private fun DefaultCameraPreviewTopLensChromeRow(
             CustomIconButton(
                 icon = CameraIcons.flash,
                 iconDescription = "Flash",
-                iconTint = cameraChromeIconTint(isOn = isFlashOn),
+                iconTint = cameraChromeIconTint(isOn = isFlashIndicatorOn),
                 backgroundColor = Color.Transparent,
                 shadowElevation = 0.dp,
                 clickDebounceMillis = CameraChromeClickDebounceMillis,
