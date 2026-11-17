@@ -1479,6 +1479,7 @@ private const val ShutterGlowFlickerCycleMillis = 1700
 
 private val CameraChipTouchTargetSize = 48.dp
 private val CameraChipCircleSize = 40.dp
+private val CameraChipIconSize = 18.dp
 private val CameraChipLabelFontSize = 12.sp
 private const val CameraChipInactiveContentAlpha = 0.85f
 private const val CameraChipDisabledAlpha = 0.45f
@@ -1622,7 +1623,7 @@ internal fun FrontCameraModeChips(
                     painter = painterResource(chip.icon),
                     contentDescription = chip.description,
                     tint = cameraChipContentColor(isActive = chip.isSelected),
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(CameraChipIconSize),
                 )
             }
         }

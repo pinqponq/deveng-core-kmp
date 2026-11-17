@@ -30,21 +30,37 @@ class CameraChromeColorsTest {
     }
 
     @Test
-    fun isFlashIndicatorOn_isOffOnlyForFlashModeOff() {
+    fun isFlashIndicatorOn_withFlashOff_isFalse() {
         assertFalse(isFlashIndicatorOn(FlashMode.OFF))
+    }
+
+    @Test
+    fun isFlashIndicatorOn_withFlashOn_isTrue() {
         assertTrue(isFlashIndicatorOn(FlashMode.ON))
+    }
+
+    @Test
+    fun isFlashIndicatorOn_withFlashAuto_isTrue() {
         assertTrue(isFlashIndicatorOn(FlashMode.AUTO))
     }
 
     @Test
-    fun cameraChipPillAlpha_isDimmedOnlyWhenDisabled() {
+    fun cameraChipPillAlpha_whenEnabled_isOpaque() {
         assertEquals(1f, cameraChipPillAlpha(enabled = true))
+    }
+
+    @Test
+    fun cameraChipPillAlpha_whenDisabled_isDimmed() {
         assertEquals(0.45f, cameraChipPillAlpha(enabled = false))
     }
 
     @Test
-    fun cameraChipHighlightColor_isTranslucentWhiteOnlyWhenActive() {
+    fun cameraChipHighlightColor_whenActive_isTranslucentWhite() {
         assertEquals(Color.White.copy(alpha = 0.25f), cameraChipHighlightColor(isActive = true))
+    }
+
+    @Test
+    fun cameraChipHighlightColor_whenInactive_isTransparent() {
         assertEquals(Color.Transparent, cameraChipHighlightColor(isActive = false))
     }
 }

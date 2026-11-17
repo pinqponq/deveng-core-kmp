@@ -8,39 +8,43 @@ import kotlin.test.assertEquals
 class CameraChipModelsTest {
 
     @Test
-    fun backCameraZoomChips_withMaxZoom10_listsFourStopsWithLabels() {
-        val chips = backCameraZoomChips(zoomLevel = 1f, cameraDeviceType = CameraDeviceType.DEFAULT, maxZoom = 10f)
+    fun backCameraZoomChips_withMaxZoom10_listsFourStops() {
+        assertEquals(listOf(0.5f, 1f, 2f, MAX_ZOOM), zoomChips(zoomLevel = 1f).map { it.zoomLevel })
+    }
 
-        assertEquals(listOf(0.5f, 1f, 2f, 10f), chips.map { it.zoomLevel })
-        assertEquals(listOf("0.5x", "1x", "2x", "10x"), chips.map { it.label })
+    @Test
+    fun backCameraZoomChips_withMaxZoom10_labelsEveryStop() {
+        assertEquals(listOf(ZOOM_05_LABEL, ZOOM_1_LABEL, ZOOM_2_LABEL, "10x"), zoomChips(zoomLevel = 1f).map { it.label })
     }
 
     @Test
     fun backCameraZoomChips_withMaxZoomBelow2_listsOnly05And1() {
-        val chips = backCameraZoomChips(zoomLevel = 1f, cameraDeviceType = CameraDeviceType.DEFAULT, maxZoom = 1.5f)
-
-        assertEquals(listOf(0.5f, 1f), chips.map { it.zoomLevel })
+        assertEquals(listOf(0.5f, 1f), zoomChips(zoomLevel = 1f, maxZoom = 1.5f).map { it.zoomLevel })
     }
 
     @Test
     fun backCameraZoomChips_withMaxZoomBetween2And10_usesMaxZoomAsLastStop() {
-        val chips = backCameraZoomChips(zoomLevel = 1f, cameraDeviceType = CameraDeviceType.DEFAULT, maxZoom = 6.5f)
-
-        assertEquals(listOf("0.5x", "1x", "2x", "6.5x"), chips.map { it.label })
+        assertEquals(listOf(ZOOM_05_LABEL, ZOOM_1_LABEL, ZOOM_2_LABEL, "6.5x"), zoomChips(zoomLevel = 1f, maxZoom = 6.5f).map { it.label })
     }
 
     @Test
     fun backCameraZoomChips_withMaxZoomExactly2_listsTwoOnce() {
-        val chips = backCameraZoomChips(zoomLevel = 1f, cameraDeviceType = CameraDeviceType.DEFAULT, maxZoom = 2f)
-
-        assertEquals(listOf(0.5f, 1f, 2f), chips.map { it.zoomLevel })
+        assertEquals(listOf(0.5f, 1f, 2f), zoomChips(zoomLevel = 1f, maxZoom = 2f).map { it.zoomLevel })
     }
 
     @Test
-    fun backCameraZoomChips_nearAStop_selectsOnlyThatStop() {
-        assertEquals(listOf("2x"), selectedLabels(zoomLevel = 2.1f))
-        assertEquals(listOf("2x"), selectedLabels(zoomLevel = 1.9f))
-        assertEquals(listOf("1x"), selectedLabels(zoomLevel = 1f))
+    fun backCameraZoomChips_slightlyAboveStop_selectsThatStop() {
+        assertEquals(listOf(ZOOM_2_LABEL), selectedLabels(zoomLevel = 2.1f))
+    }
+
+    @Test
+    fun backCameraZoomChips_slightlyBelowStop_selectsThatStop() {
+        assertEquals(listOf(ZOOM_2_LABEL), selectedLabels(zoomLevel = 1.9f))
+    }
+
+    @Test
+    fun backCameraZoomChips_exactlyOnStop_selectsThatStop() {
+        assertEquals(listOf(ZOOM_1_LABEL), selectedLabels(zoomLevel = 1f))
     }
 
     @Test
@@ -50,33 +54,50 @@ class CameraChipModelsTest {
 
     @Test
     fun backCameraZoomChips_belowUltraWideThreshold_selects05() {
-        assertEquals(listOf("0.5x"), selectedLabels(zoomLevel = 0.7f))
+        assertEquals(listOf(ZOOM_05_LABEL), selectedLabels(zoomLevel = 0.7f))
+    }
+
+    @Test
+    fun backCameraZoomChips_exactlyAtUltraWideThreshold_selectsNothing() {
+        assertEquals(emptyList(), selectedLabels(zoomLevel = 0.75f))
     }
 
     @Test
     fun backCameraZoomChips_onUltraWideCamera_selects05WhateverTheZoom() {
-        val chips = backCameraZoomChips(zoomLevel = 1f, cameraDeviceType = CameraDeviceType.ULTRA_WIDE, maxZoom = 10f)
+        val chips = zoomChips(zoomLevel = 1f, cameraDeviceType = CameraDeviceType.ULTRA_WIDE)
 
-        assertEquals(listOf("0.5x"), chips.filter { it.isSelected }.map { it.label })
+        assertEquals(listOf(ZOOM_05_LABEL), chips.filter { it.isSelected }.map { it.label })
     }
 
     @Test
-    fun frontCameraModeChips_listsPersonThenGroupAndSelectsTheCurrentMode() {
-        val normalSelfie = frontCameraModeChips(isWideSelfie = false)
-        val wideSelfie = frontCameraModeChips(isWideSelfie = true)
-
+    fun frontCameraModeChips_normalSelfie_listsSelectedPersonThenGroup() {
         assertEquals(
             listOf(
                 FrontCameraModeChip(isWideSelfie = false, icon = CameraIcons.person, description = "Person", isSelected = true),
                 FrontCameraModeChip(isWideSelfie = true, icon = CameraIcons.group, description = "Group", isSelected = false),
             ),
-            normalSelfie,
+            frontCameraModeChips(isWideSelfie = false),
         )
-        assertEquals(listOf(false, true), wideSelfie.map { it.isSelected })
     }
 
+    @Test
+    fun frontCameraModeChips_wideSelfie_selectsOnlyGroup() {
+        assertEquals(listOf(false, true), frontCameraModeChips(isWideSelfie = true).map { it.isSelected })
+    }
+
+    private fun zoomChips(
+        zoomLevel: Float,
+        cameraDeviceType: CameraDeviceType = CameraDeviceType.DEFAULT,
+        maxZoom: Float = MAX_ZOOM,
+    ): List<CameraZoomChip> = backCameraZoomChips(zoomLevel = zoomLevel, cameraDeviceType = cameraDeviceType, maxZoom = maxZoom)
+
     private fun selectedLabels(zoomLevel: Float): List<String> =
-        backCameraZoomChips(zoomLevel = zoomLevel, cameraDeviceType = CameraDeviceType.DEFAULT, maxZoom = 10f)
-            .filter { it.isSelected }
-            .map { it.label }
+        zoomChips(zoomLevel = zoomLevel).filter { it.isSelected }.map { it.label }
+
+    private companion object {
+        const val MAX_ZOOM = 10f
+        const val ZOOM_05_LABEL = "0.5x"
+        const val ZOOM_1_LABEL = "1x"
+        const val ZOOM_2_LABEL = "2x"
+    }
 }
