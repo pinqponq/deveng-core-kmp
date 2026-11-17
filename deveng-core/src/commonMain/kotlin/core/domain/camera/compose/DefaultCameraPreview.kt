@@ -1244,10 +1244,7 @@ private fun DefaultCameraPreviewTopLensChromeRow(
             CustomIconButton(
                 icon = CameraIcons.flash,
                 iconDescription = "Flash",
-                iconTint = when (currentFlashMode) {
-                    FlashMode.ON, FlashMode.AUTO -> Color.White
-                    FlashMode.OFF -> Color.White.copy(alpha = 0.5f)
-                },
+                iconTint = cameraChromeIconTint(isOn = currentFlashMode != FlashMode.OFF),
                 backgroundColor = Color.Transparent,
                 shadowElevation = 0.dp,
                 clickDebounceMillis = CameraChromeClickDebounceMillis,
@@ -1257,11 +1254,7 @@ private fun DefaultCameraPreviewTopLensChromeRow(
         CustomIconButton(
             icon = CameraIcons.grid,
             iconDescription = "Composition grid",
-            iconTint = if (isCompositionGridVisible) {
-                Color.White
-            } else {
-                Color.White.copy(alpha = 0.5f)
-            },
+            iconTint = cameraChromeIconTint(isOn = isCompositionGridVisible),
             backgroundColor = Color.Transparent,
             shadowElevation = 0.dp,
             clickDebounceMillis = CameraChromeClickDebounceMillis,
@@ -1271,7 +1264,7 @@ private fun DefaultCameraPreviewTopLensChromeRow(
             CustomIconButton(
                 icon = CameraIcons.moon,
                 iconDescription = "Night mode",
-                iconTint = if (isLowLightBoostOn) Color.White else Color.White.copy(alpha = 0.5f),
+                iconTint = cameraChromeIconTint(isOn = isLowLightBoostOn),
                 backgroundColor = Color.Transparent,
                 shadowElevation = 0.dp,
                 clickDebounceMillis = CameraChromeClickDebounceMillis,
@@ -1480,47 +1473,83 @@ private fun ShutterGlow(glowColor: Color) {
 private val ShutterGlowDiameter = 136.dp
 private const val ShutterGlowFlickerCycleMillis = 1700
 
+internal val CameraChipTouchTargetSize = 48.dp
+private val CameraChipCircleSize = 40.dp
+private val CameraChipLabelFontSize = 12.sp
+private const val CameraChipInactiveContentAlpha = 0.85f
+private const val CameraChromeInactiveIconAlpha = 0.75f
+
+internal fun cameraChipContentColor(isActive: Boolean): Color =
+    if (isActive) Color.White else Color.White.copy(alpha = CameraChipInactiveContentAlpha)
+
+internal fun cameraChromeIconTint(isOn: Boolean): Color =
+    if (isOn) Color.White else Color.White.copy(alpha = CameraChromeInactiveIconAlpha)
+
 @Composable
-private fun FrontCameraModeChips(
+private fun CameraChipPill(
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.5f)),
+    ) {
+        Row(
+            modifier = Modifier.alpha(if (enabled) 1f else 0.45f),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun CameraChip(
+    isActive: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(CameraChipTouchTargetSize)
+            .clip(CircleShape)
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(CameraChipCircleSize)
+                .clip(CircleShape)
+                .background(if (isActive) Color.White.copy(alpha = 0.25f) else Color.Transparent),
+            contentAlignment = Alignment.Center,
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+internal fun FrontCameraModeChips(
     isWideSelfie: Boolean,
     onSelect: (Boolean) -> Unit,
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.Black.copy(alpha = 0.5f)),
-    ) {
-        Row(
-            modifier = Modifier
-                .alpha(if (enabled) 1f else 0.45f)
-                .padding(horizontal = 3.dp, vertical = 3.dp),
-            horizontalArrangement = Arrangement.spacedBy(1.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            listOf(false, true).forEach { wide ->
-                val active = wide == isWideSelfie
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(if (active) Color.White.copy(alpha = 0.25f) else Color.Transparent)
-                        .clickable(
-                            enabled = enabled,
-                            onClick = { onSelect(wide) },
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(
-                            if (wide) CameraIcons.group else CameraIcons.person,
-                        ),
-                        contentDescription = if (wide) "Group" else "Person",
-                        tint = if (active) Color.White else Color.White.copy(alpha = 0.7f),
-                        modifier = Modifier.size(18.dp),
-                    )
-                }
+    CameraChipPill(enabled = enabled, modifier = modifier) {
+        listOf(false, true).forEach { wide ->
+            val active = wide == isWideSelfie
+            CameraChip(isActive = active, enabled = enabled, onClick = { onSelect(wide) }) {
+                Icon(
+                    painter = painterResource(
+                        if (wide) CameraIcons.group else CameraIcons.person,
+                    ),
+                    contentDescription = if (wide) "Group" else "Person",
+                    tint = cameraChipContentColor(isActive = active),
+                    modifier = Modifier.size(18.dp),
+                )
             }
         }
     }
@@ -1610,7 +1639,7 @@ private fun FocusRingExposureDragOverlay(
 }
 
 @Composable
-private fun BackCameraZoomChips(
+internal fun BackCameraZoomChips(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     zoomLevel: Float,
@@ -1627,42 +1656,20 @@ private fun BackCameraZoomChips(
         if (chipMaxZoom > 2f) add(chipMaxZoom)
     }.distinct()
 
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.Black.copy(alpha = 0.5f)),
-    ) {
-        Row(
-            modifier = Modifier
-                .alpha(if (enabled) 1f else 0.45f)
-                .padding(horizontal = 3.dp, vertical = 3.dp),
-            horizontalArrangement = Arrangement.spacedBy(1.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            stops.forEach { stop ->
-                val isActive = (effectiveZoomLevel - stop).let { it > -0.15f && it < 0.15f }
-                val label = if (stop == stop.toLong().toFloat()) {
-                    "${stop.toInt()}x"
-                } else {
-                    "${(stop * 10).toInt() / 10f}x"
-                }
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(if (isActive) Color.White.copy(alpha = 0.25f) else Color.Transparent)
-                        .clickable(
-                            enabled = enabled,
-                            onClick = { onZoomChange(stop) },
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = label,
-                        color = if (isActive) Color.White else Color.White.copy(alpha = 0.7f),
-                        style = CoreRegularTextStyle().copy(fontSize = 10.sp),
-                    )
-                }
+    CameraChipPill(enabled = enabled, modifier = modifier) {
+        stops.forEach { stop ->
+            val isActive = (effectiveZoomLevel - stop).let { it > -0.15f && it < 0.15f }
+            val label = if (stop == stop.toLong().toFloat()) {
+                "${stop.toInt()}x"
+            } else {
+                "${(stop * 10).toInt() / 10f}x"
+            }
+            CameraChip(isActive = isActive, enabled = enabled, onClick = { onZoomChange(stop) }) {
+                Text(
+                    text = label,
+                    color = cameraChipContentColor(isActive = isActive),
+                    style = CoreRegularTextStyle().copy(fontSize = CameraChipLabelFontSize),
+                )
             }
         }
     }
