@@ -61,6 +61,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
@@ -1244,7 +1246,7 @@ private fun DefaultCameraPreviewTopLensChromeRow(
             CustomIconButton(
                 icon = CameraIcons.flash,
                 iconDescription = "Flash",
-                iconTint = cameraChromeIconTint(isOn = currentFlashMode != FlashMode.OFF),
+                iconTint = cameraChromeIconTint(isOn = isFlashIndicatorOn(currentFlashMode)),
                 backgroundColor = Color.Transparent,
                 shadowElevation = 0.dp,
                 clickDebounceMillis = CameraChromeClickDebounceMillis,
@@ -1485,6 +1487,13 @@ internal fun cameraChipContentColor(isActive: Boolean): Color =
 internal fun cameraChromeIconTint(isOn: Boolean): Color =
     if (isOn) Color.White else Color.White.copy(alpha = CameraChromeInactiveIconAlpha)
 
+internal fun isFlashIndicatorOn(flashMode: FlashMode): Boolean = flashMode != FlashMode.OFF
+
+internal fun cameraChipPillAlpha(enabled: Boolean): Float = if (enabled) 1f else 0.45f
+
+internal fun cameraChipHighlightColor(isActive: Boolean): Color =
+    if (isActive) Color.White.copy(alpha = 0.25f) else Color.Transparent
+
 @Composable
 private fun CameraChipPill(
     enabled: Boolean,
@@ -1497,7 +1506,7 @@ private fun CameraChipPill(
             .background(Color.Black.copy(alpha = 0.5f)),
     ) {
         Row(
-            modifier = Modifier.alpha(if (enabled) 1f else 0.45f),
+            modifier = Modifier.alpha(cameraChipPillAlpha(enabled)),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             content()
@@ -1516,14 +1525,15 @@ private fun CameraChip(
         modifier = Modifier
             .size(CameraChipTouchTargetSize)
             .clip(CircleShape)
-            .clickable(enabled = enabled, onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick)
+            .semantics { selected = isActive },
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
                 .size(CameraChipCircleSize)
                 .clip(CircleShape)
-                .background(if (isActive) Color.White.copy(alpha = 0.25f) else Color.Transparent),
+                .background(cameraChipHighlightColor(isActive)),
             contentAlignment = Alignment.Center,
         ) {
             content()

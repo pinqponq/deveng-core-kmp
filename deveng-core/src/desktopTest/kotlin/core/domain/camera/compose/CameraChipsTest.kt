@@ -11,6 +11,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
@@ -39,8 +41,8 @@ class CameraChipsTest {
 
         listOf("0.5x", "1x", "2x", "10x").forEach { label ->
             zoomChip(label)
-                .assertWidthIsAtLeast(CameraChipTouchTargetSize)
-                .assertHeightIsAtLeast(CameraChipTouchTargetSize)
+                .assertWidthIsAtLeast(MINIMUM_TOUCH_TARGET)
+                .assertHeightIsAtLeast(MINIMUM_TOUCH_TARGET)
         }
     }
 
@@ -61,8 +63,8 @@ class CameraChipsTest {
 
         listOf("Person", "Group").forEach { description ->
             modeChip(description)
-                .assertWidthIsAtLeast(CameraChipTouchTargetSize)
-                .assertHeightIsAtLeast(CameraChipTouchTargetSize)
+                .assertWidthIsAtLeast(MINIMUM_TOUCH_TARGET)
+                .assertHeightIsAtLeast(MINIMUM_TOUCH_TARGET)
         }
     }
 
@@ -74,6 +76,38 @@ class CameraChipsTest {
         modeChip("Group").performClick()
 
         assertEquals(listOf(true), selections)
+    }
+
+    @Test
+    fun backCameraZoomChips_atZoom1_marksOnly1xSelected() = runDesktopComposeUiTest {
+        setContent { BackZoomChips(zoomLevel = 1f, onZoomChange = {}) }
+
+        zoomChip("1x").assertIsSelected()
+        listOf("0.5x", "2x", "10x").forEach { label -> zoomChip(label).assertIsNotSelected() }
+    }
+
+    @Test
+    fun backCameraZoomChips_slightlyAboveStop_stillMarksThatStopSelected() = runDesktopComposeUiTest {
+        setContent { BackZoomChips(zoomLevel = 2.1f, onZoomChange = {}) }
+
+        zoomChip("2x").assertIsSelected()
+        listOf("0.5x", "1x", "10x").forEach { label -> zoomChip(label).assertIsNotSelected() }
+    }
+
+    @Test
+    fun backCameraZoomChips_slightlyBelowStop_stillMarksThatStopSelected() = runDesktopComposeUiTest {
+        setContent { BackZoomChips(zoomLevel = 1.9f, onZoomChange = {}) }
+
+        zoomChip("2x").assertIsSelected()
+        zoomChip("1x").assertIsNotSelected()
+    }
+
+    @Test
+    fun frontCameraModeChips_wideSelfie_marksOnlyGroupSelected() = runDesktopComposeUiTest {
+        setContent { AppTheme { FrontCameraModeChips(isWideSelfie = true, onSelect = {}) } }
+
+        modeChip("Group").assertIsSelected()
+        modeChip("Person").assertIsNotSelected()
     }
 
     @Test
@@ -106,10 +140,10 @@ class CameraChipsTest {
     }
 
     @androidx.compose.runtime.Composable
-    private fun BackZoomChips(onZoomChange: (Float) -> Unit) {
+    private fun BackZoomChips(zoomLevel: Float = 1f, onZoomChange: (Float) -> Unit) {
         AppTheme {
             BackCameraZoomChips(
-                zoomLevel = 1f,
+                zoomLevel = zoomLevel,
                 cameraDeviceType = CameraDeviceType.DEFAULT,
                 maxZoom = 10f,
                 onZoomChange = onZoomChange,
@@ -126,6 +160,7 @@ class CameraChipsTest {
     private companion object {
         const val CANVAS_WIDTH_PX = 600
         const val CANVAS_HEIGHT_PX = 400
+        val MINIMUM_TOUCH_TARGET = 48.dp
         val PREVIEW_BACKGROUND = Color(0xFF3A3A3A)
     }
 }
