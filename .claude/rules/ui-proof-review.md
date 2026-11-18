@@ -42,7 +42,7 @@ The reviewer answers every row with `ok`, `defect` or `not-shown`, and says in o
 - **major:** a user would notice it at first sight, or it breaks a state the feature promises (blank thumbnail, icon-less button, raw link, missing retry, off-theme colour block).
 - **minor:** polish that does not block use (a few dp of spacing, a slightly different corner radius).
 
-Any major defect means no pull request: fix, record again and review again. After three rounds the pull request is opened anyway, with the open defects at the top and the decision marked for the owner. The report goes into the pull request under "UI inceleme" (`ui_review_report.py section`).
+Any major defect means no pull request: fix, record again and review again. There is no round limit short of the hard limit of six rounds. A defect is a defect when the owner would never choose to keep it (a covered button, an empty area, a wrapped label, a tile without avatar or name, text that cannot be read). Only a real choice between two valid looks may stay open as a decision for the owner (pass it with `--design-choice`); it does not block the pull request. A defect caused by this change is fixed in this pull request, also when the pull request is stacked on another one. If major defects remain at the hard limit, no pull request is opened: the task is set to `needs_human` with the reason. The report goes into the pull request under "UI inceleme" (`ui_review_report.py section`).
 
 ---
 
