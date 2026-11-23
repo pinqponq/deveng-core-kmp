@@ -40,9 +40,6 @@ private enum class DemoRewardedAdSurface : RewardedAdSurface {
     SAMPLE,
 }
 
-/**
- * Desktop and Web have no ads, so nothing opens there.
- */
 @Composable
 internal fun RewardedAdDemoScreen(onBack: () -> Unit) {
     val coroutineScope = rememberCoroutineScope()

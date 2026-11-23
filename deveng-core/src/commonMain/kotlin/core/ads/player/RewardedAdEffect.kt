@@ -46,6 +46,16 @@ internal fun RewardedAdEffect(
     }
 
     LaunchedEffect(show, adController) {
-        if (show) adController?.requestAdShow()
+        if (!show) return@LaunchedEffect
+        if (adController != null) {
+            adController.requestAdShow()
+        } else {
+            val failure = RewardedAdOutcome.LoadFailed(IllegalStateException(MISSING_AD_UNIT_ID_MESSAGE))
+            sendRewardedAdOutcomeUseCase(outcome = failure, surface = currentSurface)
+            currentOnAdFailed(failure)
+        }
     }
 }
+
+private const val MISSING_AD_UNIT_ID_MESSAGE = "No rewarded ad unit id in the ad config."
+

@@ -50,12 +50,15 @@ class RewardedAdEffectTest {
     }
 
     @Test
-    fun setContent_withoutAdUnitId_loadsNothing() = runComposeUiTest {
+    fun show_withoutAdUnitId_failsAtOnceAndLogsFailure() = runComposeUiTest {
         setContent { AdEffect(adUnitId = null) }
         isAdShowRequested = true
         waitForIdle()
 
         assertTrue(adPlayerList.isEmpty())
+        assertTrue(adFailureList.single() is RewardedAdOutcome.LoadFailed)
+        assertEquals(false, isAdShowRequested)
+        assertEquals(LOAD_FAILED_EVENT, analyticsLogSink.savedLogs.single().message)
     }
 
     @Test
