@@ -30,4 +30,3 @@ actual fun RewardedAdZone(
         }
     }
 }
-

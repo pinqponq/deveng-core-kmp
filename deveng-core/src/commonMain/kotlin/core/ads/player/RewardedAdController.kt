@@ -3,6 +3,9 @@ package core.ads.player
 import co.touchlab.kermit.Logger
 import core.ads.domain.model.RewardedAdOutcome
 
+private const val MISSING_AD_UNIT_ID_MESSAGE = "No rewarded ad unit id in the ad config."
+private const val LOAD_TIMED_OUT_MESSAGE = "The rewarded ad did not load in time."
+
 /**
  * A load that fails while nobody asked for the ad is only written to the local log, not reported
  * as an outcome: the next request loads again and reports its own result. The ad SDK may never
@@ -111,6 +114,3 @@ internal class RewardedAdController(
         data object Showing : AdState
     }
 }
-
-private const val MISSING_AD_UNIT_ID_MESSAGE = "No rewarded ad unit id in the ad config."
-private const val LOAD_TIMED_OUT_MESSAGE = "The rewarded ad did not load in time."

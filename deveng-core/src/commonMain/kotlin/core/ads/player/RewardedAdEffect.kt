@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+private val REWARDED_AD_LOAD_TIMEOUT = 15.seconds
+
 @Composable
 internal fun RewardedAdEffect(
     show: Boolean,
@@ -55,5 +57,3 @@ internal fun RewardedAdEffect(
         adController.expireShowRequest()
     }
 }
-
-private val REWARDED_AD_LOAD_TIMEOUT = 15.seconds
