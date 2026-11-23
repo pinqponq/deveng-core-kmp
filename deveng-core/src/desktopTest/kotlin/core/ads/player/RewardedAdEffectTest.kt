@@ -39,8 +39,10 @@ class RewardedAdEffectTest {
     private var isAdShowRequested by mutableStateOf(false)
 
     @Test
-    fun setContent_withAdUnitId_preloadsAdBeforeShowIsRequested() = runComposeUiTest {
+    fun setContent_withAdUnitId_preloadsAdWithoutShowingIt() = runComposeUiTest {
         setContent { AdEffect(adUnitId = AD_UNIT_ID) }
+        waitForIdle()
+        adPlayerList.single().finishLoad()
         waitForIdle()
 
         assertEquals(1, adPlayerList.single().loadCount)
