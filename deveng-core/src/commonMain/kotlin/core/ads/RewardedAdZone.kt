@@ -11,8 +11,10 @@ import core.ads.domain.usecase.SendRewardedAdOutcomeUseCase
  * shows it each time [show] turns true. The caller sets [show] back to false in [onRewardEarned]
  * and in [onAdFailed], so the next request can start a new attempt. Every outcome is reported
  * through [sendRewardedAdOutcomeUseCase]. When a request comes while [adConfigHolder] has no ad
- * unit id, [onAdFailed] gets [RewardedAdOutcome.LoadFailed] at once. Desktop and Web have no ads: there, each request calls
- * [onAdFailed] with [RewardedAdOutcome.LoadFailed] at once and reports nothing.
+ * unit id, [onAdFailed] gets [RewardedAdOutcome.LoadFailed] at once; when the ad has not loaded
+ * 15 seconds after the request, it gets [RewardedAdOutcome.LoadFailed] then. Desktop and Web have
+ * no ads: there, each request calls [onAdFailed] with [RewardedAdOutcome.LoadFailed] at once and
+ * reports nothing.
  *
  * @param show Whether the ad should be shown now. The zone shows nothing itself while the ad
  * loads, so the caller shows its own loading state while [show] is true.

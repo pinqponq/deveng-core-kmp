@@ -9,7 +9,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import core.ads.domain.model.RewardedAdOutcome
 import core.ads.domain.model.RewardedAdSurface
 import core.ads.domain.usecase.SendRewardedAdOutcomeUseCase
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 internal fun RewardedAdEffect(
@@ -20,6 +23,7 @@ internal fun RewardedAdEffect(
     createAdPlayer: (adUnitId: String) -> RewardedAdPlayer,
     onRewardEarned: () -> Unit,
     onAdFailed: (RewardedAdOutcome.Failure) -> Unit,
+    loadTimeout: Duration = REWARDED_AD_LOAD_TIMEOUT,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val currentSurface by rememberUpdatedState(surface)
@@ -49,6 +53,8 @@ internal fun RewardedAdEffect(
         if (!show) return@LaunchedEffect
         if (adController != null) {
             adController.requestAdShow()
+            delay(loadTimeout)
+            adController.expireShowRequest()
         } else {
             val failure = RewardedAdOutcome.LoadFailed(IllegalStateException(MISSING_AD_UNIT_ID_MESSAGE))
             sendRewardedAdOutcomeUseCase(outcome = failure, surface = currentSurface)
@@ -57,5 +63,6 @@ internal fun RewardedAdEffect(
     }
 }
 
+private val REWARDED_AD_LOAD_TIMEOUT = 15.seconds
 private const val MISSING_AD_UNIT_ID_MESSAGE = "No rewarded ad unit id in the ad config."
 

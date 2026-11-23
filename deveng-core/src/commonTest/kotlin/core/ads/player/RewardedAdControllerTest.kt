@@ -4,6 +4,7 @@ import core.ads.domain.model.RewardedAdOutcome
 import core.ads.fake.FakeRewardedAdPlayer
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class RewardedAdControllerTest {
 
@@ -136,6 +137,54 @@ class RewardedAdControllerTest {
 
         assertEquals(1, adPlayerList.single().showCount)
         assertEquals(1, adPlayerList.size)
+    }
+
+    @Test
+    fun expireShowRequest_whileLoading_reportsLoadFailedAndIgnoresLateLoad() {
+        adController.requestAdShow()
+
+        adController.expireShowRequest()
+        adPlayerList.first().finishLoad()
+        adController.requestAdShow()
+
+        assertTrue(adFailureList.single() is RewardedAdOutcome.LoadFailed)
+        assertTrue(adOutcomeList.single() is RewardedAdOutcome.LoadFailed)
+        assertEquals(0, adPlayerList.first().showCount)
+        assertEquals(2, adPlayerList.size)
+    }
+
+    @Test
+    fun expireShowRequest_afterLateLoadFailure_reportsOnlyTimeout() {
+        adController.requestAdShow()
+        adController.expireShowRequest()
+
+        adPlayerList.single().failLoad(exception = IllegalStateException(NO_FILL_MESSAGE))
+
+        assertEquals(1, adFailureList.size)
+        assertEquals(1, adOutcomeList.size)
+    }
+
+    @Test
+    fun expireShowRequest_whileAdIsShowing_reportsNothing() {
+        adController.requestAdShow()
+        adPlayerList.single().finishLoad()
+
+        adController.expireShowRequest()
+
+        assertEquals(emptyList(), adOutcomeList)
+        assertEquals(emptyList(), adFailureList)
+    }
+
+    @Test
+    fun expireShowRequest_withoutRequest_keepsPreloadedAd() {
+        adController.preloadAd()
+
+        adController.expireShowRequest()
+        adPlayerList.single().finishLoad()
+        adController.requestAdShow()
+
+        assertEquals(emptyList(), adFailureList)
+        assertEquals(1, adPlayerList.single().showCount)
     }
 
     private companion object {

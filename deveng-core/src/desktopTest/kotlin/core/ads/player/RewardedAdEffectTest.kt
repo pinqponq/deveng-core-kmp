@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalTestApi::class)
 class RewardedAdEffectTest {
@@ -109,6 +110,21 @@ class RewardedAdEffectTest {
         assertTrue(adFailureList.isEmpty())
     }
 
+    @Test
+    fun show_whenLoadNeverAnswers_failsAfterTimeoutAndLogsFailure() = runComposeUiTest {
+        mainClock.autoAdvance = false
+        setContent { AdEffect(adUnitId = AD_UNIT_ID) }
+        isAdShowRequested = true
+        mainClock.advanceTimeBy(LOAD_TIMEOUT.inWholeMilliseconds / 2)
+        assertTrue(adFailureList.isEmpty())
+
+        mainClock.advanceTimeBy(LOAD_TIMEOUT.inWholeMilliseconds)
+
+        assertTrue(adFailureList.single() is RewardedAdOutcome.LoadFailed)
+        assertEquals(false, isAdShowRequested)
+        assertEquals(LOAD_FAILED_EVENT, analyticsLogSink.savedLogs.single().message)
+    }
+
     @Composable
     private fun AdEffect(adUnitId: String?) {
         RewardedAdEffect(
@@ -125,6 +141,7 @@ class RewardedAdEffectTest {
                 adFailureList.add(failure)
                 isAdShowRequested = false
             },
+            loadTimeout = LOAD_TIMEOUT,
         )
     }
 
@@ -136,5 +153,6 @@ class RewardedAdEffectTest {
         const val AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
         const val NO_FILL_MESSAGE = "No fill."
         const val LOAD_FAILED_EVENT = "RewardedAdLoadFailed"
+        val LOAD_TIMEOUT = 2.seconds
     }
 }
