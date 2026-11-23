@@ -2,6 +2,7 @@ package core.ads
 
 import androidx.compose.runtime.Composable
 import core.ads.config.domain.holder.AdConfigHolder
+import core.ads.domain.model.RewardedAdOutcome
 import core.ads.domain.model.RewardedAdSurface
 import core.ads.domain.usecase.SendRewardedAdOutcomeUseCase
 
@@ -11,7 +12,8 @@ actual fun RewardedAdZone(
     surface: RewardedAdSurface,
     adConfigHolder: AdConfigHolder,
     sendRewardedAdOutcomeUseCase: SendRewardedAdOutcomeUseCase,
-    onRewardEarned: () -> Unit
+    onRewardEarned: () -> Unit,
+    onAdFailed: (RewardedAdOutcome.Failure) -> Unit
 ) {
     // No-op: ads not supported on web
 }

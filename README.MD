@@ -49,6 +49,7 @@ Replace `VERSION` with the [latest release](https://central.sonatype.com/artifac
 - [Crash Reporting (deveng-crash)](#crash-reporting-deveng-crash)
 - [File picker (deveng-filepicker)](#file-picker-deveng-filepicker)
 - [Web analytics (Google Analytics 4)](#web-analytics-google-analytics-4)
+- [Rewarded ads](#rewarded-ads)
 - [Sample App](#sample-app)
 - [Building](#building)
 - [License](#license)
@@ -1144,6 +1145,36 @@ webAnalytics.trackScreenView("Home") // from the product's navigation listener
 - **Desktop** keeps `NoOpConversionAnalyticsClient`.
 
 The sample app's wasm entry point (`WebAnalyticsSample.kt`) shows the wiring and sends a `page_view` and one conversion event on `localhost`.
+
+---
+
+## Rewarded ads
+
+`RewardedAdZone` (`core.ads`) shows an AdMob rewarded ad on Android and iOS; on Desktop and Web it does nothing. The ad unit ids come from `AdConfigHolder`, which `FetchAdConfigUseCase` fills at app start.
+
+- The zone loads an ad as soon as the ad unit id is known, so the ad is usually ready when the user taps.
+- Set `show` to true to show the ad. The zone draws nothing while the ad loads, so show your own loading state while `show` is true.
+- Set `show` back to false in `onRewardEarned` and in `onAdFailed`. A later `show = true` then starts a new attempt. `onAdFailed` receives `LoadFailed`, `ShowFailed` or `ClosedBeforeReward`.
+- Every outcome is logged through `SendRewardedAdOutcomeUseCase`. A load that fails before the user asked for the ad is not logged; the next request loads again and logs its own result.
+
+```kotlin
+var isAdRequested by remember { mutableStateOf(false) }
+
+RewardedAdZone(
+    show = isAdRequested,
+    surface = MyRewardedAdSurface.DECK,
+    adConfigHolder = koinInject(),
+    sendRewardedAdOutcomeUseCase = koinInject(),
+    onRewardEarned = {
+        isAdRequested = false
+        viewModel.setEvent(Event.EarnAdReward)
+    },
+    onAdFailed = { failure ->
+        isAdRequested = false
+        viewModel.setEvent(Event.FailAd(failure = failure))
+    }
+)
+```
 
 ---
 
