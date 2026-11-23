@@ -1150,7 +1150,7 @@ The sample app's wasm entry point (`WebAnalyticsSample.kt`) shows the wiring and
 
 ## Rewarded ads
 
-`RewardedAdZone` (`core.ads`) shows an AdMob rewarded ad on Android and iOS; on Desktop and Web it does nothing. The ad unit ids come from `AdConfigHolder`, which `FetchAdConfigUseCase` fills at app start.
+`RewardedAdZone` (`core.ads`) shows an AdMob rewarded ad on Android and iOS. Desktop and Web have no ads: there, each request calls `onAdFailed` with `LoadFailed` at once. The ad unit ids come from `AdConfigHolder`, which `FetchAdConfigUseCase` fills at app start.
 
 - The zone loads an ad as soon as the ad unit id is known, so the ad is usually ready when the user taps.
 - Set `show` to true to show the ad. The zone draws nothing while the ad loads, so show your own loading state while `show` is true.
