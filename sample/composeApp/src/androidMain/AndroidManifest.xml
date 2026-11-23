@@ -7,6 +7,10 @@
         android:icon="@mipmap/ic_launcher"
         android:label="deveng-core-kmp"
         android:theme="@android:style/Theme.Material.NoActionBar">
+        <!-- Google's public AdMob test app id, used by the rewarded ad demo. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
         <activity
             android:name="global.deveng.core.AppActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"

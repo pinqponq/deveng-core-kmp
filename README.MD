@@ -49,6 +49,7 @@ Replace `VERSION` with the [latest release](https://central.sonatype.com/artifac
 - [Crash Reporting (deveng-crash)](#crash-reporting-deveng-crash)
 - [File picker (deveng-filepicker)](#file-picker-deveng-filepicker)
 - [Web analytics (Google Analytics 4)](#web-analytics-google-analytics-4)
+- [Rewarded ads](#rewarded-ads)
 - [Sample App](#sample-app)
 - [Building](#building)
 - [License](#license)
@@ -1144,6 +1145,36 @@ webAnalytics.trackScreenView("Home") // from the product's navigation listener
 - **Desktop** keeps `NoOpConversionAnalyticsClient`.
 
 The sample app's wasm entry point (`WebAnalyticsSample.kt`) shows the wiring and sends a `page_view` and one conversion event on `localhost`.
+
+---
+
+## Rewarded ads
+
+`RewardedAdZone` (`core.ads`) shows an AdMob rewarded ad on Android and iOS. Desktop and Web have no ads: there, each request calls `onAdFailed` with `LoadFailed` at once. The ad unit ids come from `AdConfigHolder`, which `FetchAdConfigUseCase` fills at app start.
+
+- The zone loads an ad as soon as the ad unit id is known, so the ad is usually ready when the user taps.
+- Set `show` to true to show the ad. The zone draws nothing while the ad loads, so show your own loading state while `show` is true.
+- Set `show` back to false in `onRewardEarned` and in `onAdFailed`. A later `show = true` then starts a new attempt. `onAdFailed` receives `LoadFailed`, `ShowFailed` or `ClosedBeforeReward`. A request while the config has no ad unit id (for example after an offline app start) fails at once with `LoadFailed`. A request whose ad has not loaded after 15 seconds fails with `LoadFailed` too, so the caller's loading state always ends.
+- On Android and iOS, every outcome is reported through `SendRewardedAdOutcomeUseCase`. A load that fails before the user asked for the ad is not reported; the next request loads again and reports its own result.
+
+```kotlin
+var isAdRequested by remember { mutableStateOf(false) }
+
+RewardedAdZone(
+    show = isAdRequested,
+    surface = MyRewardedAdSurface.DECK,
+    adConfigHolder = koinInject(),
+    sendRewardedAdOutcomeUseCase = koinInject(),
+    onRewardEarned = {
+        isAdRequested = false
+        viewModel.setEvent(Event.EarnAdReward)
+    },
+    onAdFailed = { failure ->
+        isAdRequested = false
+        viewModel.setEvent(Event.FailAd(failure = failure))
+    }
+)
+```
 
 ---
 

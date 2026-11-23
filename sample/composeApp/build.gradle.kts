@@ -72,6 +72,8 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.uiTooling)
             implementation(libs.androidx.activityCompose)
+            implementation(libs.basic.ads)
+            implementation(libs.google.play.services.ads)
         }
 
         desktopMain.dependencies {
