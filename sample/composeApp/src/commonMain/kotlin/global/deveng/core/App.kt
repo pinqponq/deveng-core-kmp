@@ -382,7 +382,9 @@ internal fun App() {
         var showFilePickerScreen by remember { mutableStateOf(false) }
         var showVisibleScreenPollerScreen by remember { mutableStateOf(false) }
         var showComponentLayoutThemeScreen by remember { mutableStateOf(false) }
+        var showRewardedAdScreen by remember { mutableStateOf(false) }
         when {
+            showRewardedAdScreen -> RewardedAdDemoScreen(onBack = { showRewardedAdScreen = false })
             showJwtClaimsScreen -> JwtClaimsDemoScreen(onBack = { showJwtClaimsScreen = false })
             showPlatformConfigScreen -> PlatformConfigDemoScreen(onBack = { showPlatformConfigScreen = false })
             showAuthSessionScreen -> AuthSessionDemoScreen(onBack = { showAuthSessionScreen = false })
@@ -422,6 +424,7 @@ internal fun App() {
                 onOpenPinqloq = { showPinqloqScreen = true },
                 onOpenFilePicker = { showFilePickerScreen = true },
                 onOpenVisibleScreenPoller = { showVisibleScreenPollerScreen = true },
+                onOpenRewardedAd = { showRewardedAdScreen = true },
             )
         }
     }
@@ -780,6 +783,7 @@ private fun ThemingDemo(
     onOpenPinqloq: () -> Unit = {},
     onOpenFilePicker: () -> Unit = {},
     onOpenVisibleScreenPoller: () -> Unit = {},
+    onOpenRewardedAd: () -> Unit = {},
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var showDefaultDialog by remember { mutableStateOf(false) }
@@ -1279,6 +1283,13 @@ private fun ThemingDemo(
                             text = "Open Visible Screen Poller Demo",
                             containerColor = Color(0xFF2E7D32),
                             onClick = onOpenVisibleScreenPoller
+                        )
+
+                        CustomButton(
+                            modifier = launcherButtonModifier,
+                            text = "Open Rewarded Ad Demo",
+                            containerColor = Color(0xFF6A1B9A),
+                            onClick = onOpenRewardedAd
                         )
 
                         RatingRow(

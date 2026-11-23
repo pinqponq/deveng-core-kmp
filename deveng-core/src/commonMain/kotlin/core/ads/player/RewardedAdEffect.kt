@@ -11,11 +11,6 @@ import core.ads.domain.model.RewardedAdSurface
 import core.ads.domain.usecase.SendRewardedAdOutcomeUseCase
 import kotlinx.coroutines.launch
 
-/**
- * Preloads a rewarded ad as soon as [adUnitId] is known and shows it each time [show] turns true.
- * Every outcome is reported through [sendRewardedAdOutcomeUseCase] before the matching callback
- * runs.
- */
 @Composable
 internal fun RewardedAdEffect(
     show: Boolean,
@@ -32,18 +27,16 @@ internal fun RewardedAdEffect(
     val currentOnAdFailed by rememberUpdatedState(onAdFailed)
 
     val adController = remember(adUnitId) {
-        adUnitId?.let { loadedAdUnitId ->
+        adUnitId?.let { rewardedAdUnitId ->
             RewardedAdController(
-                createAdPlayer = { createAdPlayer(loadedAdUnitId) },
+                createAdPlayer = { createAdPlayer(rewardedAdUnitId) },
                 onAdOutcome = { outcome ->
                     coroutineScope.launch {
                         sendRewardedAdOutcomeUseCase(outcome = outcome, surface = currentSurface)
                     }
-                    when (outcome) {
-                        RewardedAdOutcome.RewardEarned -> currentOnRewardEarned()
-                        is RewardedAdOutcome.Failure -> currentOnAdFailed(outcome)
-                    }
                 },
+                onRewardEarned = { currentOnRewardEarned() },
+                onAdFailed = { failure -> currentOnAdFailed(failure) },
             )
         }
     }

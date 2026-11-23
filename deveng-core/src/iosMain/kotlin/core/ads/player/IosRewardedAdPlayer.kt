@@ -4,8 +4,8 @@ import app.lexilabs.basic.ads.DependsOnGoogleMobileAds
 import app.lexilabs.basic.ads.RewardedAdHandler
 import co.touchlab.kermit.Logger
 
-// Top-level reference — prevents Kotlin Native GC from collecting the handler
-// before the onLoad callback fires (local vars get collected in release mode).
+// Keeps the handler of the latest load strongly referenced from a top-level property, so the
+// Kotlin Native GC cannot collect it while Google Mobile Ads still has to call its callbacks.
 private var activeRewardedAdHandler: RewardedAdHandler? = null
 
 @OptIn(DependsOnGoogleMobileAds::class)
@@ -16,14 +16,7 @@ internal class IosRewardedAdPlayer(
 
     override fun load(onLoad: () -> Unit, onFailure: (Throwable) -> Unit) {
         activeRewardedAdHandler = rewardedAdHandler
-        rewardedAdHandler.load(
-            adUnitId = adUnitId,
-            onLoad = onLoad,
-            onFailure = { exception ->
-                Logger.w(exception) { "Rewarded ad failed to load." }
-                onFailure(exception)
-            },
-        )
+        rewardedAdHandler.load(adUnitId = adUnitId, onLoad = onLoad, onFailure = onFailure)
     }
 
     /**

@@ -9,9 +9,13 @@ class RewardedAdControllerTest {
 
     private val adPlayerList = mutableListOf<FakeRewardedAdPlayer>()
     private val adOutcomeList = mutableListOf<RewardedAdOutcome>()
+    private val adFailureList = mutableListOf<RewardedAdOutcome.Failure>()
+    private var rewardCount = 0
     private val adController = RewardedAdController(
         createAdPlayer = { FakeRewardedAdPlayer().also(adPlayerList::add) },
         onAdOutcome = adOutcomeList::add,
+        onRewardEarned = { rewardCount++ },
+        onAdFailed = adFailureList::add,
     )
 
     @Test
@@ -63,6 +67,7 @@ class RewardedAdControllerTest {
         adController.requestAdShow()
 
         assertEquals(emptyList(), adOutcomeList)
+        assertEquals(emptyList(), adFailureList)
         assertEquals(2, adPlayerList.size)
     }
 
@@ -75,6 +80,7 @@ class RewardedAdControllerTest {
         adController.requestAdShow()
 
         assertEquals(listOf<RewardedAdOutcome>(RewardedAdOutcome.LoadFailed(exception = loadException)), adOutcomeList)
+        assertEquals(listOf<RewardedAdOutcome.Failure>(RewardedAdOutcome.LoadFailed(exception = loadException)), adFailureList)
         assertEquals(2, adPlayerList.size)
     }
 
@@ -87,6 +93,8 @@ class RewardedAdControllerTest {
         adPlayerList.single().dismiss()
 
         assertEquals(listOf<RewardedAdOutcome>(RewardedAdOutcome.RewardEarned), adOutcomeList)
+        assertEquals(1, rewardCount)
+        assertEquals(emptyList(), adFailureList)
         assertEquals(2, adPlayerList.size)
     }
 
@@ -100,6 +108,8 @@ class RewardedAdControllerTest {
         adController.requestAdShow()
 
         assertEquals(listOf<RewardedAdOutcome>(RewardedAdOutcome.ClosedBeforeReward), adOutcomeList)
+        assertEquals(listOf<RewardedAdOutcome.Failure>(RewardedAdOutcome.ClosedBeforeReward), adFailureList)
+        assertEquals(0, rewardCount)
         assertEquals(1, adPlayerList.last().showCount)
     }
 
@@ -113,6 +123,7 @@ class RewardedAdControllerTest {
         adPlayerList.first().dismiss()
 
         assertEquals(listOf<RewardedAdOutcome>(RewardedAdOutcome.ShowFailed(exception = showException)), adOutcomeList)
+        assertEquals(listOf<RewardedAdOutcome.Failure>(RewardedAdOutcome.ShowFailed(exception = showException)), adFailureList)
         assertEquals(2, adPlayerList.size)
     }
 

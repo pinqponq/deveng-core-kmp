@@ -1,17 +1,17 @@
 package core.ads.player
 
+import co.touchlab.kermit.Logger
 import core.ads.domain.model.RewardedAdOutcome
 
 /**
- * Keeps one rewarded ad loaded ahead of time and shows it when it is requested.
- *
- * A load that fails while nobody asked for the ad is not reported: the next request loads again
- * and reports that result. After an ad was shown, dismissed or failed to show, the next ad starts
- * loading at once.
+ * A load that fails while nobody asked for the ad is only written to the local log, not reported
+ * as an outcome: the next request loads again and reports its own result.
  */
 internal class RewardedAdController(
     private val createAdPlayer: () -> RewardedAdPlayer,
     private val onAdOutcome: (RewardedAdOutcome) -> Unit,
+    private val onRewardEarned: () -> Unit,
+    private val onAdFailed: (RewardedAdOutcome.Failure) -> Unit,
 ) {
     private var adState: AdState = AdState.Idle
     private var isShowRequested = false
@@ -43,21 +43,24 @@ internal class RewardedAdController(
 
     private fun handleAdLoadFailed(exception: Throwable) {
         adState = AdState.Idle
-        if (!isShowRequested) return
+        if (!isShowRequested) {
+            Logger.w(exception) { "Rewarded ad preload failed; the next request loads again." }
+            return
+        }
         isShowRequested = false
-        onAdOutcome(RewardedAdOutcome.LoadFailed(exception = exception))
+        reportFailure(failure = RewardedAdOutcome.LoadFailed(exception = exception))
     }
 
     private fun showAd(adPlayer: RewardedAdPlayer) {
         adState = AdState.Showing
         var isRewardEarned = false
         var isShowFinished = false
-        val finishShow: (RewardedAdOutcome?) -> Unit = { outcome ->
+        val finishShow: (RewardedAdOutcome.Failure?) -> Unit = { failure ->
             if (!isShowFinished) {
                 isShowFinished = true
                 adState = AdState.Idle
                 isShowRequested = false
-                outcome?.let(onAdOutcome)
+                failure?.let { adFailure -> reportFailure(failure = adFailure) }
                 preloadAd()
             }
         }
@@ -65,10 +68,16 @@ internal class RewardedAdController(
             onRewardEarned = {
                 isRewardEarned = true
                 onAdOutcome(RewardedAdOutcome.RewardEarned)
+                onRewardEarned()
             },
             onShowFailed = { exception -> finishShow(RewardedAdOutcome.ShowFailed(exception = exception)) },
             onDismissed = { finishShow(if (isRewardEarned) null else RewardedAdOutcome.ClosedBeforeReward) },
         )
+    }
+
+    private fun reportFailure(failure: RewardedAdOutcome.Failure) {
+        onAdOutcome(failure)
+        onAdFailed(failure)
     }
 
     private sealed interface AdState {
