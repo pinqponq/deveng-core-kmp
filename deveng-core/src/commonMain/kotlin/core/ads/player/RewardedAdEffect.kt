@@ -31,38 +31,29 @@ internal fun RewardedAdEffect(
     val currentOnAdFailed by rememberUpdatedState(onAdFailed)
 
     val adController = remember(adUnitId) {
-        adUnitId?.let { rewardedAdUnitId ->
-            RewardedAdController(
-                createAdPlayer = { createAdPlayer(rewardedAdUnitId) },
-                onAdOutcome = { outcome ->
-                    coroutineScope.launch {
-                        sendRewardedAdOutcomeUseCase(outcome = outcome, surface = currentSurface)
-                    }
-                },
-                onRewardEarned = { currentOnRewardEarned() },
-                onAdFailed = { failure -> currentOnAdFailed(failure) },
-            )
-        }
+        RewardedAdController(
+            adUnitId = adUnitId,
+            createAdPlayer = createAdPlayer,
+            onAdOutcome = { outcome ->
+                coroutineScope.launch {
+                    sendRewardedAdOutcomeUseCase(outcome = outcome, surface = currentSurface)
+                }
+            },
+            onRewardEarned = { currentOnRewardEarned() },
+            onAdFailed = { failure -> currentOnAdFailed(failure) },
+        )
     }
 
     LaunchedEffect(adController) {
-        adController?.preloadAd()
+        adController.preloadAd()
     }
 
     LaunchedEffect(show, adController) {
         if (!show) return@LaunchedEffect
-        if (adController != null) {
-            adController.requestAdShow()
-            delay(loadTimeout)
-            adController.expireShowRequest()
-        } else {
-            val failure = RewardedAdOutcome.LoadFailed(IllegalStateException(MISSING_AD_UNIT_ID_MESSAGE))
-            sendRewardedAdOutcomeUseCase(outcome = failure, surface = currentSurface)
-            currentOnAdFailed(failure)
-        }
+        adController.requestAdShow()
+        delay(loadTimeout)
+        adController.expireShowRequest()
     }
 }
 
 private val REWARDED_AD_LOAD_TIMEOUT = 15.seconds
-private const val MISSING_AD_UNIT_ID_MESSAGE = "No rewarded ad unit id in the ad config."
-

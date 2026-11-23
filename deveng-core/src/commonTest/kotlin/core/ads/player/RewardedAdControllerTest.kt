@@ -12,7 +12,10 @@ class RewardedAdControllerTest {
     private val adOutcomeList = mutableListOf<RewardedAdOutcome>()
     private val adFailureList = mutableListOf<RewardedAdOutcome.Failure>()
     private var rewardCount = 0
-    private val adController = RewardedAdController(
+    private val adController = createAdController(adUnitId = AD_UNIT_ID)
+
+    private fun createAdController(adUnitId: String?) = RewardedAdController(
+        adUnitId = adUnitId,
         createAdPlayer = { FakeRewardedAdPlayer().also(adPlayerList::add) },
         onAdOutcome = adOutcomeList::add,
         onRewardEarned = { rewardCount++ },
@@ -187,7 +190,21 @@ class RewardedAdControllerTest {
         assertEquals(1, adPlayerList.single().showCount)
     }
 
+    @Test
+    fun requestAdShow_withoutAdUnitId_reportsLoadFailedEachTimeWithoutLoading() {
+        val adControllerWithoutAdUnitId = createAdController(adUnitId = null)
+        adControllerWithoutAdUnitId.preloadAd()
+
+        adControllerWithoutAdUnitId.requestAdShow()
+        adControllerWithoutAdUnitId.requestAdShow()
+
+        assertEquals(2, adFailureList.count { failure -> failure is RewardedAdOutcome.LoadFailed })
+        assertEquals(2, adOutcomeList.size)
+        assertTrue(adPlayerList.isEmpty())
+    }
+
     private companion object {
+        const val AD_UNIT_ID = "ca-app-pub-3940256099942544/5224354917"
         const val NO_FILL_MESSAGE = "No fill."
         const val SHOW_ERROR_MESSAGE = "Ad expired."
     }

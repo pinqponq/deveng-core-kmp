@@ -1155,7 +1155,7 @@ The sample app's wasm entry point (`WebAnalyticsSample.kt`) shows the wiring and
 - The zone loads an ad as soon as the ad unit id is known, so the ad is usually ready when the user taps.
 - Set `show` to true to show the ad. The zone draws nothing while the ad loads, so show your own loading state while `show` is true.
 - Set `show` back to false in `onRewardEarned` and in `onAdFailed`. A later `show = true` then starts a new attempt. `onAdFailed` receives `LoadFailed`, `ShowFailed` or `ClosedBeforeReward`. A request while the config has no ad unit id (for example after an offline app start) fails at once with `LoadFailed`. A request whose ad has not loaded after 15 seconds fails with `LoadFailed` too, so the caller's loading state always ends.
-- Every outcome is logged through `SendRewardedAdOutcomeUseCase`. A load that fails before the user asked for the ad is not logged; the next request loads again and logs its own result.
+- On Android and iOS, every outcome is reported through `SendRewardedAdOutcomeUseCase`. A load that fails before the user asked for the ad is not reported; the next request loads again and reports its own result.
 
 ```kotlin
 var isAdRequested by remember { mutableStateOf(false) }

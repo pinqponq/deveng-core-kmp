@@ -10,7 +10,8 @@ import core.ads.domain.model.RewardedAdOutcome
  * [expireShowRequest]; callbacks from that abandoned load are ignored.
  */
 internal class RewardedAdController(
-    private val createAdPlayer: () -> RewardedAdPlayer,
+    private val adUnitId: String?,
+    private val createAdPlayer: (adUnitId: String) -> RewardedAdPlayer,
     private val onAdOutcome: (RewardedAdOutcome) -> Unit,
     private val onRewardEarned: () -> Unit,
     private val onAdFailed: (RewardedAdOutcome.Failure) -> Unit,
@@ -19,8 +20,9 @@ internal class RewardedAdController(
     private var isShowRequested = false
 
     fun preloadAd() {
+        val rewardedAdUnitId = adUnitId ?: return
         if (adState != AdState.Idle) return
-        val adPlayer = createAdPlayer()
+        val adPlayer = createAdPlayer(rewardedAdUnitId)
         adState = AdState.Loading(adPlayer = adPlayer)
         adPlayer.load(
             onLoad = { handleAdLoaded(adPlayer = adPlayer) },
@@ -29,6 +31,10 @@ internal class RewardedAdController(
     }
 
     fun requestAdShow() {
+        if (adUnitId == null) {
+            reportFailure(failure = RewardedAdOutcome.LoadFailed(exception = IllegalStateException(MISSING_AD_UNIT_ID_MESSAGE)))
+            return
+        }
         if (isShowRequested) return
         isShowRequested = true
         when (val currentAdState = adState) {
@@ -106,4 +112,5 @@ internal class RewardedAdController(
     }
 }
 
+private const val MISSING_AD_UNIT_ID_MESSAGE = "No rewarded ad unit id in the ad config."
 private const val LOAD_TIMED_OUT_MESSAGE = "The rewarded ad did not load in time."
