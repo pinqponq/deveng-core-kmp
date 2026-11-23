@@ -41,9 +41,7 @@ private enum class DemoRewardedAdSurface : RewardedAdSurface {
 }
 
 /**
- * Shows a rewarded ad from Google's test ad unit. The zone loads the ad when the screen opens, the
- * button asks for it, and the result line shows the reward or the failure. After a failure or a
- * closed ad, the button starts a new attempt. Desktop and Web have no ads, so nothing opens there.
+ * Desktop and Web have no ads, so nothing opens there.
  */
 @Composable
 internal fun RewardedAdDemoScreen(onBack: () -> Unit) {
@@ -70,22 +68,15 @@ internal fun RewardedAdDemoScreen(onBack: () -> Unit) {
             analyticsLogSink = analyticsLogSink,
         )
     }
-    var isAdRequested by remember { mutableStateOf(false) }
-    var lastOutcomeText by remember { mutableStateOf("No ad shown yet.") }
+    val demoState = remember { RewardedAdDemoState() }
 
     RewardedAdZone(
-        show = isAdRequested,
+        show = demoState.isAdRequested,
         surface = DemoRewardedAdSurface.SAMPLE,
         adConfigHolder = adConfigHolder,
         sendRewardedAdOutcomeUseCase = sendRewardedAdOutcomeUseCase,
-        onRewardEarned = {
-            isAdRequested = false
-            lastOutcomeText = "Reward earned."
-        },
-        onAdFailed = { failure ->
-            isAdRequested = false
-            lastOutcomeText = describeFailure(failure = failure)
-        },
+        onRewardEarned = demoState::handleRewardEarned,
+        onAdFailed = demoState::handleAdFailure,
     )
 
     Column(
@@ -100,19 +91,38 @@ internal fun RewardedAdDemoScreen(onBack: () -> Unit) {
         CustomButton(
             modifier = Modifier.fillMaxWidth(),
             text = "Show rewarded ad",
-            onClick = { isAdRequested = true },
+            onClick = demoState::requestAd,
         )
-        if (isAdRequested) {
+        if (demoState.isAdRequested) {
             CircularProgressIndicator(modifier = Modifier.size(24.dp))
         }
-        Text(text = lastOutcomeText)
+        Text(text = demoState.outcomeText)
     }
 }
 
-private fun describeFailure(failure: RewardedAdOutcome.Failure): String = when (failure) {
-    is RewardedAdOutcome.LoadFailed -> "The ad could not be loaded. Tap again to retry."
-    is RewardedAdOutcome.ShowFailed -> "The ad could not be shown. Tap again to retry."
-    RewardedAdOutcome.ClosedBeforeReward -> "The ad was closed before the reward."
+private class RewardedAdDemoState {
+    var isAdRequested by mutableStateOf(false)
+        private set
+    var outcomeText by mutableStateOf("No ad shown yet.")
+        private set
+
+    fun requestAd() {
+        isAdRequested = true
+    }
+
+    fun handleRewardEarned() {
+        isAdRequested = false
+        outcomeText = "Reward earned."
+    }
+
+    fun handleAdFailure(failure: RewardedAdOutcome.Failure) {
+        isAdRequested = false
+        outcomeText = when (failure) {
+            is RewardedAdOutcome.LoadFailed -> "The ad could not be loaded. Tap again to retry."
+            is RewardedAdOutcome.ShowFailed -> "The ad could not be shown. Tap again to retry."
+            RewardedAdOutcome.ClosedBeforeReward -> "The ad was closed before the reward."
+        }
+    }
 }
 
 private class DemoAnalyticsLogSink : AnalyticsLogSink {
