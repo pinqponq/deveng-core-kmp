@@ -247,7 +247,7 @@ actual class CameraController internal constructor(
         stopTracks()
         val stream = getUserMediaSwitchingLens(currentLens)
         if (!currentCoroutineContext().isActive) {
-            // The browser answers even after the screen has closed, so the camera it opened is turned off again.
+            // The browser answers the camera request even after the screen has closed.
             wasmStopAllTracks(stream)
             throw CancellationException("The camera screen closed before the browser opened the camera")
         }

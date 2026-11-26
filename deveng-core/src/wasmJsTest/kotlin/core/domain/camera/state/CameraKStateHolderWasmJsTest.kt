@@ -14,6 +14,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -49,7 +50,9 @@ class CameraKStateHolderWasmJsTest {
         waitUntil { isCameraRequestPending() }
 
         denyCameraRequest()
-        waitUntil { holder.cameraState.value is CameraKState.Ready }
+        withContext(Dispatchers.Default) {
+            withTimeout(WAIT_TIMEOUT_MILLIS) { holder.cameraState.first { it is CameraKState.Ready } }
+        }
 
         assertIs<CameraKState.Ready>(holder.cameraState.value)
         holder.shutdown()
