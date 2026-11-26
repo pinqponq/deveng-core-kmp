@@ -11,6 +11,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -67,6 +68,20 @@ class CameraKStateHolderWasmJsTest {
         assertIs<CameraKState.Initializing>(holder.cameraState.value)
     }
 
+    @Test
+    fun initialize_cameraGrantedAfterCancel_turnsCameraOff() = runTest {
+        val holder = createHolder()
+        val initializing = backgroundScope.launch { holder.initialize() }
+        waitUntil { isCameraRequestPending() }
+        initializing.cancel()
+        waitUntil { !isPreviewVideoAttached() }
+
+        grantCameraRequest()
+        waitUntil { isGrantedCameraStopped() }
+
+        assertTrue(isGrantedCameraStopped())
+    }
+
     private fun TestScope.createHolder() = CameraKStateHolder(
         cameraConfiguration = CameraConfiguration(),
         controllerFactory = {
@@ -97,6 +112,7 @@ private fun holdCameraRequests(): Unit = js(
     """{
     window.__testOriginalGetUserMedia = MediaDevices.prototype.getUserMedia;
     window.__testCameraRequest = null;
+    window.__testGrantedCameraStopped = false;
     MediaDevices.prototype.getUserMedia = function () {
         return new Promise(function (resolve, reject) { window.__testCameraRequest = { resolve: resolve, reject: reject }; });
     };
@@ -117,3 +133,11 @@ private fun isPreviewVideoAttached(): Boolean = js("document.getElementById('dev
 private fun denyCameraRequest(): Unit = js(
     """window.__testCameraRequest.reject(new DOMException('Permission denied', 'NotAllowedError'))""",
 )
+
+private fun grantCameraRequest(): Unit = js(
+    """window.__testCameraRequest.resolve({
+    getTracks: function () { return [{ stop: function () { window.__testGrantedCameraStopped = true; } }]; }
+})""",
+)
+
+private fun isGrantedCameraStopped(): Boolean = js("window.__testGrantedCameraStopped === true")

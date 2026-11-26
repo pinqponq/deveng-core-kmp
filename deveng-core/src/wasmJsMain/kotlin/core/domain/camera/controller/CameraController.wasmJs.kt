@@ -24,11 +24,14 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.js.JsAny
 import kotlin.time.ExperimentalTime
 import kotlinx.browser.document
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
@@ -171,7 +174,11 @@ actual class CameraController internal constructor(
         }
         previewStartJob = scope.launch {
             runCatching { openCamera() }
-                .onFailure { error -> CustomLogger.log("Web camera could not be opened: ${error.message}") }
+                .onFailure { error ->
+                    if (error !is CancellationException) {
+                        CustomLogger.log("Web camera could not be opened: ${error.stackTraceToString()}")
+                    }
+                }
         }
     }
 
@@ -239,6 +246,11 @@ actual class CameraController internal constructor(
     private suspend fun openCamera() {
         stopTracks()
         val stream = getUserMediaSwitchingLens(currentLens)
+        if (!currentCoroutineContext().isActive) {
+            // The browser answers even after the screen has closed, so the camera it opened is turned off again.
+            wasmStopAllTracks(stream)
+            throw CancellationException("The camera screen closed before the browser opened the camera")
+        }
         mediaStream = stream
         wasmSetVideoSrcObject(video, stream)
         runCatching { awaitVoidPromise(wasmVideoPlayPromise(video)) }
