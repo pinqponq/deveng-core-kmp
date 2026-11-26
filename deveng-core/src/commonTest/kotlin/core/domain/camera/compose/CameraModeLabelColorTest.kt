@@ -15,4 +15,10 @@ class CameraModeLabelColorTest {
     fun cameraModeLabelColor_whenNotSelected_isWhiteAt70Percent() {
         assertEquals(Color.White.copy(alpha = 0.7f), cameraModeLabelColor(isSelected = false))
     }
+
+    @Test
+    fun cameraModeLabelShadow_isSemiTransparentBlackBlur() {
+        assertEquals(Color.Black.copy(alpha = 0.6f), CameraModeLabelShadow.color)
+        assertEquals(6f, CameraModeLabelShadow.blurRadius)
+    }
 }

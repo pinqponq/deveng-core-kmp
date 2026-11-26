@@ -53,6 +53,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -1320,6 +1321,14 @@ private fun ShutterFlashOverlay(
 private val CameraModeTouchTargetSize = 48.dp
 private val CameraModeTouchTargetSpacing = 24.dp
 private const val CAMERA_MODE_UNSELECTED_LABEL_ALPHA = 0.7f
+private const val CAMERA_MODE_LABEL_SHADOW_ALPHA = 0.6f
+private const val CAMERA_MODE_LABEL_SHADOW_BLUR_RADIUS = 6f
+
+internal val CameraModeLabelShadow = Shadow(
+    color = Color.Black.copy(alpha = CAMERA_MODE_LABEL_SHADOW_ALPHA),
+    offset = Offset.Zero,
+    blurRadius = CAMERA_MODE_LABEL_SHADOW_BLUR_RADIUS,
+)
 
 internal fun cameraModeLabelColor(isSelected: Boolean): Color =
     if (isSelected) Color.White else Color.White.copy(alpha = CAMERA_MODE_UNSELECTED_LABEL_ALPHA)
@@ -1349,6 +1358,7 @@ internal fun ModeSwitcher(
                     style = CoreRegularTextStyle().copy(
                         fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        shadow = CameraModeLabelShadow,
                     ),
                 )
                 Spacer(modifier = Modifier.height(2.dp))
