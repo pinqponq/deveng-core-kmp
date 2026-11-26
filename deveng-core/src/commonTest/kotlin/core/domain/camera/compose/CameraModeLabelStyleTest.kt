@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class CameraModeLabelColorTest {
+class CameraModeLabelStyleTest {
 
     @Test
     fun cameraModeLabelColor_whenSelected_isOpaqueWhite() {
@@ -17,7 +17,7 @@ class CameraModeLabelColorTest {
     }
 
     @Test
-    fun cameraModeLabelShadow_isSemiTransparentBlackBlur() {
+    fun cameraModeLabelShadow_onAnyMode_isSemiTransparentBlackBlur() {
         assertEquals(Color.Black.copy(alpha = 0.6f), CameraModeLabelShadow.color)
         assertEquals(6f, CameraModeLabelShadow.blurRadius)
     }
