@@ -162,7 +162,16 @@ class CameraKStateHolder(
 
             // Start session
             newController.startSession()
-            newController.awaitPreviewStarted()
+            try {
+                newController.awaitPreviewStarted()
+            } catch (e: CancellationException) {
+                // The screen closed while the browser was still opening the camera, and shutdown() only
+                // releases a camera that finished initializing.
+                newController.stopSession()
+                newController.cleanup()
+                controller = null
+                throw e
+            }
 
             // Initialize UI state from controller
             updateUIStateFromController(newController)
@@ -180,6 +189,8 @@ class CameraKStateHolder(
                 )
 
             isInitialized = true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             _cameraState.value =
                 CameraKState.Error(

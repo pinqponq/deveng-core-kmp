@@ -15,6 +15,7 @@ import core.domain.camera.plugins.CameraPlugin
 import core.domain.camera.result.ImageCaptureResult
 import core.domain.camera.video.VideoCaptureResult
 import core.domain.camera.video.VideoConfiguration
+import core.util.CustomLogger
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -170,6 +171,7 @@ actual class CameraController internal constructor(
         }
         previewStartJob = scope.launch {
             runCatching { openCamera() }
+                .onFailure { error -> CustomLogger.log("Web camera could not be opened: ${error.message}") }
         }
     }
 

@@ -9,20 +9,17 @@ import kotlin.js.ExperimentalWasmJsInterop
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
 class CameraKStateHolderWasmJsTest {
-
-    private val holderScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     @BeforeTest
     fun setUp() {
@@ -31,7 +28,6 @@ class CameraKStateHolderWasmJsTest {
 
     @AfterTest
     fun tearDown() {
-        holderScope.cancel()
         restoreCameraRequests()
     }
 
@@ -39,25 +35,39 @@ class CameraKStateHolderWasmJsTest {
     fun initialize_whileBrowserOpensCamera_staysInitializing() = runTest {
         val holder = createHolder()
 
-        holderScope.launch { runCatching { holder.initialize() } }
+        backgroundScope.launch { holder.initialize() }
         waitUntil { isCameraRequestPending() }
 
         assertIs<CameraKState.Initializing>(holder.cameraState.value)
     }
 
     @Test
-    fun initialize_afterBrowserAnswersCameraRequest_becomesReady() = runTest {
+    fun initialize_afterBrowserDeniesCamera_becomesReadyWithoutPreview() = runTest {
         val holder = createHolder()
-        holderScope.launch { runCatching { holder.initialize() } }
+        backgroundScope.launch { runCatching { holder.initialize() } }
         waitUntil { isCameraRequestPending() }
 
         denyCameraRequest()
         waitUntil { holder.cameraState.value is CameraKState.Ready }
 
         assertIs<CameraKState.Ready>(holder.cameraState.value)
+        holder.shutdown()
     }
 
-    private fun createHolder() = CameraKStateHolder(
+    @Test
+    fun initialize_cancelledWhileBrowserOpensCamera_removesPreviewAndReportsNoError() = runTest {
+        val holder = createHolder()
+        val initializing = backgroundScope.launch { holder.initialize() }
+        waitUntil { isCameraRequestPending() && isPreviewVideoAttached() }
+
+        initializing.cancel()
+        waitUntil { !isPreviewVideoAttached() }
+
+        assertFalse(isPreviewVideoAttached())
+        assertIs<CameraKState.Initializing>(holder.cameraState.value)
+    }
+
+    private fun TestScope.createHolder() = CameraKStateHolder(
         cameraConfiguration = CameraConfiguration(),
         controllerFactory = {
             WasmCameraControllerBuilder()
@@ -65,17 +75,24 @@ class CameraKStateHolderWasmJsTest {
                 .setDirectory(Directory.PICTURES)
                 .build()
         },
-        coroutineScope = holderScope,
+        coroutineScope = backgroundScope,
     )
 
+    // The controller opens the camera on its own scope and the browser answers through a JavaScript promise,
+    // so virtual time cannot move them; this waits in real time.
     private suspend fun waitUntil(condition: () -> Boolean) = withContext(Dispatchers.Default) {
-        withTimeout(5_000) {
-            while (!condition()) delay(10)
+        withTimeout(WAIT_TIMEOUT_MILLIS) {
+            while (!condition()) delay(POLL_INTERVAL_MILLIS)
         }
+    }
+
+    private companion object {
+        // Below the 2 s timeout of the browser test runner, so a stuck wait fails here with its own message.
+        const val WAIT_TIMEOUT_MILLIS = 1_500L
+        const val POLL_INTERVAL_MILLIS = 10L
     }
 }
 
-/** Replaces getUserMedia with a request that stays open until the test answers it. */
 private fun holdCameraRequests(): Unit = js(
     """{
     window.__testOriginalGetUserMedia = MediaDevices.prototype.getUserMedia;
@@ -94,6 +111,8 @@ private fun restoreCameraRequests(): Unit = js(
 )
 
 private fun isCameraRequestPending(): Boolean = js("window.__testCameraRequest != null")
+
+private fun isPreviewVideoAttached(): Boolean = js("document.getElementById('deveng-wasm-camera-video') != null")
 
 private fun denyCameraRequest(): Unit = js(
     """window.__testCameraRequest.reject(new DOMException('Permission denied', 'NotAllowedError'))""",
