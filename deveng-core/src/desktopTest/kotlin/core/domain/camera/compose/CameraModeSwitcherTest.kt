@@ -27,15 +27,11 @@ import io.github.takahirom.roborazzi.captureRoboImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-private const val PHOTO_LABEL = "PHOTO"
-private const val VIDEO_LABEL = "VIDEO"
-private val MINIMUM_TOUCH_TARGET = 48.dp
-
 @OptIn(ExperimentalTestApi::class)
 class CameraModeSwitcherTest {
 
     @Test
-    fun modeSwitcher_everyModeHasTouchTargetOfAtLeast48Dp() = runDesktopComposeUiTest {
+    fun render_eachMode_hasTouchTargetOfAtLeast48Dp() = runDesktopComposeUiTest {
         setContent { ModeSwitcherUnderTest(onModeChange = {}) }
 
         listOf(PHOTO_LABEL, VIDEO_LABEL).forEach { label ->
@@ -46,7 +42,7 @@ class CameraModeSwitcherTest {
     }
 
     @Test
-    fun modeSwitcher_tapOnMode_reportsThatMode() = runDesktopComposeUiTest {
+    fun tapOnMode_whenEnabled_reportsThatMode() = runDesktopComposeUiTest {
         val selectedModes = mutableListOf<CameraCaptureMode>()
         setContent { ModeSwitcherUnderTest(onModeChange = { selectedModes += it }) }
 
@@ -57,7 +53,7 @@ class CameraModeSwitcherTest {
     }
 
     @Test
-    fun modeSwitcher_whenDisabled_ignoresTaps() = runDesktopComposeUiTest {
+    fun tapOnMode_whenDisabled_reportsNothing() = runDesktopComposeUiTest {
         val selectedModes = mutableListOf<CameraCaptureMode>()
         setContent { ModeSwitcherUnderTest(onModeChange = { selectedModes += it }, enabled = false) }
 
@@ -67,7 +63,10 @@ class CameraModeSwitcherTest {
     }
 
     @Test
-    fun modeSwitcher_onDarkPreview_screenshot() = runDesktopComposeUiTest(width = 320, height = 140) {
+    fun render_onDarkPreview_showsSelectedPhotoAndBrighterVideoLabel() = runDesktopComposeUiTest(
+        width = SCREENSHOT_WIDTH_PX,
+        height = SCREENSHOT_HEIGHT_PX,
+    ) {
         setContent {
             CompositionLocalProvider(LocalDensity provides Density(density = SCREENSHOT_DENSITY)) {
                 Box(modifier = Modifier.background(Color.DarkGray).padding(8.dp)) {
@@ -94,4 +93,12 @@ class CameraModeSwitcherTest {
 
     private fun ComposeUiTest.mode(label: String): SemanticsNodeInteraction =
         onNode(hasClickAction() and hasText(label), useUnmergedTree = false)
+
+    private companion object {
+        const val PHOTO_LABEL = "PHOTO"
+        const val VIDEO_LABEL = "VIDEO"
+        const val SCREENSHOT_WIDTH_PX = 320
+        const val SCREENSHOT_HEIGHT_PX = 140
+        val MINIMUM_TOUCH_TARGET = 48.dp
+    }
 }

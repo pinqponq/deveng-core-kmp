@@ -1319,10 +1319,10 @@ private fun ShutterFlashOverlay(
 
 private val CameraModeTouchTargetSize = 48.dp
 private val CameraModeTouchTargetSpacing = 24.dp
-private const val CameraModeUnselectedLabelAlpha = 0.7f
+private const val CAMERA_MODE_UNSELECTED_LABEL_ALPHA = 0.7f
 
 internal fun cameraModeLabelColor(isSelected: Boolean): Color =
-    if (isSelected) Color.White else Color.White.copy(alpha = CameraModeUnselectedLabelAlpha)
+    if (isSelected) Color.White else Color.White.copy(alpha = CAMERA_MODE_UNSELECTED_LABEL_ALPHA)
 
 @Composable
 internal fun ModeSwitcher(
