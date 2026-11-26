@@ -3,6 +3,7 @@ package core.domain.camera.state
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.ImageBitmap
 import core.domain.camera.controller.CameraController
+import core.domain.camera.controller.awaitPreviewStarted
 import core.domain.camera.result.ImageCaptureResult
 import core.domain.camera.video.VideoCaptureResult
 import core.domain.camera.video.VideoConfiguration
@@ -161,6 +162,7 @@ class CameraKStateHolder(
 
             // Start session
             newController.startSession()
+            newController.awaitPreviewStarted()
 
             // Initialize UI state from controller
             updateUIStateFromController(newController)

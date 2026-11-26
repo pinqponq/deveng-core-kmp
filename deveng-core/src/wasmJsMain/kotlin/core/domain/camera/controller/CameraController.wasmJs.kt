@@ -25,6 +25,7 @@ import kotlin.time.ExperimentalTime
 import kotlinx.browser.document
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -88,6 +89,9 @@ actual class CameraController internal constructor(
         document.createElement("canvas").unsafeCast<HTMLCanvasElement>()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    internal var previewStartJob: Job? = null
+        private set
 
     private var listener: (ByteArray) -> Unit = { }
 
@@ -164,7 +168,7 @@ actual class CameraController internal constructor(
         if (video.parentNode == null) {
             document.documentElement?.appendChild(video)
         }
-        scope.launch {
+        previewStartJob = scope.launch {
             runCatching { openCamera() }
         }
     }
