@@ -50,6 +50,7 @@ Extends `common.md`. How Android and Kotlin Multiplatform code is tested: the st
 - Arrange-Act-Assert, one behavior per test. Put constants for test data in a `private companion object`, not as magic literals repeated across tests.
 - Build the real use cases around fake repositories; fake only the boundary (repository interfaces, storages, platform seams).
 - Inject `CoroutineDispatcher` only where the class already takes one (e.g. `@Dispatcher(IO)`); pass the test dispatcher there. Don't add dispatcher parameters just for tests to ViewModels using `viewModelScope`.
+- No fixed `delay` or sleep to wait, also in tests that run a real server, socket or dispatcher. Wait on a signal instead: a `StateFlow` the test can `first { … }` on (count server requests in one), a last message the code under test applies only after the earlier ones, or a drained single-thread dispatcher. A "nothing else happened" check sends such a last signal after the action and asserts once it has arrived.
 - Compose tests: match by semantics (text from `getString(Res.string.…)`, roles, `hasSetTextAction()`); fall back to `testTag` only when a matcher would need more than three conditions.
 - Use a **robot** (`<Screen>Robot`, extending `core.testing.ScreenRobot`) once a screen has three or more UI tests or shared interaction steps; every robot function returns `this`.
 - Screenshot baselines are committed. Re-record them only for an intended UI change and say so in the PR.
