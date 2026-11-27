@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,6 +53,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -97,7 +99,7 @@ import core.util.multiplatform.Platform
 import kotlinx.coroutines.launch
 import kotlin.math.max
 
-private enum class CameraCaptureMode { Photo, Video }
+internal enum class CameraCaptureMode { Photo, Video }
 
 /** AE compensation steps when moon boost is on (from baseline); larger than 2 for a visible delta on preview. */
 private const val ExposureBoostSteps = 6
@@ -1316,30 +1318,47 @@ private fun ShutterFlashOverlay(
     )
 }
 
+private val CameraModeTouchTargetSize = 48.dp
+private val CameraModeTouchTargetSpacing = 24.dp
+private const val CAMERA_MODE_UNSELECTED_LABEL_ALPHA = 0.7f
+private const val CAMERA_MODE_LABEL_SHADOW_ALPHA = 0.6f
+private const val CAMERA_MODE_LABEL_SHADOW_BLUR_RADIUS = 6f
+
+internal val CameraModeLabelShadow = Shadow(
+    color = Color.Black.copy(alpha = CAMERA_MODE_LABEL_SHADOW_ALPHA),
+    offset = Offset.Zero,
+    blurRadius = CAMERA_MODE_LABEL_SHADOW_BLUR_RADIUS,
+)
+
+internal fun cameraModeLabelColor(isSelected: Boolean): Color =
+    if (isSelected) Color.White else Color.White.copy(alpha = CAMERA_MODE_UNSELECTED_LABEL_ALPHA)
+
 @Composable
-private fun ModeSwitcher(
+internal fun ModeSwitcher(
     currentMode: CameraCaptureMode,
     onModeChange: (CameraCaptureMode) -> Unit,
     enabled: Boolean = true,
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(32.dp),
+        horizontalArrangement = Arrangement.spacedBy(CameraModeTouchTargetSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         CameraCaptureMode.entries.forEach { mode ->
             val isSelected = mode == currentMode
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
                 modifier = Modifier
-                    .heightIn(min = 40.dp)
+                    .sizeIn(minWidth = CameraModeTouchTargetSize, minHeight = CameraModeTouchTargetSize)
                     .clickable(enabled = enabled) { onModeChange(mode) },
             ) {
                 Text(
                     text = mode.name.uppercase(),
-                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.6f),
+                    color = cameraModeLabelColor(isSelected = isSelected),
                     style = CoreRegularTextStyle().copy(
                         fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        shadow = CameraModeLabelShadow,
                     ),
                 )
                 Spacer(modifier = Modifier.height(2.dp))
