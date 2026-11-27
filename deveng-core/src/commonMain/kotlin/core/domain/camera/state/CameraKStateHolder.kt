@@ -3,6 +3,7 @@ package core.domain.camera.state
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.ImageBitmap
 import core.domain.camera.controller.CameraController
+import core.domain.camera.controller.awaitPreviewStarted
 import core.domain.camera.result.ImageCaptureResult
 import core.domain.camera.video.VideoCaptureResult
 import core.domain.camera.video.VideoConfiguration
@@ -161,6 +162,16 @@ class CameraKStateHolder(
 
             // Start session
             newController.startSession()
+            try {
+                newController.awaitPreviewStarted()
+            } catch (e: CancellationException) {
+                // The screen closed while the browser was still opening the camera, and shutdown() only
+                // releases a camera that finished initializing.
+                newController.stopSession()
+                newController.cleanup()
+                controller = null
+                throw e
+            }
 
             // Initialize UI state from controller
             updateUIStateFromController(newController)
@@ -178,6 +189,8 @@ class CameraKStateHolder(
                 )
 
             isInitialized = true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             _cameraState.value =
                 CameraKState.Error(

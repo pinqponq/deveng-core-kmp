@@ -15,6 +15,7 @@ import core.domain.camera.plugins.CameraPlugin
 import core.domain.camera.result.ImageCaptureResult
 import core.domain.camera.video.VideoCaptureResult
 import core.domain.camera.video.VideoConfiguration
+import core.util.CustomLogger
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -23,10 +24,14 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.js.JsAny
 import kotlin.time.ExperimentalTime
 import kotlinx.browser.document
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.skia.Image
@@ -88,6 +93,9 @@ actual class CameraController internal constructor(
         document.createElement("canvas").unsafeCast<HTMLCanvasElement>()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    internal var previewStartJob: Job? = null
+        private set
 
     private var listener: (ByteArray) -> Unit = { }
 
@@ -164,8 +172,13 @@ actual class CameraController internal constructor(
         if (video.parentNode == null) {
             document.documentElement?.appendChild(video)
         }
-        scope.launch {
+        previewStartJob = scope.launch {
             runCatching { openCamera() }
+                .onFailure { error ->
+                    if (error !is CancellationException) {
+                        CustomLogger.log("Web camera could not be opened: ${error.stackTraceToString()}")
+                    }
+                }
         }
     }
 
@@ -233,6 +246,11 @@ actual class CameraController internal constructor(
     private suspend fun openCamera() {
         stopTracks()
         val stream = getUserMediaSwitchingLens(currentLens)
+        if (!currentCoroutineContext().isActive) {
+            // The browser answers the camera request even after the screen has closed.
+            wasmStopAllTracks(stream)
+            throw CancellationException("The camera screen closed before the browser opened the camera")
+        }
         mediaStream = stream
         wasmSetVideoSrcObject(video, stream)
         runCatching { awaitVoidPromise(wasmVideoPlayPromise(video)) }
