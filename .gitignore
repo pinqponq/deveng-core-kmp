@@ -322,3 +322,11 @@ kotlin-js-store/
 
 # Node modules (install with npm install)
 node_modules/
+
+# pinq-doq copies, written by the pinqdoq CLI
+/.pinq-doq
+/.pinq-doq.*
+/.claude/rules/
+/.claude/skills/pinq_*/
+/.claude/skills/.pinq-doq-skills
+/.claude/.pinq-doq-version
