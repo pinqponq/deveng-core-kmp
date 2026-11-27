@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "componentName": "CustomIconButton",
+      "kotlinFqName": "core.presentation.component.CustomIconButton",
+      "codeConnect": {
+        "templateFile": "figma-sync/templates/CustomIconButton.figma.template.js",
+        "publish": {
+          "source": "template-v2"
+        }
+      },
+      "figma": {
+        "fileKey": "sJoAsKB4qqqrwvHRlowppo",
+        "nodeId": "150-63",
+        "componentUrl": "https://www.figma.com/design/sJoAsKB4qqqrwvHRlowppo/Design-System?node-id=150-63&t=V772pClCuqxs8hqE-4"
+      }
+    },
+    {
+      "componentName": "LabeledSwitch",
+      "kotlinFqName": "core.presentation.component.LabeledSwitch",
+      "codeConnect": {
+        "templateFile": "figma-sync/templates/LabeledSwitch.figma.template.js",
+        "publish": {
+          "source": "template-v2"
+        }
+      },
+      "figma": {
+        "fileKey": "sJoAsKB4qqqrwvHRlowppo",
+        "nodeId": "148-87",
+        "componentUrl": "https://www.figma.com/design/sJoAsKB4qqqrwvHRlowppo/Design-System?node-id=148-87"
+      }
+    }
+  ]
+}

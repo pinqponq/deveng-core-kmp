@@ -1,0 +1,29 @@
+appId: io.deveng.core.androidApp
+---
+- launchApp:
+    clearState: true
+- scrollUntilVisible:
+    element: "Open Motion Demo"
+- tapOn: "Open Motion Demo"
+- scrollUntilVisible:
+    element: "Flip both cards"
+- takeScreenshot: build/maestro/android/reveal-01-before-flip
+- startRecording: build/maestro/android/reveal
+- tapOn: "Flip both cards"
+- extendedWaitUntil:
+    visible: "Flip back"
+    timeout: 5000
+- takeScreenshot: build/maestro/android/reveal-02-flipped
+- scrollUntilVisible:
+    element: "Count up"
+- tapOn: "Count up"
+- assertVisible: "237 km"
+- takeScreenshot: build/maestro/android/reveal-03-counted
+- tapOn: "Count up"
+- assertVisible: "474 km"
+- scrollUntilVisible:
+    element: "Pop (juice + medium haptic)"
+    direction: UP
+- tapOn: "Pop (juice + medium haptic)"
+- takeScreenshot: build/maestro/android/reveal-04-pop
+- stopRecording

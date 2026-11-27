@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2025-12-12T14:30:00Z",
+  "git": { "commit": "abc123def456" },
+  "components": [
+    {
+      "componentName": "LabeledSwitch",
+      "kotlinFqName": "core.presentation.component.LabeledSwitch",
+      "codeConnect": { "nestable": false },
+      "params": [
+        { "name": "label", "kind": "TEXT", "nullable": false, "required": true, "default": null, "defaultSource": "unknown", "binding": { "field": "TEXT_CHARACTERS" }, "layerHint": { "marker": "#bind:label" } },
+        { "name": "isChecked", "kind": "BOOLEAN", "nullable": false, "required": true, "default": null, "defaultSource": "unknown", "binding": { "field": "VARIANT_AXIS" }, "layerHint": null, "variantAxis": { "propertyName": "isChecked", "valueMap": { "true": true, "false": false } } },
+        { "name": "isLabelAtStart", "kind": "BOOLEAN", "nullable": false, "required": true, "default": null, "defaultSource": "unknown", "binding": { "field": "VARIANT_AXIS" }, "layerHint": null, "variantAxis": { "propertyName": "isLabelAtStart", "valueMap": { "true": true, "false": false } } },
+        { "name": "onSwitchClick", "kind": "EXCLUDED", "nullable": false, "required": true, "default": null, "defaultSource": "unknown", "binding": { "field": "NONE" }, "layerHint": null, "callbackArity": 1 }
+      ]
+    },
+    {
+      "componentName": "CustomIconButton",
+      "kotlinFqName": "core.presentation.component.CustomIconButton",
+      "codeConnect": { "nestable": false },
+      "params": [
+        { "name": "isEnabled", "kind": "BOOLEAN", "nullable": false, "required": false, "default": true, "defaultSource": "literal", "binding": { "field": "VARIANT_AXIS" }, "layerHint": null, "variantAxis": { "propertyName": "isEnabled", "valueMap": { "true": true, "false": false } } },
+        { "name": "icon", "kind": "INSTANCE_SWAP", "nullable": false, "required": true, "default": null, "defaultSource": "unknown", "binding": { "field": "INSTANCE_SWAP" }, "layerHint": null, "instanceSwap": { "targetLayerMarker": "#swap:icon", "contract": "componentNameMatchesKotlinResource" } },
+        { "name": "iconDescription", "kind": "TEXT", "nullable": false, "required": true, "default": "", "defaultSource": "literal", "binding": { "field": "PROP_ONLY" }, "layerHint": null },
+        { "name": "onClick", "kind": "EXCLUDED", "nullable": false, "required": true, "default": null, "defaultSource": "unknown", "binding": { "field": "NONE" }, "layerHint": null, "callbackArity": 0 }
+      ]
+    }
+  ]
+}

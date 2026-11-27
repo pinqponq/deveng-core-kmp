@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2025-12-16T15:20:45.967190Z",
+  "git": {
+    "commit": "2ad53f6f7a1b334900b3713ff0c37d1ff7eaf607"
+  },
+  "components": [
+    {
+      "componentName": "CustomIconButton",
+      "kotlinFqName": "core.presentation.component.CustomIconButton",
+      "codeConnect": {
+        "nestable": false
+      },
+      "params": [
+        {
+          "name": "icon",
+          "kind": "INSTANCE_SWAP",
+          "nullable": false,
+          "required": true,
+          "defaultSource": "unknown",
+          "binding": {
+            "field": "INSTANCE_SWAP"
+          },
+          "instanceSwap": {
+            "targetLayerMarker": "#swap:icon",
+            "contract": "componentNameMatchesKotlinResource"
+          }
+        },
+        {
+          "name": "iconDescription",
+          "kind": "TEXT",
+          "nullable": false,
+          "required": true,
+          "default": "",
+          "defaultSource": "literal",
+          "binding": {
+            "field": "PROP_ONLY"
+          }
+        },
+        {
+          "name": "isEnabled",
+          "kind": "BOOLEAN",
+          "nullable": false,
+          "default": true,
+          "defaultSource": "literal",
+          "binding": {
+            "field": "VARIANT_AXIS"
+          },
+          "variantAxis": {
+            "propertyName": "isEnabled",
+            "valueMap": {
+              "true": true,
+              "false": false
+            }
+          }
+        },
+        {
+          "name": "onClick",
+          "kind": "EXCLUDED",
+          "nullable": false,
+          "required": true,
+          "defaultSource": "unknown",
+          "binding": {
+            "field": "NONE"
+          },
+          "callbackArity": 0
+        }
+      ]
+    },
+    {
+      "componentName": "LabeledSwitch",
+      "kotlinFqName": "core.presentation.component.LabeledSwitch",
+      "codeConnect": {
+        "nestable": false
+      },
+      "params": [
+        {
+          "name": "isChecked",
+          "kind": "BOOLEAN",
+          "nullable": false,
+          "required": true,
+          "defaultSource": "unknown",
+          "binding": {
+            "field": "VARIANT_AXIS"
+          },
+          "variantAxis": {
+            "propertyName": "isChecked",
+            "valueMap": {
+              "true": true,
+              "false": false
+            }
+          }
+        },
+        {
+          "name": "isLabelAtStart",
+          "kind": "BOOLEAN",
+          "nullable": false,
+          "required": true,
+          "defaultSource": "unknown",
+          "binding": {
+            "field": "VARIANT_AXIS"
+          },
+          "variantAxis": {
+            "propertyName": "isLabelAtStart",
+            "valueMap": {
+              "true": true,
+              "false": false
+            }
+          }
+        },
+        {
+          "name": "label",
+          "kind": "TEXT",
+          "nullable": false,
+          "required": true,
+          "defaultSource": "unknown",
+          "binding": {
+            "field": "TEXT_CHARACTERS"
+          },
+          "layerHint": {
+            "marker": "#bind:label"
+          }
+        },
+        {
+          "name": "onSwitchClick",
+          "kind": "EXCLUDED",
+          "nullable": false,
+          "required": true,
+          "defaultSource": "unknown",
+          "binding": {
+            "field": "NONE"
+          },
+          "callbackArity": 1
+        }
+      ]
+    }
+  ]
+}

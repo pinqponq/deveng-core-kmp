@@ -1,0 +1,124 @@
+package core.domain.camera.controller
+
+import core.domain.camera.builder.CameraControllerBuilder
+import core.domain.camera.enums.AspectRatio
+import core.domain.camera.enums.CameraDeviceType
+import core.domain.camera.enums.CameraLens
+import core.domain.camera.enums.Directory
+import core.domain.camera.enums.FlashMode
+import core.domain.camera.enums.ImageFormat
+import core.domain.camera.enums.QualityPrioritization
+import core.domain.camera.enums.TorchMode
+import core.domain.camera.plugins.CameraPlugin
+import core.domain.camera.utils.InvalidConfigurationException
+import org.bytedeco.javacv.FrameGrabber
+
+/**
+ * Desktop-specific implementation of [CameraControllerBuilder] using JavaCV/FFmpeg.
+ * Supports camera capture on JVM-based desktop environments.
+ */
+class DesktopCameraControllerBuilder : CameraControllerBuilder {
+    private var grabber: FrameGrabber? = null
+    private var horizontalFlip: Boolean = false
+    private var flashMode: FlashMode = FlashMode.OFF
+    private var torchMode: TorchMode = TorchMode.OFF
+    private var cameraLens: CameraLens = CameraLens.BACK
+    private var imageFormat: ImageFormat? = null
+    private var directory: Directory? = null
+    private var qualityPriority: QualityPrioritization = QualityPrioritization.QUALITY
+    private val plugins = mutableListOf<CameraPlugin>()
+    private var targetResolution: Pair<Int, Int>? = null
+
+    /**
+     * Sets the frame grabber for camera input.
+     *
+     * @param grabber The JavaCV FrameGrabber instance.
+     * @return This builder instance for chaining.
+     */
+    fun setGrabber(grabber: FrameGrabber): CameraControllerBuilder {
+        this.grabber = grabber
+        return this
+    }
+
+    /**
+     * Configures whether to flip frames horizontally.
+     *
+     * @param horizontalFlip True to flip frames horizontally.
+     * @return This builder instance for chaining.
+     */
+    fun setHorizontalFlip(horizontalFlip: Boolean): CameraControllerBuilder {
+        this.horizontalFlip = horizontalFlip
+        return this
+    }
+
+    override fun setFlashMode(flashMode: FlashMode): CameraControllerBuilder {
+        this.flashMode = flashMode
+        return this
+    }
+
+    override fun setCameraLens(cameraLens: CameraLens): CameraControllerBuilder {
+        this.cameraLens = cameraLens
+        return this
+    }
+
+    override fun setPreferredCameraDeviceType(deviceType: CameraDeviceType): CameraControllerBuilder = this
+
+    override fun setImageFormat(imageFormat: ImageFormat): CameraControllerBuilder {
+        this.imageFormat = imageFormat
+        return this
+    }
+
+    override fun setTorchMode(torchMode: TorchMode): CameraControllerBuilder {
+        this.torchMode = torchMode
+        return this
+    }
+
+    override fun setResolution(width: Int, height: Int): CameraControllerBuilder {
+        targetResolution = width to height
+        return this
+    }
+
+    override fun setResolutionFront(width: Int, height: Int): CameraControllerBuilder = this
+
+    override fun setQualityPrioritization(prioritization: QualityPrioritization): CameraControllerBuilder {
+        this.qualityPriority = prioritization
+        return this
+    }
+
+    /**
+     * Desktop does not support file path return; always returns ByteArray.
+     *
+     * @param returnFilePath Ignored on desktop platform.
+     * @return This builder instance for chaining.
+     */
+    override fun setReturnFilePath(returnFilePath: Boolean): CameraControllerBuilder = this
+
+    override fun setAspectRatio(aspectRatio: AspectRatio): CameraControllerBuilder = this
+
+    override fun setDirectory(directory: Directory): CameraControllerBuilder {
+        this.directory = directory
+        return this
+    }
+
+    override fun addPlugin(plugin: CameraPlugin): CameraControllerBuilder {
+        plugins.add(plugin)
+        return this
+    }
+
+    override fun build(): CameraController {
+        val format = imageFormat ?: throw InvalidConfigurationException("ImageFormat must be set.")
+        val dir = directory ?: throw InvalidConfigurationException("Directory must be set.")
+
+        val cameraController =
+            CameraController(
+                imageFormat = format,
+                directory = dir,
+                plugins = plugins,
+                horizontalFlip = horizontalFlip,
+                customGrabber = grabber,
+                targetResolution = targetResolution,
+            )
+
+        return cameraController
+    }
+}

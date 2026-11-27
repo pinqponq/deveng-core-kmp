@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "codeconnect:parse": "figma connect parse --include-template-files",
+    "codeconnect:publish": "figma connect publish --include-template-files",
+    "verifyCodeConnectInputs": "node figma-sync/scripts/verify-codeconnect-inputs.js"
+  },
+  "dependencies": {
+    "@figma/code-connect": "^1.3.12"
+  }
+}

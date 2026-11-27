@@ -1,0 +1,24 @@
+package core.presentation.permission
+
+import android.content.Context
+import androidx.activity.ComponentActivity
+
+actual interface PermissionsController {
+    actual suspend fun providePermission(permission: Permission)
+    actual suspend fun isPermissionGranted(permission: Permission): Boolean
+    actual suspend fun getPermissionState(permission: Permission): PermissionState
+    actual fun openAppSettings()
+    actual fun openNotificationSettings()
+
+    fun bind(activity: ComponentActivity)
+
+    companion object {
+        operator fun invoke(
+            applicationContext: Context
+        ): PermissionsController {
+            return PermissionsControllerImpl(
+                applicationContext = applicationContext
+            )
+        }
+    }
+}

@@ -1,0 +1,34 @@
+appId: io.deveng.core.androidApp
+---
+- launchApp:
+    clearState: true
+- scrollUntilVisible:
+    element: "Open Swipe-to-Reply Demo"
+- tapOn: "Open Swipe-to-Reply Demo"
+- assertVisible: "Swipe a message to the right to reply"
+- takeScreenshot: build/maestro/android/swipe-to-reply-01-start
+- startRecording: build/maestro/android/swipe-to-reply
+- swipe:
+    from: "Message #3"
+    direction: RIGHT
+    duration: 600
+- assertVisible: "Replying to message #3"
+- assertVisible: "Replies: 1"
+- takeScreenshot: build/maestro/android/swipe-to-reply-02-replied
+- scrollUntilVisible:
+    element: "Message #40"
+    direction: DOWN
+- assertVisible: "Replies: 1"
+- takeScreenshot: build/maestro/android/swipe-to-reply-03-scrolled
+- swipe:
+    from: "Message #41"
+    direction: RIGHT
+    duration: 600
+- assertVisible: "Replying to message #41"
+- assertVisible: "Replies: 2"
+- scrollUntilVisible:
+    element: "Message #5"
+    direction: UP
+- assertVisible: "Replies: 2"
+- takeScreenshot: build/maestro/android/swipe-to-reply-04-scrolled-back
+- stopRecording

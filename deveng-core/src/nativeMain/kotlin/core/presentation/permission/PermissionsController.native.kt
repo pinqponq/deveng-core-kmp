@@ -1,0 +1,3 @@
+package core.presentation.permission
+
+actual typealias PermissionsController = PermissionsControllerProtocol

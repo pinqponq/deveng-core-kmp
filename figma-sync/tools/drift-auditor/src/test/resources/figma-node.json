@@ -1,0 +1,9 @@
+{
+  "componentPropertyDefinitions": {
+    "label#0:0": { "type": "BOOLEAN" },
+    "extraProp#150:12": { "type": "TEXT" }
+  },
+  "componentPropertyReferences": {
+    "characters": "label#0:0"
+  }
+}

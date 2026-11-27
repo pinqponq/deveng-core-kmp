@@ -1,0 +1,67 @@
+package core.domain.camera.utils
+
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.graphics.Bitmap
+import androidx.camera.core.ImageProxy
+import java.io.ByteArrayOutputStream
+
+fun Context.getActivityOrNull(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+
+    return null
+}
+
+/**
+ * Compress bitmap to byte array with memory-efficient approach
+ * @param format Bitmap format (JPEG, PNG)
+ * @param quality Compression quality (0-100)
+ * @param recycleInput Whether to recycle the input bitmap after compression
+ * @return ByteArray containing the compressed image data
+ */
+fun Bitmap.compressToByteArray(
+    format: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG,
+    quality: Int = 95,
+    recycleInput: Boolean = false,
+): ByteArray {
+    val initialSize =
+        when (format) {
+            Bitmap.CompressFormat.JPEG -> width * height / 8
+            Bitmap.CompressFormat.PNG -> width * height / 4
+            else -> width * height / 6
+        }
+
+    val outputStream = ByteArrayOutputStream(initialSize.coerceIn(16384, 1024 * 1024))
+
+    compress(format, quality.coerceIn(0, 100), outputStream)
+
+    if (recycleInput) {
+        recycle()
+    }
+
+    return outputStream.toByteArray()
+}
+
+fun ImageProxy.toByteArray(): ByteArray {
+    val yPlane = planes[0]
+    val uPlane = planes[1]
+    val vPlane = planes[2]
+
+    val ySize = yPlane.buffer.remaining()
+    val uSize = uPlane.buffer.remaining()
+    val vSize = vPlane.buffer.remaining()
+
+    val nv21 = ByteArray(ySize + uSize + vSize)
+
+    yPlane.buffer.get(nv21, 0, ySize)
+
+    vPlane.buffer.get(nv21, ySize, vSize)
+    uPlane.buffer.get(nv21, ySize + vSize, uSize)
+
+    return nv21
+}

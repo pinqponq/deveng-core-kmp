@@ -1,0 +1,8 @@
+{
+  "componentPropertyDefinitions": {
+    "isChecked#42:0": { "type": "VARIANT" }
+  },
+  "componentPropertyReferences": {
+    "state": "isChecked#0:0"
+  }
+}

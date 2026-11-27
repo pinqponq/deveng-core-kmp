@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "description": "Maps Kotlin parameter types to schema param definitions for generateSchema extraction",
+  "mappings": {
+    "String": {
+      "kind": "TEXT",
+      "binding": "TEXT_CHARACTERS",
+      "supportsLiteralDefault": true,
+      "literalDefaultType": "string"
+    },
+    "Boolean": {
+      "kind": "BOOLEAN",
+      "binding": "VARIANT_AXIS",
+      "supportsLiteralDefault": true,
+      "literalDefaultType": "boolean",
+      "variantAxis": {
+        "derivePropertyNameFromParam": true,
+        "defaultValueMap": {
+          "true": true,
+          "false": false
+        }
+      }
+    },
+    "DrawableResource": {
+      "kind": "INSTANCE_SWAP",
+      "binding": "INSTANCE_SWAP",
+      "supportsLiteralDefault": false,
+      "instanceSwap": {
+        "deriveTargetLayerMarkerFromParam": true,
+        "contract": "componentNameMatchesKotlinResource"
+      }
+    },
+    "() -> Unit": {
+      "kind": "EXCLUDED",
+      "binding": "NONE",
+      "supportsLiteralDefault": false,
+      "callbackArity": 0,
+      "forceRequired": true
+    },
+    "(Boolean) -> Unit": {
+      "kind": "EXCLUDED",
+      "binding": "NONE",
+      "supportsLiteralDefault": false,
+      "callbackArity": 1,
+      "forceRequired": true
+    },
+    "(Int) -> Unit": {
+      "kind": "EXCLUDED",
+      "binding": "NONE",
+      "supportsLiteralDefault": false,
+      "callbackArity": 1,
+      "forceRequired": true
+    },
+    "(String) -> Unit": {
+      "kind": "EXCLUDED",
+      "binding": "NONE",
+      "supportsLiteralDefault": false,
+      "callbackArity": 1,
+      "forceRequired": true
+    },
+    "Int": {
+      "kind": "TEXT",
+      "binding": "PROP_ONLY",
+      "supportsLiteralDefault": true,
+      "literalDefaultType": "int"
+    },
+    "Float": {
+      "kind": "TEXT",
+      "binding": "PROP_ONLY",
+      "supportsLiteralDefault": true,
+      "literalDefaultType": "float"
+    }
+  },
+  "excludedTypes": [
+    "Modifier",
+    "Color",
+    "TextStyle",
+    "Shape",
+    "Dp",
+    "Slot",
+    "BorderStroke"
+  ],
+  "notes": {
+    "excludedTypes": "Types that are excluded from schema extraction (style/theming concerns)",
+    "callbackArity": "Number of lambda parameters; used for template stub generation",
+    "derivePropertyNameFromParam": "When true, uses the param name as Figma property name",
+    "deriveTargetLayerMarkerFromParam": "When true, generates #swap:paramName marker"
+  }
+}

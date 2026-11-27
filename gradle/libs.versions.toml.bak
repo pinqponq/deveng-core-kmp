@@ -1,0 +1,68 @@
+[versions]
+agp = "8.11.2"
+android-minSdk = "24"
+android-targetSdk = "36"
+android-compileSdk = "36"
+app-version-major = "1"
+app-version-code = "7"
+app-minor-version = "59"
+
+androidx-activityCompose = "1.12.2"
+compose-plugin = "1.10.0"
+kotlin = "2.3.0"
+figma-code-connect = "1.2.6"
+figma-code-connect-lib = "1.1.3"
+
+vanniktech = "0.30.0"
+kotlinx-coroutines-swing = "1.10.2"
+kotlinx-coroutines = "1.10.2"
+serialization = "1.8.0"
+
+# CameraK / camera
+atomicfu = "0.29.0"
+kermit = "2.0.8"
+camera-core = "1.5.1"
+startupRuntime = "1.2.0"
+coil-mp = "3.3.0"
+javacvPlatform = "1.5.12"
+datetime = "0.7.1"
+russhwolfsettings = "1.2.0"
+
+[libraries]
+
+androidx-activityCompose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
+kotlinx-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines-swing" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+russhwolf-settings = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "russhwolfsettings" }
+
+figma-code-connect-lib = { module = "com.figma.code.connect:code-connect-lib", version.ref = "figma-code-connect-lib" }
+
+# CameraK / camera
+atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "camera-core" }
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camera-core" }
+androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "camera-core" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camera-core" }
+androidx-camera-extensions = { module = "androidx.camera:camera-extensions", version.ref = "camera-core" }
+androidx-camera-video = { module = "androidx.camera:camera-video", version.ref = "camera-core" }
+androidx-startup-runtime = { module = "androidx.startup:startup-runtime", version.ref = "startupRuntime" }
+coil3 = { module = "io.coil-kt.coil3:coil", version.ref = "coil-mp" }
+coil3-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil-mp" }
+coil3-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil-mp" }
+javacv-platform = { module = "org.bytedeco:javacv-platform", version.ref = "javacvPlatform" }
+
+[plugins]
+
+multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+compose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+vanniktech-mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+figma-code-connect = { id = "com.figma.code.connect", version.ref = "figma-code-connect" }

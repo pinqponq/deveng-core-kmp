@@ -1,0 +1,12 @@
+{
+  "codeConnect": {
+    "include": [
+      "figma-sync/templates/**/*.figma.template.js"
+    ],
+    "exclude": [
+      "**/node_modules/**",
+      "**/build/**"
+    ],
+    "label": "Code Connect (Template V2)"
+  }
+}
